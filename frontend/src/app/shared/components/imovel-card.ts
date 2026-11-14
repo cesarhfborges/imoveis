@@ -23,6 +23,9 @@ import { AuthService } from '@/app/core/services/auth.service';
                 @if (imovel().destaque) {
                     <span class="imovel-card__selo imovel-card__selo--verde">Destaque</span>
                 }
+                @if (imovel().fotoCapaIa) {
+                    <span class="selo-origem-foto ia selo-origem-foto--canto" title="Foto de capa criada ou alterada com IA"><i class="pi pi-sparkles" aria-hidden="true"></i> IA</span>
+                }
                 @if (imovel().aceitaFinanciamento) {
                     <span class="imovel-card__financia"><i class="pi pi-wallet" aria-hidden="true"></i> Aceita financiamento</span>
                 }

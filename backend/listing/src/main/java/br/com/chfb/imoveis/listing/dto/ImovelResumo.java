@@ -33,6 +33,7 @@ public record ImovelResumo(
         String anuncianteCreci,
         String anuncianteFoto,
         String fotoCapa,
+        boolean fotoCapaIa,
         int totalFotos,
         boolean lancamento,
         boolean destaque,

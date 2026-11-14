@@ -6,6 +6,7 @@ import java.util.Set;
 
 import br.com.chfb.imoveis.listing.entity.Finalidade;
 import br.com.chfb.imoveis.listing.entity.TipoImovel;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
@@ -43,6 +44,6 @@ public record ImovelForm(
         boolean aceitaPermuta,
         boolean escrituraRegistrada,
         boolean quitado,
-        @Size(max = 30) List<@Size(max = 500) String> fotos,
+        @Size(max = 30) List<@Valid FotoDto> fotos,
         @Size(max = 40) Set<@Size(max = 60) String> caracteristicas) {
 }

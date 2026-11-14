@@ -17,6 +17,7 @@ import org.springframework.util.StringUtils;
 import br.com.chfb.imoveis.coreapi.entity.Usuario;
 import br.com.chfb.imoveis.coreapi.repository.UsuarioRepository;
 import br.com.chfb.imoveis.listing.entity.Finalidade;
+import br.com.chfb.imoveis.listing.entity.FotoImovel;
 import br.com.chfb.imoveis.listing.entity.Imovel;
 import br.com.chfb.imoveis.listing.entity.StatusAnuncio;
 import br.com.chfb.imoveis.listing.entity.TipoImovel;
@@ -156,9 +157,14 @@ public class DataSeeder implements ApplicationRunner {
     }
 
     /** Fotos de teste servidas pelo front em /mock/fotos (frontend/public/mock/fotos). */
-    static List<String> fotosMock(int n) {
-        return java.util.stream.IntStream.of(0, 1, 3, 5)
-                .mapToObj(d -> "/mock/fotos/foto-" + (((n + d) % 9) + 1) + ".jpg").toList();
+    static List<FotoImovel> fotosMock(int n) {
+        // as fotos de teste são renders; a 2ª de cada anúncio fica marcada como "editada com IA" para demonstrar o selo
+        int[] passos = {0, 1, 3, 5};
+        List<FotoImovel> lista = new java.util.ArrayList<>();
+        for (int k = 0; k < passos.length; k++) {
+            lista.add(new FotoImovel("/mock/fotos/foto-" + (((n + passos[k]) % 9) + 1) + ".jpg", k == 1));
+        }
+        return lista;
     }
 
     /** Em dev, anúncios sem nenhuma foto recebem as fotos de teste (só para visualizar). */

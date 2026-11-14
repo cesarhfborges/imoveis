@@ -1,5 +1,5 @@
 import { Component, ElementRef, computed, effect, input, signal, viewChild } from '@angular/core';
-import { TipoImovel } from '@/app/core/models/models';
+import { FotoImovel, TipoImovel } from '@/app/core/models/models';
 import { ImovelFoto } from './imovel-foto';
 
 /**
@@ -21,6 +21,12 @@ import { ImovelFoto } from './imovel-foto';
             @if (fotos().length) {
                 <button type="button" class="galeria__expandir" (click)="abrirTelaCheia()" aria-label="Ver fotos em tela cheia"><i class="pi pi-window-maximize" aria-hidden="true"></i></button>
             }
+            @if (fotoAtual(); as f) {
+                <span class="selo-origem-foto selo-origem-foto--grande" [class.ia]="f.editadaIa" [attr.title]="f.editadaIa ? 'O anunciante informou que esta imagem foi criada ou alterada com inteligência artificial' : 'O anunciante informou que esta é uma foto real, sem alterações'">
+                    <i class="pi" [class.pi-sparkles]="f.editadaIa" [class.pi-camera]="!f.editadaIa" aria-hidden="true"></i>
+                    {{ f.editadaIa ? 'Imagem editada com IA' : 'Foto real' }}
+                </span>
+            }
             <span class="galeria__contador" aria-live="polite"><i class="pi pi-camera" aria-hidden="true"></i> {{ fotos().length ? indice() + 1 : 0 }}/{{ fotos().length }}</span>
         </div>
 
@@ -28,7 +34,10 @@ import { ImovelFoto } from './imovel-foto';
             <div class="galeria__miniaturas" role="list" aria-label="Miniaturas">
                 @for (f of fotos(); track $index) {
                     <button type="button" role="listitem" class="galeria__mini" [class.ativa]="$index === indice()" (click)="indice.set($index)" [attr.aria-label]="'Ver foto ' + ($index + 1)" [attr.aria-current]="$index === indice()">
-                        <img [src]="f" alt="" loading="lazy" />
+                        <img [src]="f.url" alt="" loading="lazy" />
+                        @if (f.editadaIa) {
+                            <span class="galeria__mini-ia" aria-hidden="true">IA</span>
+                        }
                     </button>
                 }
             </div>
@@ -42,6 +51,12 @@ import { ImovelFoto } from './imovel-foto';
                     <button type="button" class="visualizador__seta visualizador__seta--esq" (click)="mover(-1)" aria-label="Foto anterior"><i class="pi pi-chevron-left" aria-hidden="true"></i></button>
                     <button type="button" class="visualizador__seta visualizador__seta--dir" (click)="mover(1)" aria-label="Próxima foto"><i class="pi pi-chevron-right" aria-hidden="true"></i></button>
                 }
+                @if (fotoAtual(); as f) {
+                    <span class="selo-origem-foto selo-origem-foto--grande visualizador__origem" [class.ia]="f.editadaIa">
+                        <i class="pi" [class.pi-sparkles]="f.editadaIa" [class.pi-camera]="!f.editadaIa" aria-hidden="true"></i>
+                        {{ f.editadaIa ? 'Imagem editada com IA' : 'Foto real, sem alterações' }}
+                    </span>
+                }
                 <span class="visualizador__contador"><i class="pi pi-camera" aria-hidden="true"></i> {{ indice() + 1 }}/{{ fotos().length }}</span>
             </div>
         }
@@ -49,14 +64,15 @@ import { ImovelFoto } from './imovel-foto';
     host: { '(document:keydown)': 'tecla($event)' }
 })
 export class GaleriaFotos {
-    fotos = input<string[]>([]);
+    fotos = input<FotoImovel[]>([]);
     alt = input('Imóvel');
     tipo = input<TipoImovel | null>(null);
     semente = input(1);
 
     indice = signal(0);
     telaCheia = signal(false);
-    atual = computed(() => this.fotos()[this.indice()] ?? null);
+    fotoAtual = computed<FotoImovel | null>(() => this.fotos()[this.indice()] ?? null);
+    atual = computed(() => this.fotoAtual()?.url ?? null);
 
     private botaoFechar = viewChild<ElementRef<HTMLButtonElement>>('fechar');
     private focoAnterior: HTMLElement | null = null;
@@ -78,7 +94,8 @@ export class GaleriaFotos {
     }
 
     rotuloFoto(i: number) {
-        return `${this.alt()} - foto ${i + 1} de ${this.fotos().length || 1}`;
+        const ia = this.fotos()[i]?.editadaIa ? ' (imagem editada com IA)' : '';
+        return `${this.alt()} - foto ${i + 1} de ${this.fotos().length || 1}${ia}`;
     }
 
     mover(d: number) {

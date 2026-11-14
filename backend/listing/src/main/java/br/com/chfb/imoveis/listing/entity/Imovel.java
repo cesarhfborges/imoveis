@@ -108,8 +108,7 @@ public class Imovel extends BaseEntity {
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "imovel_fotos", joinColumns = @JoinColumn(name = "imovel_id"))
     @OrderColumn(name = "ordem")
-    @Column(name = "url", length = 500)
-    private List<String> fotos = new ArrayList<>();
+    private List<FotoImovel> fotos = new ArrayList<>();
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "imovel_caracteristicas", joinColumns = @JoinColumn(name = "imovel_id"))
@@ -180,8 +179,8 @@ public class Imovel extends BaseEntity {
     public void setAnuncianteId(Long anuncianteId) { this.anuncianteId = anuncianteId; }
     public long getVisualizacoes() { return visualizacoes; }
     public void setVisualizacoes(long visualizacoes) { this.visualizacoes = visualizacoes; }
-    public List<String> getFotos() { return fotos; }
-    public void setFotos(List<String> fotos) { this.fotos = fotos; }
+    public List<FotoImovel> getFotos() { return fotos; }
+    public void setFotos(List<FotoImovel> fotos) { this.fotos = fotos; }
     public Set<String> getCaracteristicas() { return caracteristicas; }
     public void setCaracteristicas(Set<String> caracteristicas) { this.caracteristicas = caracteristicas; }
 }

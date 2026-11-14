@@ -17,12 +17,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.chfb.imoveis.listing.dto.EstatisticasAnuncios;
+import br.com.chfb.imoveis.listing.dto.FotoDto;
 import br.com.chfb.imoveis.listing.dto.ImovelDetalhe;
 import br.com.chfb.imoveis.listing.dto.ImovelFiltro;
 import br.com.chfb.imoveis.listing.dto.ImovelForm;
 import br.com.chfb.imoveis.listing.dto.ImovelResumo;
 import br.com.chfb.imoveis.listing.dto.OpcoesBusca;
 import br.com.chfb.imoveis.listing.dto.StatusForm;
+import br.com.chfb.imoveis.listing.entity.FotoImovel;
 import br.com.chfb.imoveis.listing.entity.Imovel;
 import br.com.chfb.imoveis.listing.entity.StatusAnuncio;
 import br.com.chfb.imoveis.listing.entity.TipoImovel;
@@ -250,8 +252,8 @@ public class ImovelService {
         i.setQuitado(f.quitado());
         i.getFotos().clear();
         if (f.fotos() != null) {
-            f.fotos().stream().filter(Objects::nonNull).map(String::trim).filter(s -> !s.isEmpty())
-                    .forEach(i.getFotos()::add);
+            f.fotos().stream().filter(Objects::nonNull).filter(x -> x.url() != null && !x.url().isBlank())
+                    .map(x -> new FotoImovel(x.url().trim(), x.editadaIa())).forEach(i.getFotos()::add);
         }
         i.getCaracteristicas().clear();
         if (f.caracteristicas() != null) {
@@ -266,7 +268,8 @@ public class ImovelService {
                 i.getQuartos(), i.getSuites(), i.getBanheiros(), i.getVagas(), i.getUf(), i.getCidade(), i.getBairro(),
                 i.getEndereco(), i.getLatitude(), i.getLongitude(), resumir(i.getDescricao()),
                 anunciante == null ? null : anunciante.creci(), anunciante == null ? null : anunciante.fotoUrl(),
-                i.getFotos().isEmpty() ? null : i.getFotos().get(0), i.getFotos().size(), i.isLancamento(),
+                i.getFotos().isEmpty() ? null : i.getFotos().get(0).getUrl(),
+                !i.getFotos().isEmpty() && i.getFotos().get(0).isEditadaIa(), i.getFotos().size(), i.isLancamento(),
                 i.isDestaque(), i.isAceitaFinanciamento(), i.isAceitaFgts(), i.getVisualizacoes(), i.getAnuncianteId(),
                 anunciante == null ? null : anunciante.nome(), i.getCriadoEm());
     }
@@ -348,7 +351,7 @@ public class ImovelService {
                 i.getUf(), i.getCidade(), i.getBairro(), i.getEndereco(), i.getCep(), i.getLatitude(), i.getLongitude(),
                 i.isLancamento(), i.isDestaque(),
                 i.isAceitaFinanciamento(), i.isAceitaFgts(), i.isAceitaPermuta(), i.isEscrituraRegistrada(), i.isQuitado(),
-                List.copyOf(i.getFotos()), Set.copyOf(i.getCaracteristicas()),
+                i.getFotos().stream().map(FotoDto::of).toList(), Set.copyOf(i.getCaracteristicas()),
                 i.getVisualizacoes(), anunciante, i.getCriadoEm(), i.getAtualizadoEm());
     }
 }

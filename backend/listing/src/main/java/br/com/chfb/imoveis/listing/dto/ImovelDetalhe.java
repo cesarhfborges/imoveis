@@ -42,7 +42,7 @@ public record ImovelDetalhe(
         boolean aceitaPermuta,
         boolean escrituraRegistrada,
         boolean quitado,
-        List<String> fotos,
+        List<FotoDto> fotos,
         Set<String> caracteristicas,
         long visualizacoes,
         Anunciante anunciante,

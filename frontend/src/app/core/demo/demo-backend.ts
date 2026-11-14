@@ -45,6 +45,8 @@ export class DemoBackend {
                         i.quitado ??= false;
                         // bancos de demonstração antigos não tinham fotos: usa as fotos de teste
                         if (!i.fotos || i.fotos.length === 0) i.fotos = fotosMock(i.id - 1);
+                        // versões antigas guardavam só a URL de cada foto
+                        i.fotos = (i.fotos as unknown[]).map((f) => (typeof f === 'string' ? { url: f, editadaIa: false } : (f as { url: string; editadaIa: boolean })));
                     });
                     return db;
                 }
@@ -363,7 +365,8 @@ export class DemoBackend {
             descricaoCurta: desc.length > 220 ? desc.slice(0, 217) + '...' : desc,
             anuncianteCreci: a?.creci ?? null,
             anuncianteFoto: a?.fotoUrl ?? null,
-            fotoCapa: i.fotos[0] ?? null,
+            fotoCapa: i.fotos[0]?.url ?? null,
+            fotoCapaIa: !!i.fotos[0]?.editadaIa,
             totalFotos: i.fotos.length,
             lancamento: i.lancamento,
             destaque: i.destaque,
@@ -596,7 +599,7 @@ export class DemoBackend {
             aceitaPermuta: !!b.aceitaPermuta,
             escrituraRegistrada: !!b.escrituraRegistrada,
             quitado: !!b.quitado,
-            fotos: (b.fotos ?? []).filter((x: string) => !!x),
+            fotos: (b.fotos ?? []).filter((x: { url?: string }) => !!x?.url).map((x: { url: string; editadaIa?: boolean }) => ({ url: x.url, editadaIa: !!x.editadaIa })),
             caracteristicas: (b.caracteristicas ?? []).filter((x: string) => !!x)
         };
     }

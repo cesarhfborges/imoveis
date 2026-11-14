@@ -88,6 +88,8 @@ export interface ImovelResumo {
     anuncianteCreci: string | null;
     anuncianteFoto: string | null;
     fotoCapa: string | null;
+    /** A foto de capa foi criada/alterada com IA. */
+    fotoCapaIa: boolean;
     totalFotos: number;
     lancamento: boolean;
     destaque: boolean;
@@ -105,6 +107,12 @@ export interface Anunciante {
     telefone: string | null;
     creci: string | null;
     fotoUrl: string | null;
+}
+
+/** Foto do anúncio: editadaIa = criada/alterada com IA; false = foto real sem alterações. */
+export interface FotoImovel {
+    url: string;
+    editadaIa: boolean;
 }
 
 export interface ImovelDetalhe {
@@ -139,7 +147,7 @@ export interface ImovelDetalhe {
     aceitaPermuta: boolean;
     escrituraRegistrada: boolean;
     quitado: boolean;
-    fotos: string[];
+    fotos: FotoImovel[];
     caracteristicas: string[];
     visualizacoes: number;
     anunciante: Anunciante | null;
@@ -174,7 +182,7 @@ export interface ImovelForm {
     aceitaPermuta: boolean;
     escrituraRegistrada: boolean;
     quitado: boolean;
-    fotos: string[];
+    fotos: FotoImovel[];
     caracteristicas: string[];
 }
 
