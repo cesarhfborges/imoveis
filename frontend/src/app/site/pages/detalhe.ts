@@ -10,7 +10,7 @@ import { ContaService } from '@/app/core/services/conta.service';
 import { AuthService } from '@/app/core/services/auth.service';
 import { ConfigService } from '@/app/core/services/config.service';
 import { PrecoPipe, TempoAtrasPipe, ValorM2Pipe } from '@/app/core/pipes/formatos';
-import { ImovelFoto } from '@/app/shared/components/imovel-foto';
+import { GaleriaFotos } from '@/app/shared/components/galeria-fotos';
 import { ContatoForm } from '@/app/shared/components/contato-form';
 import { MapaOsm, PontoMapa } from '@/app/shared/components/mapa-osm';
 import { ImovelCardMini } from '@/app/shared/components/imovel-card-mini';
@@ -19,7 +19,7 @@ import { EmptyState } from '@/app/shared/components/empty-state';
 /** Página do imóvel. */
 @Component({
     selector: 'app-detalhe-page',
-    imports: [RouterLink, ButtonModule, SkeletonModule, TagModule, PrecoPipe, ValorM2Pipe, TempoAtrasPipe, ImovelFoto, ContatoForm, MapaOsm, ImovelCardMini, EmptyState],
+    imports: [RouterLink, ButtonModule, SkeletonModule, TagModule, PrecoPipe, ValorM2Pipe, TempoAtrasPipe, GaleriaFotos, ContatoForm, MapaOsm, ImovelCardMini, EmptyState],
     template: `
         @if (erro()) {
             <div class="site-container py-10">
@@ -33,14 +33,7 @@ import { EmptyState } from '@/app/shared/components/empty-state';
             @let i = imovel()!;
             <div class="site-container detalhe">
                 <div class="detalhe__principal">
-                    <div class="galeria" aria-roledescription="carrossel" aria-label="Fotos do imóvel">
-                        <app-imovel-foto class="galeria__foto" [src]="fotoAtual()" [tipo]="i.tipo" [semente]="i.id" [alt]="i.titulo + ' - foto ' + (indice() + 1)" />
-                        @if (i.fotos.length > 1) {
-                            <button type="button" class="galeria__seta galeria__seta--esq" (click)="mover(-1)" aria-label="Foto anterior"><i class="pi pi-chevron-left"></i></button>
-                            <button type="button" class="galeria__seta galeria__seta--dir" (click)="mover(1)" aria-label="Próxima foto"><i class="pi pi-chevron-right"></i></button>
-                        }
-                        <span class="galeria__contador"><i class="pi pi-camera" aria-hidden="true"></i> {{ i.fotos.length ? indice() + 1 : 0 }}/{{ i.fotos.length }}</span>
-                    </div>
+                    <app-galeria-fotos [fotos]="i.fotos" [alt]="i.titulo" [tipo]="i.tipo" [semente]="i.id" />
 
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
                         @if (i.anunciante?.telefone) {
@@ -228,12 +221,10 @@ export class DetalhePage {
     imovel = signal<ImovelDetalhe | null>(null);
     similares = signal<ImovelResumo[]>([]);
     erro = signal(false);
-    indice = signal(0);
     descricaoAberta = signal(false);
     finalidadeLabel = finalidadeLabel;
     documentacao = DOCUMENTACAO;
 
-    fotoAtual = computed(() => this.imovel()?.fotos[this.indice()] ?? null);
     favorito = computed(() => this.conta.favoritos().has(Number(this.id())));
     precoSemRs = computed(() => {
         const i = this.imovel();
@@ -256,7 +247,6 @@ export class DetalhePage {
             const id = Number(this.id());
             this.imovel.set(null);
             this.erro.set(false);
-            this.indice.set(0);
             this.imoveis.detalhe(id).subscribe({
                 next: (i) => {
                     this.imovel.set(i);
@@ -268,10 +258,6 @@ export class DetalhePage {
         });
     }
 
-    mover(d: number) {
-        const n = this.imovel()?.fotos.length ?? 0;
-        if (n) this.indice.update((i) => (i + d + n) % n);
-    }
 
     iniciais(nome: string) {
         return nome
