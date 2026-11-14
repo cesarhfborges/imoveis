@@ -1,0 +1,12 @@
+{
+  "name": "imoveis",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Portal de imóveis: backend Spring Boot (pasta backend) + frontend Angular/PrimeNG (pasta frontend).",
+  "scripts": {
+    "postinstall": "npm --prefix frontend install --no-audit --no-fund",
+    "build": "npm --prefix frontend run build && node scripts/rotas-estaticas.mjs",
+    "build:backend": "cd backend && mvn -B -Pprod package",
+    "test:backend": "cd backend && mvn -B test"
+  }
+}

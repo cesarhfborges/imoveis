@@ -1,0 +1,41 @@
+# -----------------------------------------------------------------------------
+# DESENVOLVIMENTO - estende application-prod.yml.
+# Ativado como "prod,dev": tudo que não estiver aqui vem do prod.
+# -----------------------------------------------------------------------------
+server:
+  servlet:
+    session:
+      cookie:
+        # Em http://localhost o cookie não pode ser "secure"
+        secure: false
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/imoveis}
+    username: ${DB_USER:admin}
+    password: ${DB_PASSWORD:secretpassword}
+  jpa:
+    show-sql: false
+  devtools:
+    # Hot reload: reinicia a aplicação ao recompilar e avisa o navegador (LiveReload)
+    restart:
+      enabled: true
+      additional-paths: ../listing/target/classes,../shared-kernel/target/classes
+    livereload:
+      enabled: true
+
+app:
+  security:
+    frontend-origins: http://localhost:4200,http://127.0.0.1:4200
+    api-cors-origins: "*"
+  uploads:
+    dir: ./.data/uploads
+  seed:
+    demo: true
+  bootstrap:
+    admin-email: ""
+    admin-senha: ""
+
+logging:
+  level:
+    br.com.chfb: DEBUG

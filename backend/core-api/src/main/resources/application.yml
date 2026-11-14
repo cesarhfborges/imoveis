@@ -1,0 +1,17 @@
+# -----------------------------------------------------------------------------
+# Configuração base.
+#
+# Perfis:
+#   prod -> application-prod.yml (configuração completa de produção)
+#   dev  -> application-dev.yml  (ESTENDE o prod: só sobrescreve o necessário)
+#
+# O perfil ativo vem do perfil Maven usado no build/execução:
+#   mvn ... -Pdev  (padrão)  => "prod,dev"  (carrega prod e depois dev, o dev vence)
+#   mvn ... -Pprod           => "prod"
+# Também pode ser trocado em tempo de execução: SPRING_PROFILES_ACTIVE=prod,dev
+# -----------------------------------------------------------------------------
+spring:
+  application:
+    name: imoveis
+  profiles:
+    active: "@spring.profiles.active@"

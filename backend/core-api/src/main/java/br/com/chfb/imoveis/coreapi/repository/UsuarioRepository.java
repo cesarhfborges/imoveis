@@ -1,0 +1,34 @@
+package br.com.chfb.imoveis.coreapi.repository;
+
+import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import br.com.chfb.imoveis.coreapi.entity.Usuario;
+import br.com.chfb.imoveis.sharedkernel.security.Perfil;
+
+public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
+
+    Optional<Usuario> findByEmailIgnoreCase(String email);
+
+    boolean existsByEmailIgnoreCase(String email);
+
+    @Query("select count(distinct u) from Usuario u join u.papeis p where p = :papel")
+    long contarPorPapel(@Param("papel") Perfil papel);
+
+    @Query(value = """
+            select distinct u from Usuario u left join u.papeis p
+            where (lower(u.nome) like :q or lower(u.email) like :q)
+              and (:papel is null or p = :papel)
+            """,
+            countQuery = """
+            select count(distinct u) from Usuario u left join u.papeis p
+            where (lower(u.nome) like :q or lower(u.email) like :q)
+              and (:papel is null or p = :papel)
+            """)
+    Page<Usuario> buscar(@Param("q") String q, @Param("papel") Perfil papel, Pageable pageable);
+}

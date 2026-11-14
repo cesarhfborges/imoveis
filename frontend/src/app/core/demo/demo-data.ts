@@ -1,0 +1,149 @@
+import { Configuracao, Finalidade, ImovelDetalhe, Perfil, StatusAnuncio, TipoImovel, tipoLabel } from '@/app/core/models/models';
+import { CONFIG_PADRAO } from '@/app/core/services/config.service';
+
+/** Usuário do modo demonstração (a senha fica em texto só porque é um banco de mentira no navegador). */
+export interface DemoUsuario {
+    id: number;
+    nome: string;
+    email: string;
+    senha: string;
+    telefone: string | null;
+    creci: string | null;
+    documento: string | null;
+    tipoAnunciante: string | null;
+    fotoUrl: string | null;
+    ativo: boolean;
+    papeis: Perfil[];
+    ultimoAcesso: string | null;
+    criadoEm: string;
+}
+
+export interface DemoImovel extends Omit<ImovelDetalhe, 'anunciante' | 'tipoDescricao' | 'codigo'> {
+    anuncianteId: number;
+}
+
+export interface DemoContato {
+    id: number;
+    imovelId: number;
+    nome: string;
+    email: string;
+    telefone: string | null;
+    mensagem: string;
+    lido: boolean;
+    criadoEm: string;
+}
+
+export interface DemoToken {
+    id: number;
+    usuarioId: number;
+    nome: string;
+    prefixo: string;
+    perfil: Perfil;
+    criadoEm: string;
+    expiraEm: string | null;
+    ultimoUso: string | null;
+    revogado: boolean;
+}
+
+export interface DemoDb {
+    versao: number;
+    seq: number;
+    usuarios: DemoUsuario[];
+    imoveis: DemoImovel[];
+    contatos: DemoContato[];
+    favoritos: { usuarioId: number; imovelId: number; criadoEm: string }[];
+    tokens: DemoToken[];
+    config: Configuracao;
+}
+
+type Modelo = [string, TipoImovel, Finalidade, number, number, number, number, number, string, string, string, number, number, boolean];
+
+const MODELOS: Modelo[] = [
+    ['Cobertura duplex com vista livre', 'COBERTURA', 'VENDA', 2450000, 212, 3, 3, 3, 'Brasília', 'Noroeste', 'SQNW 311 Bloco H', -15.7605, -47.915, true],
+    ['Casa térrea com piscina e área gourmet', 'CASA_CONDOMINIO', 'VENDA', 850000, 306, 5, 2, 2, 'Sobradinho', 'Grande Colorado', 'Condomínio Jardim Europa II', -15.656, -47.832, false],
+    ['Apartamento reformado, 2 quartos com suíte', 'APARTAMENTO', 'VENDA', 695000, 90, 2, 1, 1, 'Águas Claras', 'Norte', 'Rua 13 Norte', -15.835, -48.023, false],
+    ['Apartamento 3 quartos, nascente, andar alto', 'APARTAMENTO', 'VENDA', 1190000, 95, 3, 1, 1, 'Brasília', 'Asa Norte', 'SQN 303', -15.779, -47.883, false],
+    ['Kitnet mobiliada perto do metrô', 'KITNET', 'ALUGUEL', 1800, 32, 1, 0, 1, 'Águas Claras', 'Sul', 'Rua 7 Sul', -15.842, -48.029, false],
+    ['Sala comercial com 2 vagas', 'SALA', 'ALUGUEL', 3500, 45, 0, 0, 2, 'Brasília', 'Asa Sul', 'SCS Quadra 2', -15.798, -47.888, false],
+    ['Casa 4 quartos em lote de 800 m²', 'CASA', 'VENDA', 1650000, 280, 4, 2, 4, 'Brasília', 'Lago Norte', 'SHIN QI 5', -15.727, -47.846, false],
+    ['Lote plano em condomínio fechado', 'LOTE', 'VENDA', 420000, 800, 0, 0, 0, 'Jardim Botânico', 'Jardim Botânico', 'Condomínio Solar', -15.865, -47.8, false],
+    ['Apartamento 2 quartos com lazer completo', 'APARTAMENTO', 'ALUGUEL', 3200, 68, 2, 1, 1, 'Guará', 'Guará II', 'QE 40', -15.832, -47.985, false],
+    ['Lançamento: studios a partir de 38 m²', 'APARTAMENTO', 'VENDA', 389000, 38, 1, 1, 1, 'Brasília', 'Noroeste', 'SQNW 102', -15.757, -47.91, true],
+    ['Loja de esquina com mezanino', 'LOJA', 'ALUGUEL', 9000, 120, 0, 0, 0, 'Taguatinga', 'Taguatinga Centro', 'CNB 12', -15.834, -48.057, false],
+    ['Chácara com casa sede e pomar', 'CHACARA', 'VENDA', 980000, 20000, 3, 1, 6, 'Brazlândia', 'Zona Rural', 'Núcleo Rural', -15.67, -48.19, false],
+    ['Flat mobiliado para temporada', 'FLAT', 'TEMPORADA', 350, 40, 1, 1, 1, 'Brasília', 'Setor Hoteleiro Norte', 'SHN Quadra 1', -15.79, -47.89, false],
+    ['Apartamento 4 suítes, 2 por andar', 'APARTAMENTO', 'VENDA', 3100000, 180, 4, 4, 3, 'Brasília', 'Sudoeste', 'SQSW 300', -15.798, -47.925, false],
+    ['Galpão logístico com doca', 'GALPAO', 'ALUGUEL', 25000, 1200, 0, 0, 10, 'Brasília', 'SIA', 'SIA Trecho 3', -15.803, -47.955, false],
+    ['Casa sobrado 3 quartos, quintal amplo', 'CASA', 'ALUGUEL', 4800, 160, 3, 1, 2, 'Vicente Pires', 'Vicente Pires', 'Rua 4C', -15.803, -48.023, false],
+    ['Apartamento 3 quartos com varanda gourmet', 'APARTAMENTO', 'VENDA', 870000, 82, 3, 1, 2, 'Águas Claras', 'Sul', 'Avenida Araucárias', -15.845, -48.031, false],
+    ['Casa em condomínio, 3 suítes', 'CASA_CONDOMINIO', 'VENDA', 1290000, 240, 3, 3, 4, 'Jardim Botânico', 'Jardim Botânico', 'Condomínio Mirante', -15.873, -47.79, false],
+    ['Lançamento: 2 e 3 quartos com lazer de clube', 'APARTAMENTO', 'VENDA', 640000, 70, 2, 1, 1, 'Samambaia', 'Samambaia Sul', 'QS 302', -15.877, -48.091, true],
+    ['Cobertura linear com piscina privativa', 'COBERTURA', 'VENDA', 1980000, 260, 4, 2, 3, 'Guará', 'Guará I', 'QI 12', -15.817, -47.977, false],
+    ['Apartamento 1 quarto mobiliado', 'APARTAMENTO', 'ALUGUEL', 2600, 45, 1, 1, 1, 'Brasília', 'Asa Norte', 'SQN 211', -15.765, -47.879, false],
+    ['Prédio comercial com 6 salas', 'PREDIO', 'VENDA', 4200000, 900, 0, 0, 8, 'Taguatinga', 'Taguatinga Norte', 'QNA 30', -15.82, -48.065, false],
+    ['Casa de praia… no cerrado: chalé para temporada', 'CASA', 'TEMPORADA', 600, 90, 2, 1, 2, 'Pirenópolis', 'Centro', 'Rua do Bonfim', -15.851, -48.959, false],
+    ['Kitnet reformada com garagem', 'KITNET', 'VENDA', 215000, 30, 1, 0, 1, 'Guará', 'Guará II', 'QE 38', -15.836, -47.982, false]
+];
+
+const CARACTERISTICAS = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varanda', 'Churrasqueira', 'Portaria 24h', 'Academia', 'Salão de festas', 'Elevador', 'Playground', 'Ar condicionado', 'Interfone'];
+
+export function criarDemoDb(): DemoDb {
+    const agora = Date.now();
+    const dia = 86400000;
+    const usuarios: DemoUsuario[] = [
+        { id: 1, nome: 'Administrador Demo', email: 'admin@imoveis.local', senha: 'admin12345', telefone: '(61) 90000-0001', creci: null, documento: null, tipoAnunciante: null, fotoUrl: null, ativo: true, papeis: ['ADMIN', 'CORRETOR', 'CLIENTE'], ultimoAcesso: null, criadoEm: new Date(agora - 90 * dia).toISOString() },
+        { id: 2, nome: 'Corretora Exemplo', email: 'corretor@imoveis.local', senha: 'corretor123', telefone: '(61) 90000-0002', creci: '12345-F', documento: null, tipoAnunciante: 'CORRETOR', fotoUrl: null, ativo: true, papeis: ['CORRETOR', 'CLIENTE'], ultimoAcesso: null, criadoEm: new Date(agora - 60 * dia).toISOString() },
+        { id: 3, nome: 'Imobiliária Modelo', email: 'imobiliaria@imoveis.local', senha: 'corretor123', telefone: '(61) 90000-0003', creci: 'J-0420', documento: null, tipoAnunciante: 'IMOBILIARIA', fotoUrl: null, ativo: true, papeis: ['CORRETOR', 'CLIENTE'], ultimoAcesso: null, criadoEm: new Date(agora - 45 * dia).toISOString() },
+        { id: 4, nome: 'Cliente Exemplo', email: 'cliente@imoveis.local', senha: 'cliente123', telefone: '(61) 90000-0004', creci: null, documento: null, tipoAnunciante: null, fotoUrl: null, ativo: true, papeis: ['CLIENTE'], ultimoAcesso: null, criadoEm: new Date(agora - 30 * dia).toISOString() }
+    ];
+    const imoveis: DemoImovel[] = MODELOS.map((m, n) => {
+        const [titulo, tipo, finalidade, preco, area, q, s, v, cidade, bairro, endereco, lat, lng, lanc] = m;
+        const ehApto = tipo === 'APARTAMENTO' || tipo === 'COBERTURA';
+        return {
+            id: n + 1,
+            titulo,
+            descricao: `${titulo}. ${tipoLabel(tipo)} com ${area} m² em ${bairro}, ${cidade}. Imóvel de exemplo para demonstração: ambientes bem iluminados, boa localização e fácil acesso a comércio e transporte.\n\nAgende uma visita e conheça todos os detalhes.`,
+            finalidade,
+            tipo,
+            status: 'ATIVO' as StatusAnuncio,
+            preco,
+            condominio: ehApto ? 450 + (n % 5) * 120 : null,
+            iptu: finalidade === 'VENDA' ? 900 + n * 80 : null,
+            areaUtil: area,
+            areaTotal: area,
+            quartos: q,
+            suites: s,
+            banheiros: Math.max(1, s + 1),
+            vagas: v,
+            uf: 'DF',
+            cidade,
+            bairro,
+            endereco,
+            cep: null,
+            latitude: lat,
+            longitude: lng,
+            lancamento: lanc,
+            destaque: n % 3 === 0,
+            aceitaFinanciamento: finalidade === 'VENDA',
+            fotos: [],
+            caracteristicas: CARACTERISTICAS.filter((_, i) => (i + n) % 3 === 0).slice(0, 6),
+            visualizacoes: 15 + ((n * 37) % 300),
+            anuncianteId: n % 2 === 0 ? 2 : 3,
+            criadoEm: new Date(agora - (n * 2 + 1) * dia).toISOString(),
+            atualizadoEm: new Date(agora - n * dia).toISOString()
+        };
+    });
+    return {
+        versao: 1,
+        seq: 1000,
+        usuarios,
+        imoveis,
+        contatos: [
+            { id: 1, imovelId: 1, nome: 'Maria Visitante', email: 'maria@exemplo.com', telefone: '(61) 98888-0000', mensagem: 'Olá! Gostaria de agendar uma visita no fim de semana.', lido: false, criadoEm: new Date(agora - 2 * dia).toISOString() },
+            { id: 2, imovelId: 3, nome: 'João Interessado', email: 'joao@exemplo.com', telefone: null, mensagem: 'O imóvel aceita financiamento?', lido: true, criadoEm: new Date(agora - 5 * dia).toISOString() }
+        ],
+        favoritos: [{ usuarioId: 4, imovelId: 2, criadoEm: new Date(agora - dia).toISOString() }],
+        tokens: [],
+        config: { ...CONFIG_PADRAO }
+    };
+}

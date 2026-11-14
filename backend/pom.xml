@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.2</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>br.com.chfb</groupId>
+    <artifactId>imoveis</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>imoveis</name>
+    <description>Portal de anúncios de imóveis - backend multi-módulo</description>
+
+    <modules>
+        <module>shared-kernel</module>
+        <module>listing</module>
+        <module>core-api</module>
+    </modules>
+
+    <properties>
+        <java.version>17</java.version>
+        <maven.compiler.release>17</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Perfil Spring ativo; sobrescrito pelos perfis Maven "dev" e "prod" abaixo -->
+        <spring.profiles.active>prod</spring.profiles.active>
+        <!-- spring-boot:run só no core-api (permite "mvn -pl core-api -am spring-boot:run") -->
+        <spring-boot.run.skip>true</spring-boot.run.skip>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>br.com.chfb</groupId>
+                <artifactId>shared-kernel</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>br.com.chfb</groupId>
+                <artifactId>listing</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <profiles>
+        <!--
+            dev: estende o prod. O Spring carrega application-prod.yml e em seguida
+            application-dev.yml (o último perfil da lista vence), então o dev só
+            sobrescreve o que precisa. Ativo por padrão para desenvolvimento local.
+        -->
+        <profile>
+            <id>dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <spring.profiles.active>prod,dev</spring.profiles.active>
+            </properties>
+        </profile>
+        <profile>
+            <id>prod</id>
+            <properties>
+                <spring.profiles.active>prod</spring.profiles.active>
+            </properties>
+        </profile>
+    </profiles>
+</project>
