@@ -1,4 +1,4 @@
-import { Component, inject, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
@@ -9,6 +9,7 @@ import { AuthService } from '@/app/core/services/auth.service';
 import { mensagemErro } from '@/app/core/services/api.service';
 import { Perfil, Sessao } from '@/app/core/models/models';
 import { DemoModeService } from '@/app/core/interceptors/demo.interceptor';
+import { environment } from '@/environments/environment';
 
 interface ContaDemo {
     rotulo: string;
@@ -48,10 +49,10 @@ interface ContaDemo {
             <p-button type="submit" [label]="area() === 'admin' ? 'Entrar na administração' : 'Entrar'" icon="pi pi-sign-in" [loading]="enviando()" styleClass="w-full" />
         </form>
 
-        @if (demo.ativo()) {
+        @if (mostrarContas()) {
             <section class="mt-6 p-4 rounded-border border border-dashed border-surface bg-surface-50 dark:bg-surface-800" aria-labelledby="demo-titulo">
-                <h2 id="demo-titulo" class="text-base font-semibold m-0">Contas de demonstração</h2>
-                <p class="text-sm text-muted-color mt-1 mb-3">O site está sem a API, então os dados ficam só neste navegador. Clique numa conta para entrar:</p>
+                <h2 id="demo-titulo" class="text-base font-semibold m-0">{{ demo.ativo() ? 'Contas de demonstração' : 'Usuários de teste (desenvolvimento)' }}</h2>
+                <p class="text-sm text-muted-color mt-1 mb-3">{{ demo.ativo() ? 'O site está sem a API, então os dados ficam só neste navegador.' : 'Criados pelo backend no perfil dev (só aparecem fora da produção).' }} Clique numa conta para entrar:</p>
                 <div class="flex flex-col gap-2">
                     @for (c of contasDemo(); track c.rotulo) {
                         <button type="button" class="flex items-center justify-between gap-3 text-left p-2 rounded-border border border-surface bg-surface-0 dark:bg-surface-900 hover:border-primary cursor-pointer" (click)="entrarComo(c)">
@@ -76,6 +77,8 @@ export class LoginForm {
     private auth = inject(AuthService);
     private fb = inject(NonNullableFormBuilder);
     demo = inject(DemoModeService);
+    /** Mostra os usuários de teste no modo demonstração ou em build de desenvolvimento (nunca em produção com API). */
+    mostrarContas = computed(() => this.demo.ativo() || !environment.production);
 
     area = input<'conta' | 'admin'>('conta');
     entrou = output<Sessao>();
@@ -102,6 +105,7 @@ export class LoginForm {
         return [
             { rotulo: 'Cliente', descricao: 'favoritos', email: 'cliente@imoveis.local', senha: 'cliente123', perfil: 'CLIENTE' },
             { rotulo: 'Corretor', descricao: 'meus anúncios', email: 'corretor@imoveis.local', senha: 'corretor123', perfil: 'CORRETOR' },
+            { rotulo: 'Imobiliária', descricao: 'outro anunciante', email: 'imobiliaria@imoveis.local', senha: 'corretor123', perfil: 'CORRETOR' },
             { rotulo: 'Corretor entrando como cliente', descricao: 'mesma conta, outro perfil', email: 'corretor@imoveis.local', senha: 'corretor123', perfil: 'CLIENTE' },
             { rotulo: 'Administrador entrando como corretor', descricao: 'admin também é corretor', email: 'admin@imoveis.local', senha: 'admin12345', perfil: 'CORRETOR' }
         ];
