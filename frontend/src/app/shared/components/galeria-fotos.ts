@@ -1,4 +1,4 @@
-import { Component, ElementRef, computed, effect, input, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, computed, effect, inject, input, signal, viewChild } from '@angular/core';
 import { FotoImovel, TipoImovel } from '@/app/core/models/models';
 import { ImovelFoto } from './imovel-foto';
 
@@ -78,6 +78,8 @@ export class GaleriaFotos {
     private focoAnterior: HTMLElement | null = null;
 
     constructor() {
+        // se sair da página com a foto aberta, libera a rolagem
+        inject(DestroyRef).onDestroy(() => this.travarRolagem(false));
         // nova lista de fotos (outro anúncio): volta para a primeira
         effect(() => {
             this.fotos();
@@ -86,11 +88,27 @@ export class GaleriaFotos {
         // foco no botão de fechar ao abrir; trava a rolagem da página enquanto aberto
         effect(() => {
             const aberto = this.telaCheia();
-            document.body.classList.toggle('blocked-scroll', aberto);
+            this.travarRolagem(aberto);
             if (aberto) {
                 queueMicrotask(() => this.botaoFechar()?.nativeElement.focus());
             }
         });
+    }
+
+    /**
+     * Trava a rolagem da página (em qualquer largura de tela) enquanto a foto está em tela cheia.
+     * Compensa a largura da barra de rolagem para o conteúdo não "pular" ao abrir.
+     */
+    private travarRolagem(travar: boolean) {
+        const html = document.documentElement;
+        if (travar) {
+            const barra = window.innerWidth - html.clientWidth;
+            html.classList.add('rolagem-travada');
+            document.body.style.paddingRight = barra > 0 ? `${barra}px` : '';
+        } else {
+            html.classList.remove('rolagem-travada');
+            document.body.style.paddingRight = '';
+        }
     }
 
     rotuloFoto(i: number) {
