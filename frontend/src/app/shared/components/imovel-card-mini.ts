@@ -13,6 +13,9 @@ import { ImovelFoto } from './imovel-foto';
             <div class="relative aspect-[4/3]">
                 <app-imovel-foto class="w-full h-full" [src]="imovel().fotoCapa" [tipo]="imovel().tipo" [semente]="imovel().id" [alt]="imovel().titulo" [mostrarTexto]="false" />
                 <span class="card-mini__preco">{{ imovel().preco | preco: imovel().finalidade }}</span>
+                @if (imovel().aceitaFinanciamento) {
+                    <span class="imovel-card__financia"><i class="pi pi-wallet" aria-hidden="true"></i> Financia</span>
+                }
                 @if (imovel().lancamento) {
                     <span class="imovel-card__selo imovel-card__selo--topo">Imóvel novo</span>
                 }

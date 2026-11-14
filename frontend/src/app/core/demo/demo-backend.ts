@@ -365,6 +365,8 @@ export class DemoBackend {
             totalFotos: i.fotos.length,
             lancamento: i.lancamento,
             destaque: i.destaque,
+            aceitaFinanciamento: !!i.aceitaFinanciamento,
+            aceitaFgts: !!i.aceitaFgts,
             visualizacoes: i.visualizacoes,
             anuncianteId: i.anuncianteId,
             anuncianteNome: a?.nome ?? null,

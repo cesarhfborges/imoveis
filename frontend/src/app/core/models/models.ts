@@ -91,6 +91,8 @@ export interface ImovelResumo {
     totalFotos: number;
     lancamento: boolean;
     destaque: boolean;
+    aceitaFinanciamento: boolean;
+    aceitaFgts: boolean;
     visualizacoes: number;
     anuncianteId: number;
     anuncianteNome: string | null;

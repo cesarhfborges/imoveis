@@ -267,7 +267,7 @@ public class ImovelService {
                 i.getEndereco(), i.getLatitude(), i.getLongitude(), resumir(i.getDescricao()),
                 anunciante == null ? null : anunciante.creci(), anunciante == null ? null : anunciante.fotoUrl(),
                 i.getFotos().isEmpty() ? null : i.getFotos().get(0), i.getFotos().size(), i.isLancamento(),
-                i.isDestaque(), i.getVisualizacoes(), i.getAnuncianteId(),
+                i.isDestaque(), i.isAceitaFinanciamento(), i.isAceitaFgts(), i.getVisualizacoes(), i.getAnuncianteId(),
                 anunciante == null ? null : anunciante.nome(), i.getCriadoEm());
     }
 

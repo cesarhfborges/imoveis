@@ -23,6 +23,9 @@ import { AuthService } from '@/app/core/services/auth.service';
                 @if (imovel().destaque) {
                     <span class="imovel-card__selo imovel-card__selo--verde">Destaque</span>
                 }
+                @if (imovel().aceitaFinanciamento) {
+                    <span class="imovel-card__financia"><i class="pi pi-wallet" aria-hidden="true"></i> Aceita financiamento</span>
+                }
                 @if (imovel().totalFotos > 1) {
                     <span class="imovel-card__fotos"><i class="pi pi-camera"></i> {{ imovel().totalFotos }}</span>
                 }

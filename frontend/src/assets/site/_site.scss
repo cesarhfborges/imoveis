@@ -1103,3 +1103,107 @@ h2[class*='mt-'] {
     border-radius: 999px;
     padding: 0.15rem 0.7rem;
 }
+
+/* ---------------------------------------------------------------- destaque de financiamento */
+.faixa-financiamento {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1rem 1.25rem;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #15803d, #16a34a);
+    color: #fff;
+    box-shadow: 0 6px 18px rgb(22 163 74 / 0.3);
+}
+
+.faixa-financiamento__icone {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    i {
+        font-size: 1.5rem;
+    }
+}
+
+.faixa-financiamento__titulo {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    line-height: 1.2;
+}
+
+.faixa-financiamento__texto {
+    font-size: 0.9rem;
+    opacity: 0.95;
+}
+
+.faixa-financiamento__extra {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #fff;
+    color: #166534;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border-radius: 999px;
+    padding: 0.3rem 0.8rem;
+}
+
+.selo-condicao--cheio {
+    background: #15803d;
+    border-color: #15803d;
+    color: #fff;
+}
+
+.selo-lateral-financiamento {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding: 0.7rem 1rem;
+    border-radius: 8px;
+    background: #16a34a;
+    color: #fff;
+    font-weight: 800;
+    font-size: 1rem;
+    text-transform: uppercase;
+    box-shadow: 0 4px 12px rgb(22 163 74 / 0.3);
+}
+
+.imovel-card__financia {
+    position: absolute;
+    right: 0.6rem;
+    bottom: 0.6rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #16a34a;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+}
+
+.faixa-financiamento {
+    margin-bottom: 0.25rem;
+    @media (max-width: 575px) {
+        .faixa-financiamento__titulo {
+            font-size: 1.1rem;
+        }
+        > div:last-child:not(:only-child) {
+            flex-basis: 100%;
+        }
+    }
+}

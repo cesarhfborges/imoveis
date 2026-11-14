@@ -36,6 +36,8 @@ public record ImovelResumo(
         int totalFotos,
         boolean lancamento,
         boolean destaque,
+        boolean aceitaFinanciamento,
+        boolean aceitaFgts,
         long visualizacoes,
         Long anuncianteId,
         String anuncianteNome,

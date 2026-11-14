@@ -66,16 +66,29 @@ import { EmptyState } from '@/app/shared/components/empty-state';
                             <span>Valor R$/m²: <strong class="text-primary text-lg">{{ i.preco | valorM2: i.areaUtil }}</strong></span>
                         }
                     </div>
-                    @if (i.aceitaFinanciamento || i.aceitaFgts || i.aceitaPermuta) {
+                    @if (i.aceitaFinanciamento) {
+                        <div class="faixa-financiamento" role="note" aria-label="Condições de pagamento">
+                            <span class="faixa-financiamento__icone"><i class="pi pi-wallet" aria-hidden="true"></i></span>
+                            <div class="flex-1 min-w-0">
+                                <div class="faixa-financiamento__titulo">Aceita financiamento</div>
+                                <div class="faixa-financiamento__texto">Este imóvel pode ser comprado com financiamento bancário.</div>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                @if (i.aceitaFgts) {
+                                    <span class="faixa-financiamento__extra"><i class="pi pi-check" aria-hidden="true"></i> Aceita FGTS</span>
+                                }
+                                @if (i.aceitaPermuta) {
+                                    <span class="faixa-financiamento__extra"><i class="pi pi-check" aria-hidden="true"></i> Aceita permuta</span>
+                                }
+                            </div>
+                        </div>
+                    } @else if (i.aceitaFgts || i.aceitaPermuta) {
                         <div class="flex flex-wrap gap-2 mt-3">
-                            @if (i.aceitaFinanciamento) {
-                                <span class="selo-condicao"><i class="pi pi-check" aria-hidden="true"></i> Aceita financiamento</span>
-                            }
                             @if (i.aceitaFgts) {
-                                <span class="selo-condicao"><i class="pi pi-check" aria-hidden="true"></i> Aceita FGTS</span>
+                                <span class="selo-condicao selo-condicao--cheio"><i class="pi pi-check" aria-hidden="true"></i> Aceita FGTS</span>
                             }
                             @if (i.aceitaPermuta) {
-                                <span class="selo-condicao"><i class="pi pi-check" aria-hidden="true"></i> Aceita permuta</span>
+                                <span class="selo-condicao selo-condicao--cheio"><i class="pi pi-check" aria-hidden="true"></i> Aceita permuta</span>
                             }
                         </div>
                     }
@@ -166,6 +179,9 @@ import { EmptyState } from '@/app/shared/components/empty-state';
                             <i class="pi" [class.pi-heart-fill]="favorito()" [class.pi-heart]="!favorito()" aria-hidden="true"></i> {{ favorito() ? 'Favoritado' : 'Favoritar' }}
                         </button>
                     </div>
+                    @if (i.aceitaFinanciamento) {
+                        <div class="selo-lateral-financiamento"><i class="pi pi-wallet" aria-hidden="true"></i> Aceita financiamento{{ i.aceitaFgts ? ' e FGTS' : '' }}</div>
+                    }
                     <div class="caixa-contato" id="contato">
                         @if (i.anunciante; as a) {
                             <div class="flex items-center gap-3 mb-3">
