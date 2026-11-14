@@ -21,7 +21,7 @@ import { PageHeader } from '@/app/shared/components/page-header';
     selector: 'app-api-tokens-page',
     imports: [DatePipe, ReactiveFormsModule, TableModule, ButtonModule, InputTextModule, SelectModule, InputNumberModule, MessageModule, TagModule, PageHeader],
     template: `
-        <app-page-header titulo="Tokens da API" subtitulo="Integre outros sistemas usando a API aberta com autenticação Bearer." />
+        <app-page-header titulo="Tokens da API" subtitulo="Integre outros sistemas usando a API aberta com autenticação Bearer. Disponível para corretores e administradores." />
 
         <div class="grid grid-cols-12 gap-6">
             <form class="card col-span-12 lg:col-span-5 flex flex-col gap-4 m-0" [formGroup]="form" (ngSubmit)="criar()">
@@ -56,7 +56,7 @@ import { PageHeader } from '@/app/shared/components/page-header';
                 <pre class="bg-surface-100 dark:bg-surface-800 p-3 rounded-border text-sm overflow-x-auto"><code>curl -H "Authorization: Bearer imv_..." \\
   "{{ origem }}/api/v1/imoveis?finalidade=VENDA&amp;cidade=Brasília"</code></pre>
                 <ul class="text-sm text-muted-color pl-4 leading-7">
-                    <li><code>GET /api/v1/imoveis</code>, <code>/api/v1/imoveis/&#123;id&#125;</code>: consulta pública (qualquer token)</li>
+                    <li><code>GET /api/v1/imoveis</code>, <code>/api/v1/imoveis/&#123;id&#125;</code>: consulta de anúncios (qualquer token)</li>
                     <li><code>/api/v1/corretor/imoveis</code>: seus anúncios (token com perfil Corretor)</li>
                     <li><code>/api/v1/admin/imoveis</code>: todos os anúncios (token com perfil Administrador)</li>
                 </ul>
@@ -108,11 +108,12 @@ export class ApiTokensPage {
     tokens = signal<ApiToken[]>([]);
     criando = signal(false);
     novoToken = signal<string | null>(null);
-    perfis = computed(() => this.auth.sessao().perfisDisponiveis.map((p) => ({ value: p, label: perfilLabel(p) })));
+    /** Clientes não têm token de API: só os perfis de corretor e administrador. */
+    perfis = computed(() => this.auth.sessao().perfisDisponiveis.filter((p) => p !== 'CLIENTE').map((p) => ({ value: p, label: perfilLabel(p) })));
 
     form = this.fb.group({
         nome: ['', [Validators.required, Validators.maxLength(80)]],
-        perfil: this.fb.control<Perfil>(this.auth.perfil() ?? 'CLIENTE'),
+        perfil: this.fb.control<Perfil>(this.auth.perfil() === 'ADMIN' ? 'ADMIN' : 'CORRETOR'),
         validadeDias: this.fb.control<number | null>(90)
     });
 

@@ -41,7 +41,7 @@ export const appRoutes: Routes = [
             { path: '', loadComponent: () => import('./app/conta/pages/painel').then((m) => m.PainelContaPage) },
             { path: 'perfil', loadComponent: () => import('./app/conta/pages/perfil').then((m) => m.PerfilPage) },
             { path: 'favoritos', loadComponent: () => import('./app/conta/pages/favoritos').then((m) => m.FavoritosPage) },
-            { path: 'api', loadComponent: () => import('./app/shared/pages/api-tokens-page').then((m) => m.ApiTokensPage) },
+            { path: 'api', canActivate: [corretorGuard], loadComponent: () => import('./app/shared/pages/api-tokens-page').then((m) => m.ApiTokensPage) },
             { path: 'anuncios', canActivate: [corretorGuard], loadComponent: () => import('./app/shared/pages/anuncios-lista-page').then((m) => m.AnunciosListaPage), data: { area: 'corretor' } },
             { path: 'anuncios/novo', canActivate: [corretorGuard], loadComponent: () => import('./app/shared/pages/anuncio-edicao-page').then((m) => m.AnuncioEdicaoPage), data: { area: 'corretor' } },
             { path: 'anuncios/:id', canActivate: [corretorGuard], loadComponent: () => import('./app/shared/pages/anuncio-edicao-page').then((m) => m.AnuncioEdicaoPage), data: { area: 'corretor' } },

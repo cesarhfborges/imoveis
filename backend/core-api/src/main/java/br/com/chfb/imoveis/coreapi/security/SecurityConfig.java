@@ -99,6 +99,8 @@ public class SecurityConfig {
                         .requestMatchers("/app/admin/**").hasRole("ADMIN")
                         .requestMatchers("/app/corretor/**").hasRole("CORRETOR")
                         .requestMatchers("/app/uploads/**").hasAnyRole("CORRETOR", "ADMIN")
+                        // tokens da API aberta: só corretores e administradores (clientes não têm)
+                        .requestMatchers("/app/conta/tokens/**").hasAnyRole("CORRETOR", "ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(sessaoEntryPoint()).accessDeniedHandler(negado()))
                 .headers(h -> h.frameOptions(f -> f.deny()));

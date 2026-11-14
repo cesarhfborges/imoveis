@@ -58,7 +58,7 @@ Variáveis de produção: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `APP_FRONTEND_ORIG
 - CORS liberado só para `app.security.frontend-origins`.
 
 ### API aberta — `/api/v1/**` (token Bearer, sem sessão)
-- O usuário gera tokens em *Tokens da API* (front) ou `POST /app/conta/tokens`. Formato `imv_…`; só o hash SHA-256 fica no banco.
+- **Só corretores e administradores** têm tokens (clientes não). Gerados em *Tokens da API* (front) ou `POST /app/conta/tokens`, com perfil CORRETOR ou ADMIN. Formato `imv_…`; só o hash SHA-256 fica no banco.
 - `Authorization: Bearer imv_...`
 
 ### Perfis e hierarquia
@@ -85,5 +85,6 @@ Variáveis de produção: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `APP_FRONTEND_ORIG
 | as mesmas rotas em `/app/admin/...` | admin (todos os anúncios) |
 | `GET /app/admin/dashboard`, `GET/POST/PUT/DELETE /app/admin/usuarios` | admin |
 | `GET /app/public/configuracao`, `PUT /app/admin/configuracao` | público / admin |
-| `GET/PUT /app/conta/perfil`, `PUT /app/conta/senha`, `/app/conta/favoritos`, `/app/conta/tokens` | logado |
+| `GET/PUT /app/conta/perfil`, `PUT /app/conta/senha`, `/app/conta/favoritos` | logado |
+| `/app/conta/tokens` | corretor / admin (clientes não têm token) |
 | `POST /app/uploads` (multipart `arquivo`) | corretor / admin |

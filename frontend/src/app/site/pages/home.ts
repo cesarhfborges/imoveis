@@ -115,7 +115,7 @@ export class HomePage {
         { q: 'Preciso criar conta para pesquisar?', r: 'Não. A busca e a página de cada imóvel são livres. A conta serve para salvar favoritos e, para corretores, publicar anúncios.' },
         { q: 'Como falo com o anunciante?', r: 'Na página do imóvel, preencha "Contate o anunciante". A mensagem chega no painel do corretor ou imobiliária.' },
         { q: 'Quem pode anunciar?', r: 'Corretores e imobiliárias com CRECI. Faça o cadastro em "Anunciar" e publique pelo seu painel.' },
-        { q: 'Existe uma API para integrar meus anúncios?', r: 'Sim. Na sua conta, em "Tokens da API", você gera um token Bearer para consultar e gerenciar anúncios por integração.' }
+        { q: 'Existe uma API para integrar meus anúncios?', r: 'Sim, para corretores e imobiliárias. No painel do anunciante, em "Tokens da API", você gera um token Bearer para consultar e gerenciar seus anúncios por integração.' }
     ];
 
     constructor() {

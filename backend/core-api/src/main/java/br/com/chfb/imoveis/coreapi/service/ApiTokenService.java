@@ -23,6 +23,7 @@ import br.com.chfb.imoveis.coreapi.repository.UsuarioRepository;
 import br.com.chfb.imoveis.sharedkernel.exception.ForbiddenException;
 import br.com.chfb.imoveis.sharedkernel.exception.NotFoundException;
 import br.com.chfb.imoveis.sharedkernel.security.AuthUser;
+import br.com.chfb.imoveis.sharedkernel.security.Perfil;
 
 /** Tokens pessoais para a API aberta. Formato: {@code imv_} + 40 caracteres aleatórios. */
 @Service
@@ -48,6 +49,9 @@ public class ApiTokenService {
     @Transactional
     public ApiTokenCriado criar(ApiTokenForm form, AuthUser u) {
         Usuario usuario = usuarios.findById(u.id()).orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
+        if (form.perfil() == Perfil.CLIENTE) {
+            throw new ForbiddenException("Tokens de API são exclusivos para corretores e administradores");
+        }
         if (!usuario.perfisPermitidos().contains(form.perfil())) {
             throw new ForbiddenException("Você não possui o perfil " + form.perfil());
         }
@@ -83,6 +87,7 @@ public class ApiTokenService {
         return tokens.findByTokenHash(hash(valor))
                 .filter(t -> t.valido(agora))
                 .filter(t -> t.getUsuario().isAtivo())
+                .filter(t -> t.getPerfil() != Perfil.CLIENTE)
                 .filter(t -> t.getUsuario().perfisPermitidos().contains(t.getPerfil()))
                 .map(t -> {
                     if (t.getUltimoUso() == null || t.getUltimoUso().isBefore(agora.minusSeconds(60))) {

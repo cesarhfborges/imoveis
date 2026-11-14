@@ -74,10 +74,13 @@ export class AppMenu {
                 ]
             });
         }
-        itens.push({
-            label: 'Integrações',
-            items: [{ label: 'Tokens da API', icon: 'pi pi-fw pi-key', routerLink: ['/conta/api'] }]
-        });
+        if (perfil === 'CORRETOR') {
+            // tokens da API aberta: só corretores (clientes não têm)
+            itens.push({
+                label: 'Integrações',
+                items: [{ label: 'Tokens da API', icon: 'pi pi-fw pi-key', routerLink: ['/conta/api'] }]
+            });
+        }
         itens.push({ label: 'Site', items: [{ label: 'Buscar imóveis', icon: 'pi pi-fw pi-search', routerLink: ['/venda'] }] });
         return itens;
     });

@@ -443,8 +443,13 @@ export class DemoBackend {
             this.salvarDb();
             return null;
         }
+        if (url.startsWith('/app/conta/tokens')) {
+            const sessaoAtual = this.sessao();
+            if (sessaoAtual?.perfil !== 'CORRETOR' && sessaoAtual?.perfil !== 'ADMIN') throw new DemoError(403, 'Tokens de API são exclusivos para corretores e administradores');
+        }
         if (url === '/app/conta/tokens') {
             if (m === 'POST') {
+                if (b.perfil === 'CLIENTE') throw new DemoError(403, 'Tokens de API são exclusivos para corretores e administradores');
                 if (!permitidos(u.papeis).includes(b.perfil)) throw new DemoError(403, 'Você não possui esse perfil');
                 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
                 let token = 'imv_';
