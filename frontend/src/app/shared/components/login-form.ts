@@ -8,6 +8,15 @@ import { MessageModule } from 'primeng/message';
 import { AuthService } from '@/app/core/services/auth.service';
 import { mensagemErro } from '@/app/core/services/api.service';
 import { Perfil, Sessao } from '@/app/core/models/models';
+import { DemoModeService } from '@/app/core/interceptors/demo.interceptor';
+
+interface ContaDemo {
+    rotulo: string;
+    descricao: string;
+    email: string;
+    senha: string;
+    perfil: Perfil;
+}
 
 /**
  * Login por e-mail e senha.
@@ -38,11 +47,35 @@ import { Perfil, Sessao } from '@/app/core/models/models';
             }
             <p-button type="submit" [label]="area() === 'admin' ? 'Entrar na administração' : 'Entrar'" icon="pi pi-sign-in" [loading]="enviando()" styleClass="w-full" />
         </form>
+
+        @if (demo.ativo()) {
+            <section class="mt-6 p-4 rounded-border border border-dashed border-surface bg-surface-50 dark:bg-surface-800" aria-labelledby="demo-titulo">
+                <h2 id="demo-titulo" class="text-base font-semibold m-0">Contas de demonstração</h2>
+                <p class="text-sm text-muted-color mt-1 mb-3">O site está sem a API, então os dados ficam só neste navegador. Clique numa conta para entrar:</p>
+                <div class="flex flex-col gap-2">
+                    @for (c of contasDemo(); track c.rotulo) {
+                        <button type="button" class="flex items-center justify-between gap-3 text-left p-2 rounded-border border border-surface bg-surface-0 dark:bg-surface-900 hover:border-primary cursor-pointer" (click)="entrarComo(c)">
+                            <span>
+                                <strong class="block text-sm">{{ c.rotulo }}</strong>
+                                <span class="text-xs text-muted-color">{{ c.email }} · senha {{ c.senha }}</span>
+                            </span>
+                            <span class="text-xs text-muted-color hidden sm:inline">{{ c.descricao }}</span>
+                        </button>
+                    }
+                </div>
+                @if (area() === 'conta') {
+                    <p class="text-sm mt-3 mb-0">Painel de administração: <a href="/admin/login" class="text-primary font-semibold hover:underline">/admin/login</a> (admin@imoveis.local / admin12345)</p>
+                } @else {
+                    <p class="text-sm mt-3 mb-0">Área de cliente e corretor: <a href="/conta/login" class="text-primary font-semibold hover:underline">/conta/login</a></p>
+                }
+            </section>
+        }
     `
 })
 export class LoginForm {
     private auth = inject(AuthService);
     private fb = inject(NonNullableFormBuilder);
+    demo = inject(DemoModeService);
 
     area = input<'conta' | 'admin'>('conta');
     entrou = output<Sessao>();
@@ -60,6 +93,24 @@ export class LoginForm {
 
     enviando = signal(false);
     erro = signal<string | null>(null);
+
+    /** Contas criadas pelo modo demonstração (as mesmas que o backend cria em dev). */
+    contasDemo(): ContaDemo[] {
+        if (this.area() === 'admin') {
+            return [{ rotulo: 'Administrador', descricao: 'painel /admin', email: 'admin@imoveis.local', senha: 'admin12345', perfil: 'ADMIN' }];
+        }
+        return [
+            { rotulo: 'Cliente', descricao: 'favoritos', email: 'cliente@imoveis.local', senha: 'cliente123', perfil: 'CLIENTE' },
+            { rotulo: 'Corretor', descricao: 'meus anúncios', email: 'corretor@imoveis.local', senha: 'corretor123', perfil: 'CORRETOR' },
+            { rotulo: 'Corretor entrando como cliente', descricao: 'mesma conta, outro perfil', email: 'corretor@imoveis.local', senha: 'corretor123', perfil: 'CLIENTE' },
+            { rotulo: 'Administrador entrando como corretor', descricao: 'admin também é corretor', email: 'admin@imoveis.local', senha: 'admin12345', perfil: 'CORRETOR' }
+        ];
+    }
+
+    entrarComo(c: ContaDemo) {
+        this.form.setValue({ perfil: c.perfil, email: c.email, senha: c.senha });
+        this.entrar();
+    }
 
     entrar() {
         if (this.form.invalid) {
