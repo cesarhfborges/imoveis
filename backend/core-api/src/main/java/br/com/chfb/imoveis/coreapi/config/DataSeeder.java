@@ -54,8 +54,11 @@ public class DataSeeder implements ApplicationRunner {
     @Transactional
     public void run(ApplicationArguments args) {
         criarAdminInicial();
-        if (props.seed() != null && props.seed().demo() && imoveis.count() == 0) {
-            criarDemonstracao();
+        if (props.seed() != null && props.seed().demo()) {
+            if (imoveis.count() == 0) {
+                criarDemonstracao();
+            }
+            preencherFotosDeTeste();
         }
     }
 
@@ -143,12 +146,34 @@ public class DataSeeder implements ApplicationRunner {
             i.setCaracteristicas(new LinkedHashSet<>(List.of("Área de serviço", "Armários embutidos",
                     n % 2 == 0 ? "Piscina" : "Varanda", n % 3 == 0 ? "Churrasqueira" : "Portaria 24h")));
             i.setStatus(StatusAnuncio.ATIVO);
+            i.setFotos(new java.util.ArrayList<>(fotosMock(n)));
             i.setAnuncianteId(n % 2 == 0 ? corretor.getId() : corretor2.getId());
             i.setVisualizacoes(20L + n * 7L);
             imoveis.save(i);
             n++;
         }
         log.info("Dados de demonstração criados: {} anúncios", n);
+    }
+
+    /** Fotos de teste servidas pelo front em /mock/fotos (frontend/public/mock/fotos). */
+    static List<String> fotosMock(int n) {
+        return java.util.stream.IntStream.of(0, 1, 3, 5)
+                .mapToObj(d -> "/mock/fotos/foto-" + (((n + d) % 9) + 1) + ".jpg").toList();
+    }
+
+    /** Em dev, anúncios sem nenhuma foto recebem as fotos de teste (só para visualizar). */
+    private void preencherFotosDeTeste() {
+        int total = 0;
+        for (Imovel i : imoveis.findAll()) {
+            if (i.getFotos().isEmpty()) {
+                i.getFotos().addAll(fotosMock((int) (i.getId() - 1)));
+                imoveis.save(i);
+                total++;
+            }
+        }
+        if (total > 0) {
+            log.info("Fotos de teste adicionadas a {} anúncios sem foto", total);
+        }
     }
 
     private Usuario usuario(String nome, String email, String senha, EnumSet<Perfil> papeis, String creci) {

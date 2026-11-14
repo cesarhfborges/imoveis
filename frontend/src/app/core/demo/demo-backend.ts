@@ -1,6 +1,6 @@
 import { HttpParams, HttpRequest } from '@angular/common/http';
 import { ContagemTipo, ImovelDetalhe, ImovelFiltro, ImovelResumo, PageResponse, Perfil, Sessao, StatusAnuncio, TIPOS, TipoImovel, tipoLabel } from '@/app/core/models/models';
-import { DemoDb, DemoImovel, DemoUsuario, criarDemoDb } from './demo-data';
+import { DemoDb, DemoImovel, DemoUsuario, criarDemoDb, fotosMock } from './demo-data';
 
 /**
  * "Backend de mentira" que imita as rotas /app/** do Spring Boot dentro do navegador.
@@ -43,6 +43,8 @@ export class DemoBackend {
                         i.aceitaPermuta ??= false;
                         i.escrituraRegistrada ??= false;
                         i.quitado ??= false;
+                        // bancos de demonstração antigos não tinham fotos: usa as fotos de teste
+                        if (!i.fotos || i.fotos.length === 0) i.fotos = fotosMock(i.id - 1);
                     });
                     return db;
                 }

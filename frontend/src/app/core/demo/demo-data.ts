@@ -85,6 +85,12 @@ const MODELOS: Modelo[] = [
     ['Kitnet reformada com garagem', 'KITNET', 'VENDA', 215000, 30, 1, 0, 1, 'Guará', 'Guará II', 'QE 38', -15.836, -47.982, false]
 ];
 
+/** Fotos de teste (frontend/public/mock/fotos): cada anúncio recebe 4, em sequência diferente. */
+export const TOTAL_FOTOS_MOCK = 9;
+export function fotosMock(n: number): string[] {
+    return [0, 1, 3, 5].map((d) => `/mock/fotos/foto-${((n + d) % TOTAL_FOTOS_MOCK) + 1}.jpg`);
+}
+
 const CARACTERISTICAS = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varanda', 'Churrasqueira', 'Portaria 24h', 'Academia', 'Salão de festas', 'Elevador', 'Playground', 'Ar condicionado', 'Interfone'];
 
 export function criarDemoDb(): DemoDb {
@@ -129,7 +135,7 @@ export function criarDemoDb(): DemoDb {
             aceitaPermuta: n % 4 === 1,
             escrituraRegistrada: finalidade === 'VENDA' && !lanc,
             quitado: n % 3 !== 2,
-            fotos: [],
+            fotos: fotosMock(n),
             caracteristicas: CARACTERISTICAS.filter((_, i) => (i + n) % 3 === 0).slice(0, 6),
             visualizacoes: 15 + ((n * 37) % 300),
             anuncianteId: n % 2 === 0 ? 2 : 3,
