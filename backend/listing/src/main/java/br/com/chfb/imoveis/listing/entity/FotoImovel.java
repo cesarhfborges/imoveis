@@ -2,10 +2,12 @@ package br.com.chfb.imoveis.listing.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 /**
- * Foto de um anúncio. {@code editadaIa} informa ao cliente se a imagem foi criada ou
- * alterada com inteligência artificial (true) ou se é uma foto real sem alterações (false).
+ * Foto de um anúncio. {@code origem} informa ao cliente o que o anunciante declarou sobre a
+ * imagem: foto real, criada/alterada com IA ou não informado.
  */
 @Embeddable
 public class FotoImovel {
@@ -13,17 +15,18 @@ public class FotoImovel {
     @Column(name = "url", length = 500, nullable = false)
     private String url;
 
-    @Column(name = "editada_ia", nullable = false)
-    private boolean editadaIa;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "origem", length = 20, nullable = false)
+    private OrigemFoto origem = OrigemFoto.NAO_INFORMADO;
 
     protected FotoImovel() {
     }
 
-    public FotoImovel(String url, boolean editadaIa) {
+    public FotoImovel(String url, OrigemFoto origem) {
         this.url = url;
-        this.editadaIa = editadaIa;
+        this.origem = origem == null ? OrigemFoto.NAO_INFORMADO : origem;
     }
 
     public String getUrl() { return url; }
-    public boolean isEditadaIa() { return editadaIa; }
+    public OrigemFoto getOrigem() { return origem; }
 }

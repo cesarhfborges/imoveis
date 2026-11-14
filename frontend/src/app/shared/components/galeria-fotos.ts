@@ -22,10 +22,12 @@ import { ImovelFoto } from './imovel-foto';
                 <button type="button" class="galeria__expandir" (click)="abrirTelaCheia()" aria-label="Ver fotos em tela cheia"><i class="pi pi-window-maximize" aria-hidden="true"></i></button>
             }
             @if (fotoAtual(); as f) {
-                <span class="selo-origem-foto selo-origem-foto--grande" [class.ia]="f.editadaIa" [attr.title]="f.editadaIa ? 'O anunciante informou que esta imagem foi criada ou alterada com inteligência artificial' : 'O anunciante informou que esta é uma foto real, sem alterações'">
-                    <i class="pi" [class.pi-sparkles]="f.editadaIa" [class.pi-camera]="!f.editadaIa" aria-hidden="true"></i>
-                    {{ f.editadaIa ? 'Imagem editada com IA' : 'Foto real' }}
-                </span>
+                @if (f.origem !== 'NAO_INFORMADO') {
+                    <span class="selo-origem-foto selo-origem-foto--grande" [class.ia]="f.origem === 'IA'" [attr.title]="f.origem === 'IA' ? 'O anunciante informou que esta imagem foi criada ou alterada com inteligência artificial' : 'O anunciante informou que esta é uma foto real, sem alterações'">
+                        <i class="pi" [class.pi-sparkles]="f.origem === 'IA'" [class.pi-camera]="f.origem === 'REAL'" aria-hidden="true"></i>
+                        {{ f.origem === 'IA' ? 'Editada/gerada com IA' : 'Foto real' }}
+                    </span>
+                }
             }
             <span class="galeria__contador" aria-live="polite"><i class="pi pi-camera" aria-hidden="true"></i> {{ fotos().length ? indice() + 1 : 0 }}/{{ fotos().length }}</span>
         </div>
@@ -35,12 +37,32 @@ import { ImovelFoto } from './imovel-foto';
                 @for (f of fotos(); track $index) {
                     <button type="button" role="listitem" class="galeria__mini" [class.ativa]="$index === indice()" (click)="indice.set($index)" [attr.aria-label]="'Ver foto ' + ($index + 1)" [attr.aria-current]="$index === indice()">
                         <img [src]="f.url" alt="" loading="lazy" />
-                        @if (f.editadaIa) {
+                        @if (f.origem === 'IA') {
                             <span class="galeria__mini-ia" aria-hidden="true">IA</span>
                         }
                     </button>
                 }
             </div>
+        }
+
+        @if (algumaInformada()) {
+            <aside class="aviso-origem-fotos" aria-labelledby="aviso-origem-titulo">
+                <i class="pi pi-info-circle" aria-hidden="true"></i>
+                <div>
+                    <h2 id="aviso-origem-titulo">Sobre as fotos deste anúncio</h2>
+                    <p>
+                        As indicações <strong>Foto real</strong> e <strong>Editada/gerada com IA</strong> foram declaradas pelo próprio anunciante. Exibimos essa informação por transparência com você, em linha com os princípios de
+                        transparência da LGPD (Lei nº 13.709/2018) e com o direito à informação clara previsto no Código de Defesa do Consumidor (Lei nº 8.078/1990, art. 6º, III).
+                    </p>
+                    <p>
+                        A veracidade das imagens e a correspondência com o estado real do imóvel são de responsabilidade do anunciante. Imagens criadas ou alteradas com inteligência artificial podem não representar o imóvel exatamente
+                        como ele é: confirme os detalhes na visita.
+                        @if (algumaNaoInformada()) {
+                            Fotos sem indicação não tiveram a origem informada.
+                        }
+                    </p>
+                </div>
+            </aside>
         }
 
         @if (telaCheia()) {
@@ -52,10 +74,12 @@ import { ImovelFoto } from './imovel-foto';
                     <button type="button" class="visualizador__seta visualizador__seta--dir" (click)="mover(1)" aria-label="Próxima foto"><i class="pi pi-chevron-right" aria-hidden="true"></i></button>
                 }
                 @if (fotoAtual(); as f) {
-                    <span class="selo-origem-foto selo-origem-foto--grande visualizador__origem" [class.ia]="f.editadaIa">
-                        <i class="pi" [class.pi-sparkles]="f.editadaIa" [class.pi-camera]="!f.editadaIa" aria-hidden="true"></i>
-                        {{ f.editadaIa ? 'Imagem editada com IA' : 'Foto real, sem alterações' }}
-                    </span>
+                    @if (f.origem !== 'NAO_INFORMADO') {
+                        <span class="selo-origem-foto selo-origem-foto--grande visualizador__origem" [class.ia]="f.origem === 'IA'">
+                            <i class="pi" [class.pi-sparkles]="f.origem === 'IA'" [class.pi-camera]="f.origem === 'REAL'" aria-hidden="true"></i>
+                            {{ f.origem === 'IA' ? 'Imagem criada ou alterada com IA' : 'Foto real, sem alterações' }}
+                        </span>
+                    }
                 }
                 <span class="visualizador__contador"><i class="pi pi-camera" aria-hidden="true"></i> {{ indice() + 1 }}/{{ fotos().length }}</span>
             </div>
@@ -73,6 +97,9 @@ export class GaleriaFotos {
     telaCheia = signal(false);
     fotoAtual = computed<FotoImovel | null>(() => this.fotos()[this.indice()] ?? null);
     atual = computed(() => this.fotoAtual()?.url ?? null);
+    /** O aviso sobre a origem das fotos só aparece se o anunciante informou a origem de alguma. */
+    algumaInformada = computed(() => this.fotos().some((f) => f.origem === 'REAL' || f.origem === 'IA'));
+    algumaNaoInformada = computed(() => this.fotos().some((f) => f.origem === 'NAO_INFORMADO'));
 
     private botaoFechar = viewChild<ElementRef<HTMLButtonElement>>('fechar');
     private focoAnterior: HTMLElement | null = null;
@@ -112,8 +139,9 @@ export class GaleriaFotos {
     }
 
     rotuloFoto(i: number) {
-        const ia = this.fotos()[i]?.editadaIa ? ' (imagem editada com IA)' : '';
-        return `${this.alt()} - foto ${i + 1} de ${this.fotos().length || 1}${ia}`;
+        const o = this.fotos()[i]?.origem;
+        const sufixo = o === 'IA' ? ' (imagem criada ou alterada com IA)' : o === 'REAL' ? ' (foto real)' : '';
+        return `${this.alt()} - foto ${i + 1} de ${this.fotos().length || 1}${sufixo}`;
     }
 
     mover(d: number) {

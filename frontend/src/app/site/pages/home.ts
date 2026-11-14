@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AccordionModule } from 'primeng/accordion';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -7,17 +7,30 @@ import { ImovelService } from '@/app/core/services/imovel.service';
 import { ConfigService } from '@/app/core/services/config.service';
 import { FiltrosBusca } from '@/app/shared/components/filtros-busca';
 import { ImovelCardMini } from '@/app/shared/components/imovel-card-mini';
+import { HeroDecor } from '@/app/shared/components/hero-decor';
 
 /** Página inicial: busca em destaque, vitrine, atalhos por tipo/bairro, chamada para anunciantes e dúvidas frequentes. */
 @Component({
     selector: 'app-home-page',
-    imports: [RouterLink, AccordionModule, SkeletonModule, FiltrosBusca, ImovelCardMini],
+    imports: [RouterLink, AccordionModule, SkeletonModule, FiltrosBusca, ImovelCardMini, HeroDecor],
     template: `
         <section class="hero" aria-labelledby="hero-titulo">
+            <app-hero-decor />
             <div class="site-container hero__conteudo">
                 <div class="hero__texto">
-                    <h1 id="hero-titulo">{{ cfg().slogan || 'Encontre o imóvel ideal' }}</h1>
-                    <p>Casas, apartamentos, lotes e salas para comprar ou alugar, direto com corretores e imobiliárias.</p>
+                    <span class="hero__chapeu"><i class="pi pi-sparkles" aria-hidden="true"></i> Compra, aluguel, lançamentos e temporada</span>
+                    <h1 id="hero-titulo">
+                        {{ titulo().inicio }}
+                        @if (titulo().destaque) {
+                            <span class="hero__destaque">{{ titulo().destaque }}</span>
+                        }
+                    </h1>
+                    <p class="hero__sub">Casas, apartamentos, lotes e salas para comprar ou alugar, direto com corretores e imobiliárias.</p>
+                    <ul class="hero__selos">
+                        <li><i class="pi pi-search" aria-hidden="true"></i> Busca livre, sem cadastro</li>
+                        <li><i class="pi pi-comments" aria-hidden="true"></i> Contato direto com o anunciante</li>
+                        <li><i class="pi pi-verified" aria-hidden="true"></i> Corretores com CRECI</li>
+                    </ul>
                 </div>
                 <div class="hero__busca">
                     <app-filtros-busca variante="hero" (buscar)="buscar($event)" />
@@ -97,6 +110,13 @@ export class HomePage {
     private router = inject(Router);
     private config = inject(ConfigService);
     cfg = this.config.config;
+
+    /** Título do hero dividido para destacar o fim da frase (as duas últimas palavras). */
+    titulo = computed(() => {
+        const palavras = (this.cfg().slogan || 'Encontre o imóvel ideal').trim().split(/\s+/);
+        const n = palavras.length >= 4 ? 2 : palavras.length > 1 ? 1 : 0;
+        return { inicio: palavras.slice(0, palavras.length - n).join(' '), destaque: palavras.slice(palavras.length - n).join(' ') };
+    });
 
     carregando = signal(true);
     destaques = signal<ImovelResumo[]>([]);

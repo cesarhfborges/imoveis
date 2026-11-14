@@ -15,18 +15,24 @@ export interface PontoMapa {
  * Mapa com OpenStreetMap (gratuito) via Leaflet, carregado sob demanda.
  *  - "pontos": marcadores com balão (título, preço e link);
  *  - "selecionavel": clique no mapa escolhe a posição (formulário do anúncio);
- *  - "cliqueParaCarregar": mostra um aviso e só baixa o mapa quando a pessoa clica.
+ *  - "cliqueParaCarregar": mostra um aviso e só baixa o mapa quando a pessoa clica;
+ *  - "zoomRoda": 'livre' dá zoom com a roda do mouse direto (mapa como conteúdo principal);
+ *    'ctrl' (padrão) deixa a roda rolar a página e só dá zoom com Ctrl/⌘ + roda ou pinça
+ *    no trackpad, mostrando um aviso — evita a página "prender" ao passar por cima do mapa.
  */
 @Component({
     selector: 'app-mapa-osm',
     template: `
-        <div class="mapa-osm" [style.height]="altura()">
+        <div class="mapa-osm" #caixa [style.height]="altura()">
             @if (!ativo()) {
                 <button type="button" class="mapa-osm__capa" (click)="ativar()">
                     <span class="mapa-osm__aviso"><i class="pi pi-map-marker text-3xl! text-primary" aria-hidden="true"></i><span>Clique para carregar o mapa</span></span>
                 </button>
             }
             <div #alvo class="w-full h-full" [class.invisible]="!ativo()"></div>
+            @if (ativo() && zoomRoda() === 'ctrl') {
+                <div class="mapa-osm__dica" [class.visivel]="dicaVisivel()" aria-hidden="true">Use {{ teclaZoom }} + rolagem para dar zoom no mapa</div>
+            }
         </div>
         <p class="text-[0.7rem] text-muted-color mt-1 mb-0">Mapa: © colaboradores do OpenStreetMap</p>
     `
@@ -38,10 +44,15 @@ export class MapaOsm implements AfterViewInit, OnDestroy {
     altura = input('360px');
     selecionavel = input(false);
     cliqueParaCarregar = input(false);
+    zoomRoda = input<'livre' | 'ctrl'>('ctrl');
     posicaoSelecionada = output<{ lat: number; lng: number }>();
 
     alvo = viewChild.required<ElementRef<HTMLDivElement>>('alvo');
+    caixa = viewChild.required<ElementRef<HTMLDivElement>>('caixa');
     ativo = signal(false);
+    dicaVisivel = signal(false);
+    teclaZoom = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl';
+    private timerDica: ReturnType<typeof setTimeout> | undefined;
 
     private L: typeof Leaflet | null = null;
     private mapa: Leaflet.Map | null = null;
@@ -58,7 +69,11 @@ export class MapaOsm implements AfterViewInit, OnDestroy {
         });
     }
 
+    // listener em fase de captura (o template do Angular não tem modificador ".capture")
+    private ouvinteRoda = (e: WheelEvent) => this.aoRolar(e);
+
     ngAfterViewInit() {
+        this.caixa().nativeElement.addEventListener('wheel', this.ouvinteRoda, { capture: true, passive: true });
         if (!this.cliqueParaCarregar()) {
             this.ativar();
         }
@@ -70,7 +85,7 @@ export class MapaOsm implements AfterViewInit, OnDestroy {
         const L = (await import('leaflet')).default ?? (await import('leaflet'));
         this.L = L as typeof Leaflet;
         const centro = this.centro() ?? this.mediaPontos() ?? [-15.7939, -47.8828];
-        this.mapa = this.L.map(this.alvo().nativeElement, { scrollWheelZoom: false }).setView(centro, this.zoom());
+        this.mapa = this.L.map(this.alvo().nativeElement, { scrollWheelZoom: true, wheelPxPerZoomLevel: 90 }).setView(centro, this.zoom());
         this.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
@@ -84,6 +99,22 @@ export class MapaOsm implements AfterViewInit, OnDestroy {
         }
         this.desenhar(this.pontos(), this.centro());
         setTimeout(() => this.mapa?.invalidateSize(), 50);
+    }
+
+    /**
+     * Captura a roda antes do Leaflet. No modo 'ctrl', sem Ctrl/⌘ o evento não chega ao
+     * mapa (a página rola normalmente) e aparece a dica; com Ctrl/⌘ (ou pinça, que o
+     * navegador envia como ctrlKey) o Leaflet recebe e dá zoom, bloqueando o zoom da página.
+     */
+    aoRolar(e: WheelEvent) {
+        if (!this.mapa || this.zoomRoda() === 'livre' || e.ctrlKey || e.metaKey) {
+            this.dicaVisivel.set(false);
+            return;
+        }
+        e.stopPropagation();
+        this.dicaVisivel.set(true);
+        clearTimeout(this.timerDica);
+        this.timerDica = setTimeout(() => this.dicaVisivel.set(false), 1500);
     }
 
     private icone(): Leaflet.DivIcon {
@@ -129,6 +160,8 @@ export class MapaOsm implements AfterViewInit, OnDestroy {
     }
 
     ngOnDestroy() {
+        clearTimeout(this.timerDica);
+        this.caixa().nativeElement.removeEventListener('wheel', this.ouvinteRoda, { capture: true });
         this.mapa?.remove();
     }
 }

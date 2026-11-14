@@ -1,4 +1,4 @@
-import { Configuracao, Finalidade, FotoImovel, ImovelDetalhe, Perfil, StatusAnuncio, TipoImovel, tipoLabel } from '@/app/core/models/models';
+import { Configuracao, Finalidade, FotoImovel, ImovelDetalhe, OrigemFoto, Perfil, StatusAnuncio, TipoImovel, tipoLabel } from '@/app/core/models/models';
 import { CONFIG_PADRAO } from '@/app/core/services/config.service';
 
 /** Usuário do modo demonstração (a senha fica em texto só porque é um banco de mentira no navegador). */
@@ -88,8 +88,9 @@ const MODELOS: Modelo[] = [
 /** Fotos de teste (frontend/public/mock/fotos): cada anúncio recebe 4, em sequência diferente. */
 export const TOTAL_FOTOS_MOCK = 9;
 export function fotosMock(n: number): FotoImovel[] {
-    // a 2ª foto de cada anúncio fica marcada como "editada com IA" para demonstrar o selo
-    return [0, 1, 3, 5].map((d, k) => ({ url: `/mock/fotos/foto-${((n + d) % TOTAL_FOTOS_MOCK) + 1}.jpg`, editadaIa: k === 1 }));
+    // a 1ª fica como "foto real", a 2ª como "IA" e as demais "não informado", para demonstrar os três estados
+    const origens: OrigemFoto[] = ['REAL', 'IA', 'NAO_INFORMADO', 'NAO_INFORMADO'];
+    return [0, 1, 3, 5].map((d, k) => ({ url: `/mock/fotos/foto-${((n + d) % TOTAL_FOTOS_MOCK) + 1}.jpg`, origem: origens[k] }));
 }
 
 const CARACTERISTICAS = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varanda', 'Churrasqueira', 'Portaria 24h', 'Academia', 'Salão de festas', 'Elevador', 'Playground', 'Ar condicionado', 'Interfone'];

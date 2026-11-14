@@ -26,6 +26,7 @@ import br.com.chfb.imoveis.listing.dto.OpcoesBusca;
 import br.com.chfb.imoveis.listing.dto.StatusForm;
 import br.com.chfb.imoveis.listing.entity.FotoImovel;
 import br.com.chfb.imoveis.listing.entity.Imovel;
+import br.com.chfb.imoveis.listing.entity.OrigemFoto;
 import br.com.chfb.imoveis.listing.entity.StatusAnuncio;
 import br.com.chfb.imoveis.listing.entity.TipoImovel;
 import br.com.chfb.imoveis.listing.repository.ContatoRepository;
@@ -253,7 +254,7 @@ public class ImovelService {
         i.getFotos().clear();
         if (f.fotos() != null) {
             f.fotos().stream().filter(Objects::nonNull).filter(x -> x.url() != null && !x.url().isBlank())
-                    .map(x -> new FotoImovel(x.url().trim(), x.editadaIa())).forEach(i.getFotos()::add);
+                    .map(x -> new FotoImovel(x.url().trim(), x.origem())).forEach(i.getFotos()::add);
         }
         i.getCaracteristicas().clear();
         if (f.caracteristicas() != null) {
@@ -269,7 +270,7 @@ public class ImovelService {
                 i.getEndereco(), i.getLatitude(), i.getLongitude(), resumir(i.getDescricao()),
                 anunciante == null ? null : anunciante.creci(), anunciante == null ? null : anunciante.fotoUrl(),
                 i.getFotos().isEmpty() ? null : i.getFotos().get(0).getUrl(),
-                !i.getFotos().isEmpty() && i.getFotos().get(0).isEditadaIa(), i.getFotos().size(), i.isLancamento(),
+                !i.getFotos().isEmpty() && i.getFotos().get(0).getOrigem() == OrigemFoto.IA, i.getFotos().size(), i.isLancamento(),
                 i.isDestaque(), i.isAceitaFinanciamento(), i.isAceitaFgts(), i.getVisualizacoes(), i.getAnuncianteId(),
                 anunciante == null ? null : anunciante.nome(), i.getCriadoEm());
     }

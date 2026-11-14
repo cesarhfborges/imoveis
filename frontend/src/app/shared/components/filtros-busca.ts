@@ -29,13 +29,13 @@ export type AbaBusca = 'VENDA' | 'ALUGUEL' | 'NOVO' | 'TEMPORADA';
             </div>
 
             <div class="filtros__campos">
-                <p-select [options]="tipos" formControlName="tipo" optionLabel="label" optionValue="value" placeholder="Tipo (todos)" [showClear]="true" styleClass="w-full" ariaLabel="Tipo de imóvel" />
-                <p-select [options]="ufs()" formControlName="uf" placeholder="UF" [showClear]="true" styleClass="w-full" ariaLabel="Estado" />
-                <p-select [options]="cidades()" formControlName="cidade" placeholder="Cidade (todas)" [showClear]="true" [filter]="true" filterPlaceholder="Filtrar" styleClass="w-full" ariaLabel="Cidade" />
-                <p-select [options]="bairros()" formControlName="bairro" placeholder="Bairro (todos)" [showClear]="true" [filter]="true" filterPlaceholder="Filtrar" styleClass="w-full" ariaLabel="Bairro" />
+                <p-select [options]="tipos" formControlName="tipo" class="filtros__tipo" optionLabel="label" optionValue="value" placeholder="Tipo (todos)" [showClear]="true" styleClass="w-full" ariaLabel="Tipo de imóvel" />
+                <p-select [options]="ufs()" formControlName="uf" class="filtros__uf" placeholder="UF" [showClear]="true" styleClass="w-full" ariaLabel="Estado" />
+                <p-select [options]="cidades()" formControlName="cidade" class="filtros__cidade" placeholder="Cidade (todas)" [showClear]="true" [filter]="true" filterPlaceholder="Filtrar" styleClass="w-full" ariaLabel="Cidade" />
+                <p-select [options]="bairros()" formControlName="bairro" class="filtros__bairro" placeholder="Bairro (todos)" [showClear]="true" [filter]="true" filterPlaceholder="Filtrar" styleClass="w-full" ariaLabel="Bairro" />
                 <div class="grid grid-cols-2 gap-2 filtros__dupla">
-                    <p-select [options]="quartosOpcoes" formControlName="quartos" optionLabel="label" optionValue="value" placeholder="Quartos" [showClear]="true" styleClass="w-full" ariaLabel="Quartos" />
-                    <p-inputnumber formControlName="precoMax" mode="currency" currency="BRL" locale="pt-BR" [maxFractionDigits]="0" placeholder="Valor até" styleClass="w-full" inputStyleClass="w-full" ariaLabel="Valor máximo" />
+                    <p-select [options]="quartosOpcoes" formControlName="quartos" class="filtros__quartos" optionLabel="label" optionValue="value" placeholder="Quartos" [showClear]="true" styleClass="w-full" ariaLabel="Quartos" />
+                    <p-inputnumber formControlName="precoMax" class="filtros__preco" mode="currency" currency="BRL" locale="pt-BR" [maxFractionDigits]="0" placeholder="Valor até" styleClass="w-full" inputStyleClass="w-full" ariaLabel="Valor máximo" />
                 </div>
                 <p-iconfield class="filtros__texto">
                     <p-inputicon class="pi pi-search" />

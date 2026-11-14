@@ -18,6 +18,7 @@ import br.com.chfb.imoveis.coreapi.entity.Usuario;
 import br.com.chfb.imoveis.coreapi.repository.UsuarioRepository;
 import br.com.chfb.imoveis.listing.entity.Finalidade;
 import br.com.chfb.imoveis.listing.entity.FotoImovel;
+import br.com.chfb.imoveis.listing.entity.OrigemFoto;
 import br.com.chfb.imoveis.listing.entity.Imovel;
 import br.com.chfb.imoveis.listing.entity.StatusAnuncio;
 import br.com.chfb.imoveis.listing.entity.TipoImovel;
@@ -158,11 +159,12 @@ public class DataSeeder implements ApplicationRunner {
 
     /** Fotos de teste servidas pelo front em /mock/fotos (frontend/public/mock/fotos). */
     static List<FotoImovel> fotosMock(int n) {
-        // as fotos de teste são renders; a 2ª de cada anúncio fica marcada como "editada com IA" para demonstrar o selo
+        // fotos de teste: a 1ª fica como "foto real", a 2ª como "IA" e as demais "não informado", para demonstrar os três estados
         int[] passos = {0, 1, 3, 5};
         List<FotoImovel> lista = new java.util.ArrayList<>();
         for (int k = 0; k < passos.length; k++) {
-            lista.add(new FotoImovel("/mock/fotos/foto-" + (((n + passos[k]) % 9) + 1) + ".jpg", k == 1));
+            OrigemFoto origem = k == 0 ? OrigemFoto.REAL : k == 1 ? OrigemFoto.IA : OrigemFoto.NAO_INFORMADO;
+            lista.add(new FotoImovel("/mock/fotos/foto-" + (((n + passos[k]) % 9) + 1) + ".jpg", origem));
         }
         return lista;
     }

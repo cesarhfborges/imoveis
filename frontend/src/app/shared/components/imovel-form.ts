@@ -9,12 +9,15 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { ButtonModule } from 'primeng/button';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { MessageService } from 'primeng/api';
-import { DOCUMENTACAO, FINALIDADES, Finalidade, ImovelDetalhe, ImovelForm as ImovelFormDto, TIPOS, TipoImovel } from '@/app/core/models/models';
+import { DOCUMENTACAO, FINALIDADES, Finalidade, ImovelDetalhe, ImovelForm as ImovelFormDto, ORIGENS_FOTO, OrigemFoto, TIPOS, TipoImovel } from '@/app/core/models/models';
 import { ImageUpload } from './image-upload';
 import { MapaOsm } from './mapa-osm';
 import { ImovelFoto } from './imovel-foto';
 
-type FotoGrupo = FormGroup<{ url: FormControl<string>; editadaIa: FormControl<boolean> }>;
+type FotoGrupo = FormGroup<{ url: FormControl<string>; origem: FormControl<OrigemFoto> }>;
+
+/** Mesmo limite do servidor (ImovelForm.fotos @Size(max = 30)). */
+const MAX_FOTOS = 30;
 
 const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varanda', 'Churrasqueira', 'Portaria 24h', 'Academia', 'Salão de festas', 'Elevador', 'Playground', 'Ar condicionado', 'Interfone', 'Quintal', 'Mobiliado', 'Aceita pet'];
 
@@ -122,35 +125,56 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
             </section>
 
             <section class="card m-0 flex flex-col gap-4">
-                <h2 class="text-lg font-semibold m-0">Fotos</h2>
-                <p class="text-sm text-muted-color m-0">A primeira foto é a capa do anúncio. Marque <strong>"Imagem criada ou alterada com IA"</strong> nas fotos geradas ou retocadas por inteligência artificial; as demais aparecem para o cliente como <strong>foto real</strong>.</p>
-                <div class="grid gap-3 grid-cols-2 md:grid-cols-4">
-                    @for (f of fotos.controls; track $index) {
-                        <div class="foto-tile" [formGroup]="f">
-                            <div class="relative aspect-[4/3]">
-                                <app-imovel-foto class="w-full h-full" [src]="f.controls.url.value" [alt]="'Foto ' + ($index + 1)" />
-                                <div class="absolute top-1 right-1 flex gap-1">
-                                    @if ($index > 0) {
-                                        <p-button icon="pi pi-arrow-left" size="small" [rounded]="true" severity="secondary" (onClick)="moverFoto($index, -1)" [ariaLabel]="'Mover foto ' + ($index + 1) + ' para a esquerda'" />
-                                    }
-                                    <p-button icon="pi pi-trash" size="small" [rounded]="true" severity="danger" (onClick)="fotos.removeAt($index)" [ariaLabel]="'Remover foto ' + ($index + 1)" />
-                                </div>
-                                @if ($index === 0) {
-                                    <span class="imovel-card__selo imovel-card__selo--topo">Capa</span>
-                                }
-                                <span class="selo-origem-foto" [class.ia]="f.controls.editadaIa.value">
-                                    <i class="pi" [class.pi-sparkles]="f.controls.editadaIa.value" [class.pi-camera]="!f.controls.editadaIa.value" aria-hidden="true"></i>
-                                    {{ f.controls.editadaIa.value ? 'Editada com IA' : 'Foto real' }}
-                                </span>
-                            </div>
-                            <label class="foto-tile__ia" [for]="'foto-ia-' + $index">
-                                <p-checkbox formControlName="editadaIa" [binary]="true" [inputId]="'foto-ia-' + $index" />
-                                <span>Imagem criada ou alterada com IA</span>
-                            </label>
+                <div class="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg font-semibold m-0">Fotos <span class="text-muted-color font-normal text-base">({{ fotos.length }}/{{ maxFotos }})</span></h2>
+                        <p class="text-sm text-muted-color m-0 mt-1">A primeira foto é a capa. Em cada foto, informe se ela é <strong>real</strong> ou <strong>criada/alterada com IA</strong>; isso aparece para o cliente no anúncio.</p>
+                    </div>
+                    @if (fotos.length > 1) {
+                        <div class="flex flex-col gap-1">
+                            <label for="origem-todas" class="text-sm">Aplicar a todas as fotos</label>
+                            <p-select inputId="origem-todas" [options]="origens" optionLabel="label" optionValue="value" placeholder="Escolha…" [formControl]="origemTodas" (onChange)="aplicarOrigemATodas($event.value)" styleClass="min-w-60" />
                         </div>
                     }
                 </div>
-                <app-image-upload rotulo="Adicionar foto" [url]="null" (urlChange)="$event && fotos.push(novaFoto($event))" />
+                @if (fotos.length) {
+                    <div class="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        @for (f of fotos.controls; track f) {
+                            <div class="foto-tile" [formGroup]="f">
+                                <div class="relative aspect-[4/3]">
+                                    <app-imovel-foto class="w-full h-full" [src]="f.controls.url.value" [alt]="'Foto ' + ($index + 1)" />
+                                    <div class="absolute top-1 right-1 flex gap-1">
+                                        @if ($index > 0) {
+                                            <p-button icon="pi pi-arrow-left" size="small" [rounded]="true" severity="secondary" (onClick)="moverFoto($index, -1)" [ariaLabel]="'Mover foto ' + ($index + 1) + ' para a esquerda'" />
+                                        }
+                                        <p-button icon="pi pi-trash" size="small" [rounded]="true" severity="danger" (onClick)="fotos.removeAt($index)" [ariaLabel]="'Remover foto ' + ($index + 1)" />
+                                    </div>
+                                    @if ($index === 0) {
+                                        <span class="imovel-card__selo imovel-card__selo--topo">Capa</span>
+                                    }
+                                    @if (f.controls.origem.value !== 'NAO_INFORMADO') {
+                                        <span class="selo-origem-foto" [class.ia]="f.controls.origem.value === 'IA'">
+                                            <i class="pi" [class.pi-sparkles]="f.controls.origem.value === 'IA'" [class.pi-camera]="f.controls.origem.value === 'REAL'" aria-hidden="true"></i>
+                                            {{ f.controls.origem.value === 'IA' ? 'IA' : 'Foto real' }}
+                                        </span>
+                                    }
+                                </div>
+                                <div class="foto-tile__origem">
+                                    <label [for]="'foto-origem-' + $index">Origem da foto {{ $index + 1 }}</label>
+                                    <p-select [inputId]="'foto-origem-' + $index" formControlName="origem" [options]="origens" optionLabel="label" optionValue="value" styleClass="w-full" appendTo="body">
+                                        <ng-template #selectedItem let-o>
+                                            <span class="inline-flex items-center gap-2"><i class="pi {{ o.icone }}" aria-hidden="true"></i>{{ o.curto }}</span>
+                                        </ng-template>
+                                        <ng-template #item let-o>
+                                            <span class="inline-flex items-center gap-2"><i class="pi {{ o.icone }}" aria-hidden="true"></i>{{ o.label }}</span>
+                                        </ng-template>
+                                    </p-select>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                <app-image-upload rotulo="Escolher fotos" [multiplo]="true" [limite]="maxFotos" [quantidadeAtual]="fotos.length" (urlAdicionada)="fotos.push(novaFoto($event))" />
             </section>
 
             <div class="flex justify-end gap-2 sticky bottom-0 py-3 bg-surface-50 dark:bg-surface-950">
@@ -218,6 +242,11 @@ export class ImovelFormComponent {
         fotos: this.fb.array<FotoGrupo>([])
     });
 
+    readonly maxFotos = MAX_FOTOS;
+    readonly origens = ORIGENS_FOTO;
+    /** Seletor "aplicar a todas": volta a ficar vazio depois de aplicar. */
+    origemTodas = new FormControl<OrigemFoto | null>(null);
+
     get fotos(): FormArray<FotoGrupo> {
         return this.form.controls.fotos;
     }
@@ -227,14 +256,20 @@ export class ImovelFormComponent {
             const v = this.valor();
             if (!v) return;
             this.fotos.clear();
-            v.fotos.forEach((f) => this.fotos.push(this.novaFoto(f.url, f.editadaIa)));
+            v.fotos.forEach((f) => this.fotos.push(this.novaFoto(f.url, f.origem)));
             this.form.patchValue({ ...v, descricao: v.descricao ?? '', endereco: v.endereco ?? '', cep: v.cep ?? '', caracteristicas: [...v.caracteristicas] });
             this.centro.set(v.latitude != null && v.longitude != null ? [v.latitude, v.longitude] : null);
         });
     }
 
-    novaFoto(url: string, editadaIa = false): FotoGrupo {
-        return this.fb.group({ url: [url], editadaIa: [editadaIa] });
+    novaFoto(url: string, origem: OrigemFoto = 'NAO_INFORMADO'): FotoGrupo {
+        return this.fb.group({ url: [url], origem: [origem] });
+    }
+
+    aplicarOrigemATodas(origem: OrigemFoto | null) {
+        if (!origem) return;
+        this.fotos.controls.forEach((c) => c.controls.origem.setValue(origem));
+        queueMicrotask(() => this.origemTodas.setValue(null));
     }
 
     moverFoto(i: number, d: number) {

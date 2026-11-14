@@ -109,10 +109,18 @@ export interface Anunciante {
     fotoUrl: string | null;
 }
 
-/** Foto do anúncio: editadaIa = criada/alterada com IA; false = foto real sem alterações. */
+/** O que o anunciante declarou sobre a foto: real, criada/alterada com IA ou não informado. */
+export type OrigemFoto = 'REAL' | 'IA' | 'NAO_INFORMADO';
+
+export const ORIGENS_FOTO: { value: OrigemFoto; label: string; curto: string; icone: string }[] = [
+    { value: 'NAO_INFORMADO', label: 'Não informado', curto: 'Não informado', icone: 'pi-question-circle' },
+    { value: 'REAL', label: 'Foto real, sem alterações', curto: 'Foto real', icone: 'pi-camera' },
+    { value: 'IA', label: 'Criada ou alterada com IA', curto: 'Editada/gerada com IA', icone: 'pi-sparkles' }
+];
+
 export interface FotoImovel {
     url: string;
-    editadaIa: boolean;
+    origem: OrigemFoto;
 }
 
 export interface ImovelDetalhe {
