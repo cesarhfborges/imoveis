@@ -4,7 +4,7 @@ import { ButtonModule } from 'primeng/button';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
 import { MessageService } from 'primeng/api';
-import { ImovelDetalhe, ImovelResumo, finalidadeLabel } from '@/app/core/models/models';
+import { DOCUMENTACAO, ImovelDetalhe, ImovelResumo, finalidadeLabel } from '@/app/core/models/models';
 import { ImovelService } from '@/app/core/services/imovel.service';
 import { ContaService } from '@/app/core/services/conta.service';
 import { AuthService } from '@/app/core/services/auth.service';
@@ -66,6 +66,19 @@ import { EmptyState } from '@/app/shared/components/empty-state';
                             <span>Valor R$/m²: <strong class="text-primary text-lg">{{ i.preco | valorM2: i.areaUtil }}</strong></span>
                         }
                     </div>
+                    @if (i.aceitaFinanciamento || i.aceitaFgts || i.aceitaPermuta) {
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            @if (i.aceitaFinanciamento) {
+                                <span class="selo-condicao"><i class="pi pi-check" aria-hidden="true"></i> Aceita financiamento</span>
+                            }
+                            @if (i.aceitaFgts) {
+                                <span class="selo-condicao"><i class="pi pi-check" aria-hidden="true"></i> Aceita FGTS</span>
+                            }
+                            @if (i.aceitaPermuta) {
+                                <span class="selo-condicao"><i class="pi pi-check" aria-hidden="true"></i> Aceita permuta</span>
+                            }
+                        </div>
+                    }
                     <div class="local-pilula mt-3"><i class="pi pi-map-marker" aria-hidden="true"></i> {{ i.cidade }} - {{ i.bairro }}</div>
 
                     <dl class="detalhe__fatos">
@@ -101,9 +114,22 @@ import { EmptyState } from '@/app/shared/components/empty-state';
                         <button type="button" class="text-primary font-semibold mt-2" (click)="descricaoAberta.set(!descricaoAberta())" [attr.aria-expanded]="descricaoAberta()">
                             {{ descricaoAberta() ? 'Ver menos' : 'Ver mais' }} <i class="pi" [class.pi-angle-up]="descricaoAberta()" [class.pi-angle-down]="!descricaoAberta()" aria-hidden="true"></i>
                         </button>
-                        @if (i.aceitaFinanciamento) {
-                            <p class="mt-3 mb-0"><i class="pi pi-check-circle text-green-600 mr-1" aria-hidden="true"></i>Aceita financiamento</p>
-                        }
+                    </section>
+
+                    <section class="bloco" aria-labelledby="doc-titulo">
+                        <h2 id="doc-titulo">Documentação e condições</h2>
+                        <ul class="lista-doc">
+                            @for (d of documentacao; track d.campo) {
+                                @let sim = !!i[d.campo];
+                                <li [class.sim]="sim">
+                                    <i class="pi" [class.pi-check-circle]="sim" [class.pi-times-circle]="!sim" aria-hidden="true"></i>
+                                    <span>
+                                        <strong>{{ d.label }}:</strong> {{ sim ? 'Sim' : 'Não' }}
+                                        <span class="block text-xs text-muted-color">{{ d.dica }}</span>
+                                    </span>
+                                </li>
+                            }
+                        </ul>
                     </section>
 
                     @if (i.caracteristicas.length) {
@@ -189,6 +215,7 @@ export class DetalhePage {
     indice = signal(0);
     descricaoAberta = signal(false);
     finalidadeLabel = finalidadeLabel;
+    documentacao = DOCUMENTACAO;
 
     fotoAtual = computed(() => this.imovel()?.fotos[this.indice()] ?? null);
     favorito = computed(() => this.conta.favoritos().has(Number(this.id())));

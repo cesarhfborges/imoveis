@@ -133,6 +133,10 @@ export interface ImovelDetalhe {
     lancamento: boolean;
     destaque: boolean;
     aceitaFinanciamento: boolean;
+    aceitaFgts: boolean;
+    aceitaPermuta: boolean;
+    escrituraRegistrada: boolean;
+    quitado: boolean;
     fotos: string[];
     caracteristicas: string[];
     visualizacoes: number;
@@ -164,6 +168,10 @@ export interface ImovelForm {
     longitude: number | null;
     lancamento: boolean;
     aceitaFinanciamento: boolean;
+    aceitaFgts: boolean;
+    aceitaPermuta: boolean;
+    escrituraRegistrada: boolean;
+    quitado: boolean;
     fotos: string[];
     caracteristicas: string[];
 }
@@ -339,6 +347,15 @@ export interface Dashboard {
     administradores: number;
     anuncios: EstatisticasAnuncios;
 }
+
+/** Opções de documentação e condições do anúncio (mesma ordem no formulário e na página). */
+export const DOCUMENTACAO: { campo: 'aceitaFinanciamento' | 'aceitaFgts' | 'aceitaPermuta' | 'escrituraRegistrada' | 'quitado'; label: string; dica: string }[] = [
+    { campo: 'aceitaFinanciamento', label: 'Aceita financiamento', dica: 'Pode ser comprado com financiamento bancário' },
+    { campo: 'aceitaFgts', label: 'Aceita FGTS', dica: 'O comprador pode usar o saldo do FGTS' },
+    { campo: 'aceitaPermuta', label: 'Aceita permuta', dica: 'O proprietário aceita outro imóvel ou bem como parte do pagamento' },
+    { campo: 'escrituraRegistrada', label: 'Escritura registrada', dica: 'Documentação em cartório regularizada' },
+    { campo: 'quitado', label: 'Imóvel quitado', dica: 'Sem saldo devedor de financiamento' }
+];
 
 export function tipoLabel(t: TipoImovel | string | null | undefined): string {
     return TIPOS.find((x) => x.value === t)?.label ?? String(t ?? '');

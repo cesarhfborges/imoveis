@@ -1062,3 +1062,44 @@ h2[class*='mb-'],
 h2[class*='mt-'] {
     margin: revert-layer;
 }
+
+/* ---------------------------------------------------------------- documentação do anúncio */
+.lista-doc {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.75rem 2rem;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    @media (min-width: 576px) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    li {
+        display: flex;
+        gap: 0.6rem;
+        align-items: flex-start;
+        color: var(--p-text-muted-color);
+        i {
+            font-size: 1.1rem;
+            margin-top: 0.1rem;
+        }
+        &.sim {
+            color: var(--p-text-color);
+            i {
+                color: var(--site-verde);
+            }
+        }
+    }
+}
+
+.selo-condicao {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--site-verde);
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    padding: 0.15rem 0.7rem;
+}

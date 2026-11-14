@@ -88,6 +88,18 @@ public class Imovel extends BaseEntity {
     @Column(name = "aceita_financiamento")
     private boolean aceitaFinanciamento;
 
+    // Documentação e condições de negócio
+    @Column(name = "aceita_fgts")
+    private boolean aceitaFgts;
+
+    @Column(name = "aceita_permuta")
+    private boolean aceitaPermuta;
+
+    @Column(name = "escritura_registrada")
+    private boolean escrituraRegistrada;
+
+    private boolean quitado;
+
     @Column(name = "anunciante_id", nullable = false)
     private Long anuncianteId;
 
@@ -156,6 +168,14 @@ public class Imovel extends BaseEntity {
     public void setDestaque(boolean destaque) { this.destaque = destaque; }
     public boolean isAceitaFinanciamento() { return aceitaFinanciamento; }
     public void setAceitaFinanciamento(boolean aceitaFinanciamento) { this.aceitaFinanciamento = aceitaFinanciamento; }
+    public boolean isAceitaFgts() { return aceitaFgts; }
+    public void setAceitaFgts(boolean v) { this.aceitaFgts = v; }
+    public boolean isAceitaPermuta() { return aceitaPermuta; }
+    public void setAceitaPermuta(boolean v) { this.aceitaPermuta = v; }
+    public boolean isEscrituraRegistrada() { return escrituraRegistrada; }
+    public void setEscrituraRegistrada(boolean v) { this.escrituraRegistrada = v; }
+    public boolean isQuitado() { return quitado; }
+    public void setQuitado(boolean v) { this.quitado = v; }
     public Long getAnuncianteId() { return anuncianteId; }
     public void setAnuncianteId(Long anuncianteId) { this.anuncianteId = anuncianteId; }
     public long getVisualizacoes() { return visualizacoes; }

@@ -244,6 +244,10 @@ public class ImovelService {
         i.setLongitude(f.longitude());
         i.setLancamento(f.lancamento());
         i.setAceitaFinanciamento(f.aceitaFinanciamento());
+        i.setAceitaFgts(f.aceitaFgts());
+        i.setAceitaPermuta(f.aceitaPermuta());
+        i.setEscrituraRegistrada(f.escrituraRegistrada());
+        i.setQuitado(f.quitado());
         i.getFotos().clear();
         if (f.fotos() != null) {
             f.fotos().stream().filter(Objects::nonNull).map(String::trim).filter(s -> !s.isEmpty())
@@ -343,7 +347,8 @@ public class ImovelService {
                 i.getAreaUtil(), i.getAreaTotal(), i.getQuartos(), i.getSuites(), i.getBanheiros(), i.getVagas(),
                 i.getUf(), i.getCidade(), i.getBairro(), i.getEndereco(), i.getCep(), i.getLatitude(), i.getLongitude(),
                 i.isLancamento(), i.isDestaque(),
-                i.isAceitaFinanciamento(), List.copyOf(i.getFotos()), Set.copyOf(i.getCaracteristicas()),
+                i.isAceitaFinanciamento(), i.isAceitaFgts(), i.isAceitaPermuta(), i.isEscrituraRegistrada(), i.isQuitado(),
+                List.copyOf(i.getFotos()), Set.copyOf(i.getCaracteristicas()),
                 i.getVisualizacoes(), anunciante, i.getCriadoEm(), i.getAtualizadoEm());
     }
 }

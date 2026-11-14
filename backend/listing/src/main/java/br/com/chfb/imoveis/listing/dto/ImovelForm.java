@@ -39,6 +39,10 @@ public record ImovelForm(
         @DecimalMin("-180.0") @DecimalMax("180.0") BigDecimal longitude,
         boolean lancamento,
         boolean aceitaFinanciamento,
+        boolean aceitaFgts,
+        boolean aceitaPermuta,
+        boolean escrituraRegistrada,
+        boolean quitado,
         @Size(max = 30) List<@Size(max = 500) String> fotos,
         @Size(max = 40) Set<@Size(max = 60) String> caracteristicas) {
 }

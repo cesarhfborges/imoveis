@@ -37,7 +37,15 @@ export class DemoBackend {
             const raw = localStorage.getItem(DB_KEY);
             if (raw) {
                 const db = JSON.parse(raw) as DemoDb;
-                if (db.versao === 1) return db;
+                if (db.versao === 1) {
+                    db.imoveis.forEach((i) => {
+                        i.aceitaFgts ??= false;
+                        i.aceitaPermuta ??= false;
+                        i.escrituraRegistrada ??= false;
+                        i.quitado ??= false;
+                    });
+                    return db;
+                }
             }
         } catch {
             /* recria */
@@ -580,6 +588,10 @@ export class DemoBackend {
             longitude: b.longitude ?? null,
             lancamento: !!b.lancamento,
             aceitaFinanciamento: !!b.aceitaFinanciamento,
+            aceitaFgts: !!b.aceitaFgts,
+            aceitaPermuta: !!b.aceitaPermuta,
+            escrituraRegistrada: !!b.escrituraRegistrada,
+            quitado: !!b.quitado,
             fotos: (b.fotos ?? []).filter((x: string) => !!x),
             caracteristicas: (b.caracteristicas ?? []).filter((x: string) => !!x)
         };

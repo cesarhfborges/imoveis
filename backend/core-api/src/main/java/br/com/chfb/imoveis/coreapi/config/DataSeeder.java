@@ -132,6 +132,10 @@ public class DataSeeder implements ApplicationRunner {
             i.setLancamento(m.lanc());
             i.setDestaque(n % 3 == 0);
             i.setAceitaFinanciamento(m.fin() == Finalidade.VENDA);
+            i.setAceitaFgts(m.fin() == Finalidade.VENDA && n % 2 == 0);
+            i.setAceitaPermuta(n % 4 == 1);
+            i.setEscrituraRegistrada(m.fin() == Finalidade.VENDA && !m.lanc());
+            i.setQuitado(n % 3 != 2);
             if (m.fin() == Finalidade.VENDA && m.tipo() == TipoImovel.APARTAMENTO) {
                 i.setCondominio(BigDecimal.valueOf(650));
                 i.setIptu(BigDecimal.valueOf(1800));

@@ -5,10 +5,11 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { CheckboxModule } from 'primeng/checkbox';
 import { ButtonModule } from 'primeng/button';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { MessageService } from 'primeng/api';
-import { FINALIDADES, Finalidade, ImovelDetalhe, ImovelForm as ImovelFormDto, TIPOS, TipoImovel } from '@/app/core/models/models';
+import { DOCUMENTACAO, FINALIDADES, Finalidade, ImovelDetalhe, ImovelForm as ImovelFormDto, TIPOS, TipoImovel } from '@/app/core/models/models';
 import { ImageUpload } from './image-upload';
 import { MapaOsm } from './mapa-osm';
 import { ImovelFoto } from './imovel-foto';
@@ -18,7 +19,7 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
 /** Formulário do anúncio, usado pelo corretor e pelo administrador. */
 @Component({
     selector: 'app-imovel-form',
-    imports: [ReactiveFormsModule, InputTextModule, InputNumberModule, TextareaModule, SelectModule, ToggleSwitchModule, ButtonModule, AutoCompleteModule, ImageUpload, MapaOsm, ImovelFoto],
+    imports: [ReactiveFormsModule, InputTextModule, InputNumberModule, TextareaModule, SelectModule, ToggleSwitchModule, CheckboxModule, ButtonModule, AutoCompleteModule, ImageUpload, MapaOsm, ImovelFoto],
     template: `
         <form [formGroup]="form" (ngSubmit)="enviar()" class="flex flex-col gap-6" novalidate>
             <section class="card m-0 flex flex-col gap-4">
@@ -47,7 +48,24 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
                 </div>
                 <div class="flex flex-wrap gap-6">
                     <label class="flex items-center gap-2"><p-toggleswitch formControlName="lancamento" inputId="im-lanc" /> Imóvel novo / lançamento</label>
-                    <label class="flex items-center gap-2"><p-toggleswitch formControlName="aceitaFinanciamento" inputId="im-fin2" /> Aceita financiamento</label>
+                </div>
+            </section>
+
+            <section class="card m-0 flex flex-col gap-4" aria-labelledby="im-doc-titulo">
+                <div>
+                    <h2 id="im-doc-titulo" class="text-lg font-semibold m-0">Documentação e condições</h2>
+                    <p class="text-sm text-muted-color mt-1 mb-0">Marque o que vale para este imóvel. Tudo aparece na página do anúncio.</p>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    @for (d of documentacao; track d.campo) {
+                        <div class="flex items-start gap-3 p-3 rounded-border border border-surface">
+                            <p-checkbox [formControlName]="d.campo" [binary]="true" [inputId]="'im-doc-' + d.campo" />
+                            <label [for]="'im-doc-' + d.campo" class="cursor-pointer">
+                                <span class="block font-medium">{{ d.label }}</span>
+                                <span class="block text-xs text-muted-color">{{ d.dica }}</span>
+                            </label>
+                        </div>
+                    }
                 </div>
             </section>
 
@@ -140,6 +158,7 @@ export class ImovelFormComponent {
     salvar = output<ImovelFormDto>();
 
     finalidades = FINALIDADES;
+    documentacao = DOCUMENTACAO;
     tipos = TIPOS;
     numeros = [
         { campo: 'areaUtil', label: 'Área útil', sufixo: ' m²', botoes: false },
@@ -179,6 +198,10 @@ export class ImovelFormComponent {
         longitude: this.fb.control<number | null>(null),
         lancamento: [false],
         aceitaFinanciamento: [false],
+        aceitaFgts: [false],
+        aceitaPermuta: [false],
+        escrituraRegistrada: [false],
+        quitado: [false],
         caracteristicas: this.fb.control<string[]>([]),
         fotos: this.fb.array<FormControl<string>>([])
     });
