@@ -2,7 +2,7 @@ import { Component, computed, effect, input, signal } from '@angular/core';
 import { iniciaisDe } from './avatar';
 
 /**
- * Foto (ou logo) do anunciante, corretor ou imobiliária, na caixa retangular dos cards e do anúncio.
+ * Foto (ou logo) do anunciante, corretor ou imobiliária, em círculo nos cards e no anúncio (mesma aparência da foto do perfil).
  * Sem foto, ou se ela não carregar, mostra as iniciais. É decorativa: o nome deve estar escrito ao lado
  * (ou no `title`).
  */

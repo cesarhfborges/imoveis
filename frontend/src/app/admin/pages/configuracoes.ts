@@ -12,6 +12,7 @@ import { ThemeChoice, ThemeService, PresetName } from '@/app/core/services/theme
 import { mensagemErro } from '@/app/core/services/api.service';
 import { PageHeader } from '@/app/shared/components/page-header';
 import { ImageUpload } from '@/app/shared/components/image-upload';
+import { RECORTES } from '@/app/shared/components/image-editor';
 import { ThemePicker } from '@/app/shared/components/theme-picker';
 import { AppLogo } from '@/app/shared/components/app-logo';
 import { TelefoneInput } from '@/app/shared/components/telefone-input';
@@ -45,9 +46,29 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                                 <label for="cf-slogan">Slogan</label>
                                 <input pInputText id="cf-slogan" formControlName="slogan" maxlength="160" />
                             </div>
-                            <app-image-upload rotulo="Logo (tema claro)" [url]="form.controls.logoUrl.value" (urlChange)="form.controls.logoUrl.setValue($event)" />
-                            <app-image-upload rotulo="Logo (tema escuro)" [fundoEscuro]="true" [url]="form.controls.logoEscuroUrl.value" (urlChange)="form.controls.logoEscuroUrl.setValue($event)" />
-                            <app-image-upload rotulo="Favicon (ícone da aba)" formato="quadrado" dica="PNG ou ICO quadrado · 64×64 px ou maior" [url]="form.controls.faviconUrl.value" (urlChange)="form.controls.faviconUrl.setValue($event)" />
+                            <app-image-upload
+                                rotulo="Logo (tema claro)"
+                                [recorte]="recortes.logo"
+                                dica="Você enquadra a imagem antes de enviar · salva em 800×200 px (PNG)"
+                                [url]="form.controls.logoUrl.value"
+                                (urlChange)="form.controls.logoUrl.setValue($event)"
+                            />
+                            <app-image-upload
+                                rotulo="Logo (tema escuro)"
+                                [fundoEscuro]="true"
+                                [recorte]="recortes.logoEscuro"
+                                dica="Você enquadra a imagem antes de enviar · salva em 800×200 px (PNG)"
+                                [url]="form.controls.logoEscuroUrl.value"
+                                (urlChange)="form.controls.logoEscuroUrl.setValue($event)"
+                            />
+                            <app-image-upload
+                                rotulo="Favicon (ícone da aba)"
+                                formato="quadrado"
+                                [recorte]="recortes.favicon"
+                                dica="Você enquadra a imagem antes de enviar · salva em 256×256 px (PNG)"
+                                [url]="form.controls.faviconUrl.value"
+                                (urlChange)="form.controls.faviconUrl.setValue($event)"
+                            />
                             <div class="flex flex-col gap-2">
                                 <span>Prévia atual</span>
                                 <div class="p-3 border border-surface rounded-border"><app-logo /></div>
@@ -68,7 +89,14 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                                 <label for="cf-sk">Palavras-chave (separadas por vírgula)</label>
                                 <input pInputText id="cf-sk" formControlName="seoPalavrasChave" maxlength="300" />
                             </div>
-                            <app-image-upload rotulo="Imagem de compartilhamento (redes sociais)" formato="largo" dica="1200×630 px · aparece ao compartilhar links do site" [url]="form.controls.seoImagemUrl.value" (urlChange)="form.controls.seoImagemUrl.setValue($event)" />
+                            <app-image-upload
+                                rotulo="Imagem de compartilhamento (redes sociais)"
+                                formato="largo"
+                                [recorte]="recortes.compartilhamento"
+                                dica="Aparece ao compartilhar links do site · salva em 1200×630 px (JPG)"
+                                [url]="form.controls.seoImagemUrl.value"
+                                (urlChange)="form.controls.seoImagemUrl.setValue($event)"
+                            />
                         </div>
                     </p-tabpanel>
                     <p-tabpanel value="contato">
@@ -119,6 +147,7 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
     `
 })
 export class ConfiguracoesPage {
+    readonly recortes = RECORTES;
     private config = inject(ConfigService);
     private theme = inject(ThemeService);
     private msg = inject(MessageService);

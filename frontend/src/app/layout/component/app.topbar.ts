@@ -11,10 +11,11 @@ import { Perfil, perfilLabel } from '@/app/core/models/models';
 import { AppLogo } from '@/app/shared/components/app-logo';
 import { ThemeModeToggle } from '@/app/shared/components/theme-mode-toggle';
 import { NotificacoesSino } from '@/app/shared/components/notificacoes-sino';
+import { Avatar } from '@/app/shared/components/avatar';
 
 @Component({
     selector: 'app-topbar',
-    imports: [RouterModule, MenuModule, TagModule, AppLogo, ThemeModeToggle, NotificacoesSino],
+    imports: [RouterModule, MenuModule, TagModule, AppLogo, ThemeModeToggle, NotificacoesSino, Avatar],
     template: ` <div class="layout-topbar">
         <div class="layout-topbar-logo-container">
             <button class="layout-menu-button layout-topbar-action" (click)="layoutService.onMenuToggle()" aria-label="Abrir ou fechar o menu">
@@ -35,31 +36,80 @@ import { NotificacoesSino } from '@/app/shared/components/notificacoes-sino';
 
             <app-notificacoes-sino botaoClasse="layout-topbar-action" />
 
-            <button type="button" class="layout-topbar-action !w-auto !rounded-full px-3 gap-2" (click)="menu.toggle($event)" aria-label="Menu do usuário">
-                <i class="pi pi-user"></i>
-                <span class="hidden md:inline text-sm font-medium">{{ primeiroNome() }}</span>
-                <span class="hidden md:inline text-xs text-muted-color">({{ perfilAtual() }})</span>
-                <i class="pi pi-angle-down text-xs"></i>
+            <!-- mesmo botão de conta do cabeçalho do site: foto (ou iniciais) + primeiro nome -->
+            <button type="button" class="topbar-conta" (click)="menu.toggle($event)" aria-haspopup="true" [attr.aria-label]="'Conta de ' + nomeCompleto()">
+                <app-avatar [nome]="nomeCompleto()" [foto]="auth.usuario()?.fotoUrl ?? null" tamanho="2rem" />
+                <span class="topbar-conta__nome">{{ primeiroNome() }}</span>
+                <i class="pi pi-chevron-down topbar-conta__seta" aria-hidden="true"></i>
             </button>
             <p-menu #menu [model]="itensUsuario()" [popup]="true" appendTo="body" />
         </div>
-    </div>`
+    </div>`,
+    styles: `
+        .topbar-conta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            height: 2.5rem;
+            padding: 0 0.65rem 0 0.25rem;
+            border-radius: 999px;
+            border: 1px solid var(--p-content-border-color);
+            background: transparent;
+            color: var(--p-text-color);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .topbar-conta:hover {
+            background: var(--p-surface-100);
+        }
+        :host-context(.app-dark) .topbar-conta:hover {
+            background: var(--p-surface-800);
+        }
+        .topbar-conta:focus-visible {
+            outline: 2px solid var(--p-primary-color);
+            outline-offset: 0;
+        }
+        .topbar-conta__nome {
+            display: none;
+            max-width: 9rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        @media (min-width: 768px) {
+            .topbar-conta__nome {
+                display: inline;
+            }
+        }
+        .topbar-conta__seta {
+            font-size: 0.7rem;
+            color: var(--p-text-muted-color);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .topbar-conta {
+                transition: none;
+            }
+        }
+    `
 })
 export class AppTopbar {
     layoutService = inject(LayoutService);
-    private auth = inject(AuthService);
+    auth = inject(AuthService);
     private config = inject(ConfigService);
     private msg = inject(MessageService);
     private route = inject(ActivatedRoute);
 
     area: string = this.route.snapshot.data['area'] ?? 'conta';
 
-    primeiroNome = computed(() => (this.auth.usuario()?.nome ?? '').split(' ')[0]);
+    nomeCompleto = computed(() => this.auth.usuario()?.nome ?? '');
+    primeiroNome = computed(() => this.nomeCompleto().trim().split(/\s+/)[0] ?? '');
     perfilAtual = computed(() => perfilLabel(this.auth.perfil()));
 
     itensUsuario = computed<MenuItem[]>(() => {
         const s = this.auth.sessao();
-        const itens: MenuItem[] = [{ label: s.usuario?.email ?? '', disabled: true, icon: 'pi pi-envelope' }, { separator: true }];
+        const itens: MenuItem[] = [{ label: `${this.nomeCompleto()} (${this.perfilAtual()})`, disabled: true }, { label: s.usuario?.email ?? '', disabled: true, icon: 'pi pi-envelope' }, { separator: true }];
         if (this.area === 'conta') {
             const outros = (['CLIENTE', 'CORRETOR'] as Perfil[]).filter((p) => p !== s.perfil && s.perfisDisponiveis.includes(p));
             outros.forEach((p) => itens.push({ label: 'Entrar como ' + perfilLabel(p).toLowerCase(), icon: 'pi pi-sync', command: () => this.trocar(p) }));

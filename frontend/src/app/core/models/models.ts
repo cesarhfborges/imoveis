@@ -613,6 +613,15 @@ export interface MensagemDenuncia {
     anexos: string[];
     interna: boolean;
     criadoEm: string;
+    /** Registro "anúncio editado": o que mudou, campo a campo (vazio nas demais mensagens). */
+    alteracoes: AlteracaoAnuncio[];
+}
+
+/** Um campo alterado numa edição do anúncio (valores já formatados; nulo = não informado). */
+export interface AlteracaoAnuncio {
+    campo: string;
+    antes: string | null;
+    depois: string | null;
 }
 
 export interface Denuncia {

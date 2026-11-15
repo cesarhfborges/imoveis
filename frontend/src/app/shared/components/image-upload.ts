@@ -5,6 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { MessageService } from 'primeng/api';
 import { UploadService } from '@/app/core/services/conta.service';
 import { mensagemErro } from '@/app/core/services/api.service';
+import { ImageEditor, RecorteImagem } from './image-editor';
 
 let seq = 0;
 
@@ -14,6 +15,8 @@ function rotuloOuImagem(r: string) {
 
 /** Mesmo limite do servidor (spring.servlet.multipart.max-file-size). */
 const TAMANHO_MAXIMO = 5 * 1024 * 1024;
+/** Com o editor a imagem é reduzida antes do envio, então aceita arquivos maiores (fotos de celular). */
+const TAMANHO_MAXIMO_EDITAVEL = 25 * 1024 * 1024;
 /** Quantos arquivos sobem ao mesmo tempo no modo múltiplo. */
 const ENVIOS_SIMULTANEOS = 3;
 
@@ -45,10 +48,12 @@ const EXTENSOES: Record<string, string> = {
  *  - modo múltiplo ([multiplo]="true"): arrastar e soltar ou escolher VÁRIOS arquivos de uma vez.
  *    Sobem em paralelo (3 por vez) e cada URL é emitida em (urlAdicionada) na ordem em que os
  *    arquivos foram escolhidos. Falhas ficam na lista com "tentar de novo".
+ *  - [recorte] (modo simples): antes de enviar, abre o editor (enquadrar, aproximar, girar) e envia
+ *    a imagem já recortada e redimensionada para o tamanho esperado.
  */
 @Component({
     selector: 'app-image-upload',
-    imports: [InputTextModule, ButtonModule],
+    imports: [InputTextModule, ButtonModule, ImageEditor],
     template: `
         @if (!multiplo()) {
             <div class="foto-campo" [class]="'foto-campo foto-campo--' + formato()" [class.foto-campo--vertical]="vertical()">
@@ -117,6 +122,9 @@ const EXTENSOES: Record<string, string> = {
                 </div>
                 <input #arquivo type="file" class="hidden" [accept]="aceitar()" (change)="enviarUm($any($event.target).files); arquivo.value = ''" tabindex="-1" aria-hidden="true" />
                 <p class="sr-only" aria-live="polite">{{ anuncio() }}</p>
+                @if (recorte(); as r) {
+                    <app-image-editor [arquivo]="editando()" [config]="r" [rotulo]="rotulo()" (confirmado)="aoConfirmarEdicao($event)" (cancelado)="editando.set(null)" />
+                }
             </div>
         } @else {
             <div class="upload-multi">
@@ -392,18 +400,22 @@ export class ImageUpload {
     dica = input<string | null>(null);
     /** Modo simples: oferece "usar o endereço de uma imagem". */
     permitirUrl = input(true);
+    /** Modo simples: abre o editor de recorte antes de enviar e envia no tamanho/formato definido. */
+    recorte = input<RecorteImagem | null>(null);
 
     urlChange = output<string | null>();
     urlAdicionada = output<string>();
 
     readonly tamanhoMaximo = TAMANHO_MAXIMO;
     enviandoUm = signal(false);
+    /** Arquivo aberto no editor de recorte. */
+    editando = signal<File | null>(null);
     falhou = signal(false);
     mostrarUrl = signal(false);
     mostrarImagem = computed(() => !!this.url() && !this.falhou());
     descricaoFormatos = computed(() => {
         const ext = [...new Set(this.tipos().map((t) => EXTENSOES[t] ?? t.replace('image/', '').toUpperCase()))];
-        return ext.join(', ') + ' · até 5 MB';
+        return ext.join(', ') + (this.recorte() ? ' · até 25 MB' : ' · até 5 MB');
     });
     private tipos = computed(() =>
         this.aceitar()
@@ -467,10 +479,24 @@ export class ImageUpload {
             this.msg.add({ severity: 'warn', summary: rotuloOuImagem(this.rotulo()), detail: 'Formato não aceito. Use ' + this.descricaoFormatos().split(' · ')[0] + '.' });
             return;
         }
-        if (f.size > TAMANHO_MAXIMO) {
-            this.msg.add({ severity: 'warn', summary: rotuloOuImagem(this.rotulo()), detail: 'O arquivo tem mais de 5 MB.' });
+        const limite = this.recorte() ? TAMANHO_MAXIMO_EDITAVEL : TAMANHO_MAXIMO;
+        if (f.size > limite) {
+            this.msg.add({ severity: 'warn', summary: rotuloOuImagem(this.rotulo()), detail: `O arquivo tem mais de ${limite / 1024 / 1024} MB.` });
             return;
         }
+        if (this.recorte()) {
+            this.editando.set(f);
+            return;
+        }
+        this.enviarArquivo(f);
+    }
+
+    aoConfirmarEdicao(f: File) {
+        this.editando.set(null);
+        this.enviarArquivo(f);
+    }
+
+    private enviarArquivo(f: File) {
         this.enviandoUm.set(true);
         this.anuncio.set('Enviando ' + this.rotulo() + '…');
         this.upload.enviar(f, this.endpoint()).subscribe({

@@ -4,8 +4,8 @@ import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { SkeletonModule } from 'primeng/skeleton';
 import { MessageService } from 'primeng/api';
-import { DOCUMENTACAO, ImovelDetalhe, ImovelResumo, finalidadeLabel } from '@/app/core/models/models';
-import { ImovelService } from '@/app/core/services/imovel.service';
+import { DOCUMENTACAO, ImovelDetalhe, ImovelResumo, finalidadeLabel, statusInfo } from '@/app/core/models/models';
+import { GestaoAnunciosService, ImovelService } from '@/app/core/services/imovel.service';
 import { ContaService } from '@/app/core/services/conta.service';
 import { AuthService } from '@/app/core/services/auth.service';
 import { ConfigService } from '@/app/core/services/config.service';
@@ -32,6 +32,17 @@ import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
             <div class="site-container py-6 grid gap-6 lg:grid-cols-[1fr_22rem]"><p-skeleton height="420px" /><p-skeleton height="420px" /></div>
         } @else {
             @let i = imovel()!;
+            @if (previa()) {
+                <div class="site-container">
+                    <div class="detalhe__previa" role="status">
+                        <i class="pi pi-eye" aria-hidden="true"></i>
+                        <div>
+                            <strong>Prévia · anúncio {{ statusLabel(i.status).toLowerCase() }}</strong>
+                            <span>Este anúncio não aparece para o público. Só {{ ehAdmin() ? 'a moderação' : 'você' }} consegue ver esta página, do jeito que ela vai ficar quando voltar ao ar.</span>
+                        </div>
+                    </div>
+                </div>
+            }
             <div class="site-container detalhe">
                 <div class="detalhe__principal">
                     <nav class="trilha" aria-label="Você está em">
@@ -219,12 +230,18 @@ import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
                             </div>
                         }
                         <h2 class="text-base font-semibold text-center mb-3">Contate o anunciante</h2>
-                        <app-contato-form [imovelId]="i.id" />
+                        @if (previa()) {
+                            <p class="text-sm text-muted-color text-center m-0">O formulário de contato fica disponível quando o anúncio estiver no ar.</p>
+                        } @else {
+                            <app-contato-form [imovelId]="i.id" />
+                        }
                         @if (i.anunciante?.telefone) {
                             <div class="text-center mt-4 text-lg"><i class="pi pi-phone mr-2" aria-hidden="true"></i>{{ i.anunciante!.telefone }}</div>
                         }
                     </div>
-                    <button type="button" class="detalhe__denunciar" (click)="denunciaAberta.set(true)"><i class="pi pi-flag" aria-hidden="true"></i> Denunciar anúncio</button>
+                    @if (!previa()) {
+                        <button type="button" class="detalhe__denunciar" (click)="denunciaAberta.set(true)"><i class="pi pi-flag" aria-hidden="true"></i> Denunciar anúncio</button>
+                    }
                 </aside>
             </div>
 
@@ -245,6 +262,7 @@ import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
 })
 export class DetalhePage {
     private imoveis = inject(ImovelService);
+    private gestao = inject(GestaoAnunciosService);
     private conta = inject(ContaService);
     private auth = inject(AuthService);
     private router = inject(Router);
@@ -257,6 +275,13 @@ export class DetalhePage {
     imovel = signal<ImovelDetalhe | null>(null);
     similares = signal<ImovelResumo[]>([]);
     erro = signal(false);
+    /** Anúncio fora do ar (suspenso, pausado…) aberto pela moderação ou pelo dono. */
+    previa = computed(() => {
+        const s = this.imovel()?.status;
+        return !!s && s !== 'ATIVO';
+    });
+    ehAdmin = computed(() => this.auth.perfil() === 'ADMIN');
+    statusLabel = (s: ImovelDetalhe['status']) => statusInfo(s).label.replace(/\s*\(.*\)$/, '');
     descricaoAberta = signal(false);
     denunciaAberta = signal(false);
     finalidadeLabel = finalidadeLabel;
@@ -301,9 +326,26 @@ export class DetalhePage {
                     this.imovel.set(i);
                     this.config.definirTitulo(i.titulo);
                 },
-                error: () => this.erro.set(true)
+                // fora do ar a consulta pública não acha: a moderação e o dono veem a prévia pela área de gestão
+                error: () => this.carregarPrevia(id)
             });
             this.imoveis.similares(id).subscribe({ next: (s) => this.similares.set(s), error: () => this.similares.set([]) });
+        });
+    }
+
+    private carregarPrevia(id: number) {
+        const perfil = this.auth.perfil();
+        const area = perfil === 'ADMIN' ? 'admin' : perfil === 'CORRETOR' ? 'corretor' : null;
+        if (!this.auth.logado() || !area) {
+            this.erro.set(true);
+            return;
+        }
+        this.gestao.obter(area, id).subscribe({
+            next: (i) => {
+                this.imovel.set(i);
+                this.config.definirTitulo('Prévia: ' + i.titulo);
+            },
+            error: () => this.erro.set(true)
         });
     }
 

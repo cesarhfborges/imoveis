@@ -63,7 +63,10 @@ import br.com.chfb.imoveis.platform.texto.TextoRico;
 import br.com.chfb.imoveis.moderation.repository.GravidadeRepository;
 import br.com.chfb.imoveis.moderation.repository.TipoDenunciaRepository;
 import br.com.chfb.imoveis.sharedkernel.dto.PageResponse;
+import br.com.chfb.imoveis.sharedkernel.event.AnuncioEditadoEvent;
 import br.com.chfb.imoveis.sharedkernel.event.AnuncioExcluindoEvent;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 import br.com.chfb.imoveis.sharedkernel.exception.BusinessException;
 import br.com.chfb.imoveis.sharedkernel.exception.ForbiddenException;
 import br.com.chfb.imoveis.sharedkernel.exception.NotFoundException;
@@ -103,6 +106,7 @@ public class DenunciaService {
     private static final Set<StatusDenuncia> ABERTAS = StatusDenuncia.ABERTAS;
     private static final Set<StatusDenuncia> TODAS = EnumSet.allOf(StatusDenuncia.class);
 
+    private final JsonMapper json;
     private final DenunciaRepository denuncias;
     private final TipoDenunciaRepository tipos;
     private final ImovelRepository imoveis;
@@ -130,7 +134,8 @@ public class DenunciaService {
     public DenunciaService(DenunciaRepository denuncias, TipoDenunciaRepository tipos, ImovelRepository imoveis,
             ImovelService anuncios, PrazoService prazos, RegrasService regras, Notificador notificador,
             UsuarioDiretorio diretorio, AnuncianteProvider usuarios, TempoReal tempoReal, GravidadeRepository gravidades,
-            ContaModeracao contas, AnexoService anexosService) {
+            ContaModeracao contas, AnexoService anexosService, JsonMapper json) {
+        this.json = json;
         this.anexosService = anexosService;
         this.tempoReal = tempoReal;
         this.gravidades = gravidades;
@@ -398,7 +403,9 @@ public class DenunciaService {
         if (texto != null) {
             d.adicionarMensagem(PapelMensagem.ADMIN, admin.id(), texto, null, false);
         }
-        encerrar(d, novo, admin.id(), texto, registro);
+        // aceitar a correção sem texto novo: a conclusão continua sendo a fundamentação do julgamento procedente
+        String conclusao = texto == null && novo == StatusDenuncia.PROCEDENTE ? d.getConclusao() : texto;
+        encerrar(d, novo, admin.id(), conclusao, registro);
         Imovel imovel = imovel(d.getImovelId());
         notificarAnunciante(imovel, d, "DENUNCIA_ENCERRADA",
                 switch (novo) {
@@ -410,8 +417,8 @@ public class DenunciaService {
         notificarDenunciante(d, imovel, "Sua denúncia foi resolvida",
                 "Obrigado por ajudar a manter os anúncios confiáveis.");
         // correção aceita: o anúncio suspenso até a correção volta ao ar (se não restar outra pendência)
-        if (novo == StatusDenuncia.PROCEDENTE || regras.config().isAprovarReativaAnuncio()) {
-            reativarSePossivel(imovel);
+        if ((novo == StatusDenuncia.PROCEDENTE || regras.config().isAprovarReativaAnuncio()) && reativarSePossivel(imovel)) {
+            d.adicionarMensagem(PapelMensagem.SISTEMA, null, "Anúncio de volta ao ar: não restou pendência aberta nele.", null, false);
         }
         sincronizar(imovel, List.of(d));
         return dtoAdmin(d);
@@ -526,6 +533,7 @@ public class DenunciaService {
             int prazo = form.prazoMinutos() != null ? form.prazoMinutos() : regras.config().getAjusteSlaMinutos();
             d.setStatus(StatusDenuncia.AGUARDANDO_ANUNCIANTE);
             d.setEtapa((short) 0);
+            d.setConclusao(conclusao);
             prazos.iniciar(d, prazo, agora);
             boolean suspenso = form.suspenderAteCorrigir()
                     && anuncios.aplicarModeracao(imovel.getId(), StatusAnuncio.SUSPENSO);
@@ -547,7 +555,11 @@ public class DenunciaService {
             };
             encerrar(d, StatusDenuncia.PROCEDENTE, admin.id(), conclusao, julgada + natureza + "): " + medida + "." + penalidade);
             switch (form.medida()) {
-                case MANTER, CORRIGIR -> reativarSePossivel(imovel);
+                case MANTER, CORRIGIR -> {
+                    if (reativarSePossivel(imovel)) {
+                        d.adicionarMensagem(PapelMensagem.SISTEMA, null, "Anúncio de volta ao ar: não restou pendência aberta nele.", null, false);
+                    }
+                }
                 case SUSPENDER -> {
                     if (anuncios.aplicarModeracao(imovel.getId(), StatusAnuncio.SUSPENSO)) {
                         registrarNasAbertas(imovel.getId(), "Anúncio suspenso: outra denúncia deste anúncio foi julgada procedente.", d);
@@ -733,6 +745,34 @@ public class DenunciaService {
 
     // ================================================================== exclusão do anúncio
 
+    /**
+     * Anúncio editado: registra o que mudou (campo a campo) em cada denúncia aberta dele, para a moderação conferir
+     * a correção sem precisar ver o anúncio (que pode estar suspenso). Com correção solicitada e edição feita pelo
+     * anunciante, avisa a moderação.
+     */
+    @EventListener
+    public void aoEditarAnuncio(AnuncioEditadoEvent e) {
+        List<Denuncia> abertas = denuncias.findByImovelIdAndStatusIn(e.imovelId(), ABERTAS);
+        if (abertas.isEmpty()) {
+            return;
+        }
+        int n = e.alteracoes().size();
+        String texto = (e.porAdmin() ? "Anúncio editado pela moderação: " : "Anúncio editado pelo anunciante: ") + n
+                + (n == 1 ? " alteração." : " alterações.");
+        String detalhes = json.writeValueAsString(e.alteracoes());
+        abertas.forEach(d -> d.adicionarMensagem(PapelMensagem.SISTEMA, null, texto, null, false).setAlteracoes(detalhes));
+        Imovel imovel = imovel(e.imovelId());
+        sincronizar(imovel, abertas);
+        if (!e.porAdmin() && abertas.stream().anyMatch(Denuncia::correcaoPendente)) {
+            String campos = e.alteracoes().stream().map(AnuncioEditadoEvent.Alteracao::campo).limit(4)
+                    .collect(java.util.stream.Collectors.joining(", ")) + (n > 4 ? "…" : "");
+            notificador.notificarTodos(diretorio.administradores(), new Notificador.Nova(null, "DENUNCIA_ANUNCIO_EDITADO",
+                    "Anúncio com correção pendente foi editado",
+                    imovel.getCodigo() + " - " + imovel.getTitulo() + ". Alterado: " + campos + ".",
+                    "pi-pencil", "/admin/denuncias/" + e.imovelId(), "IMOVEL", e.imovelId()));
+        }
+    }
+
     /** Anúncio sendo excluído: com pendências abertas, impede; sem elas, apaga o histórico de denúncias dele. */
     @EventListener
     public void aoExcluirAnuncio(AnuncioExcluindoEvent e) {
@@ -797,18 +837,24 @@ public class DenunciaService {
         d.adicionarMensagem(PapelMensagem.SISTEMA, null, registro, null, false);
     }
 
-    /** Se o anúncio está suspenso e não restou pendência aberta nele, volta ao status de antes. */
-    private void reativarSePossivel(Imovel imovel) {
+    /**
+     * Se o anúncio está suspenso e não restou pendência aberta nele, volta ao status de antes.
+     *
+     * @return se o anúncio voltou ao ar
+     */
+    private boolean reativarSePossivel(Imovel imovel) {
         denuncias.flush();
         if (imovel.getStatus() != StatusAnuncio.SUSPENSO || denuncias.existsByImovelIdAndStatusIn(imovel.getId(), ABERTAS)) {
-            return;
+            return false;
         }
         if (anuncios.reativarModeracao(imovel.getId())) {
             notificador.notificar(new Notificador.Nova(imovel.getAnuncianteId(), "ANUNCIO_REATIVADO",
                     "Seu anúncio voltou a ser exibido", imovel.getCodigo() + " - " + imovel.getTitulo()
                             + ": as pendências foram resolvidas.",
                     "pi-play-circle", "/conta/anuncios", "IMOVEL", imovel.getId()));
+            return true;
         }
+        return false;
     }
 
     private void registrarNasAbertas(Long imovelId, String texto) {
@@ -912,7 +958,8 @@ public class DenunciaService {
         AnuncianteInfo den = admin ? nomes.get(d.getDenuncianteId()) : null;
         List<MensagemDto> msgs = d.getMensagens().stream().filter(m -> admin || !m.isInterna())
                 .map(m -> new MensagemDto(m.getId(), m.getPapel(), autor(m, admin, nomes), foto(m, admin, nomes),
-                        m.getTexto(), separarAnexos(m.getAnexos()), m.isInterna(), m.getCriadoEm()))
+                        m.getTexto(), separarAnexos(m.getAnexos()), m.isInterna(), m.getCriadoEm(),
+                        lerAlteracoes(m.getAlteracoes())))
                 .toList();
         PrazoDto prazo = prazos.dto(d, agora);
         return new DenunciaDto(d.getId(), TipoPublicoDto.of(d.getTipo()), GravidadeResumo.of(d.getGravidade()),
@@ -951,6 +998,17 @@ public class DenunciaService {
             throw new BusinessException("A mensagem pode ter no máximo " + MAX_TEXTO + " caracteres");
         }
         return html;
+    }
+
+    private List<AnuncioEditadoEvent.Alteracao> lerAlteracoes(String texto) {
+        if (texto == null || texto.isBlank()) {
+            return List.of();
+        }
+        try {
+            return json.readValue(texto, new TypeReference<List<AnuncioEditadoEvent.Alteracao>>() { });
+        } catch (RuntimeException e) {
+            return List.of();
+        }
     }
 
     private static List<String> separarAnexos(String anexos) {

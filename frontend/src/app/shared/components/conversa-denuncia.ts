@@ -14,10 +14,51 @@ import { Avatar } from './avatar';
         <ol class="conversa" aria-label="Conversa da denúncia">
             @for (m of mensagens(); track m.id) {
                 @if (m.papel === 'SISTEMA') {
-                    <li class="conversa__sistema">
-                        <i class="pi pi-info-circle" aria-hidden="true"></i>
-                        <span>{{ m.texto }}</span>
-                        <time [attr.datetime]="m.criadoEm">{{ m.criadoEm | date: 'dd/MM HH:mm' }}</time>
+                    @let e = evento(m.texto);
+                    <li class="conversa__sistema" [class]="'conversa__sistema conversa__sistema--' + e.tom" [class.conversa__sistema--interna]="m.interna">
+                        <span class="conversa__sistema-icone" aria-hidden="true"><i class="pi {{ e.icone }}"></i></span>
+                        <div class="min-w-0 flex-1">
+                            <div class="conversa__sistema-cabeca">
+                                <strong>{{ m.interna ? 'Registro interno' : 'Registro do sistema' }}</strong>
+                                <time [attr.datetime]="m.criadoEm">{{ m.criadoEm | date: "dd/MM/yy 'às' HH:mm" }}</time>
+                            </div>
+                            <p class="conversa__sistema-texto">{{ m.texto }}</p>
+                            @if (m.alteracoes.length) {
+                                <table class="conversa__alteracoes">
+                                    <caption class="sr-only">
+                                        Alterações feitas no anúncio
+                                    </caption>
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Campo</th>
+                                            <th scope="col">Antes</th>
+                                            <th scope="col">Depois</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @for (a of m.alteracoes; track a.campo) {
+                                            <tr>
+                                                <th scope="row">{{ a.campo }}</th>
+                                                <td class="conversa__antes" data-rotulo="Antes">
+                                                    @if (a.antes) {
+                                                        <del><span class="sr-only">Antes: </span>{{ a.antes }}</del>
+                                                    } @else {
+                                                        <span class="text-muted-color">não informado</span>
+                                                    }
+                                                </td>
+                                                <td class="conversa__depois" data-rotulo="Depois">
+                                                    @if (a.depois) {
+                                                        <ins><span class="sr-only">Depois: </span>{{ a.depois }}</ins>
+                                                    } @else {
+                                                        <span class="text-muted-color">removido</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                        </div>
                     </li>
                 } @else {
                     <li class="conversa__linha" [class.conversa__linha--minha]="minha(m)">
@@ -61,17 +102,136 @@ import { Avatar } from './avatar';
             flex-direction: column;
             gap: 0.85rem;
         }
+        /* registros do sistema (julgamento, prazos, anúncio suspenso/reativado…): faixa de largura total */
         .conversa__sistema {
+            --tom: var(--p-primary-color);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.65rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 10px;
+            border: 1px solid color-mix(in srgb, var(--tom), transparent 65%);
+            background: color-mix(in srgb, var(--tom), transparent 92%);
+            font-size: 0.9rem;
+        }
+        .conversa__sistema--ok {
+            --tom: var(--p-green-600);
+        }
+        .conversa__sistema--alerta {
+            --tom: var(--p-orange-500);
+        }
+        .conversa__sistema--perigo {
+            --tom: var(--p-red-600);
+        }
+        .conversa__sistema--info {
+            --tom: var(--p-surface-500);
+        }
+        .conversa__sistema--interna {
+            border-style: dashed;
+        }
+        .conversa__sistema-icone {
+            flex-shrink: 0;
+            width: 1.75rem;
+            height: 1.75rem;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            background: var(--tom);
+            font-size: 0.85rem;
+        }
+        .conversa__sistema-cabeca {
             display: flex;
             flex-wrap: wrap;
             align-items: baseline;
-            gap: 0.4rem;
-            font-size: 0.8rem;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
             color: var(--p-text-muted-color);
-            padding: 0 0.25rem;
         }
-        .conversa__sistema time {
+        .conversa__sistema-cabeca strong {
+            font-weight: 600;
+        }
+        .conversa__sistema-cabeca time {
             margin-left: auto;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        .conversa__sistema--edicao {
+            --tom: var(--p-primary-color);
+        }
+        .conversa__alteracoes {
+            width: 100%;
+            margin-top: 0.6rem;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            background: var(--p-content-background);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .conversa__alteracoes :is(th, td) {
+            padding: 0.45rem 0.6rem;
+            text-align: left;
+            vertical-align: top;
+            border-bottom: 1px solid var(--p-content-border-color);
+            overflow-wrap: anywhere;
+            white-space: pre-line;
+        }
+        .conversa__alteracoes tr:last-child :is(th, td) {
+            border-bottom: 0;
+        }
+        .conversa__alteracoes thead th {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--p-text-muted-color);
+            font-weight: 600;
+        }
+        .conversa__alteracoes tbody th {
+            font-weight: 600;
+            width: 9rem;
+        }
+        .conversa__alteracoes del {
+            color: var(--p-red-700);
+            text-decoration-thickness: 1px;
+        }
+        .conversa__alteracoes ins {
+            color: var(--p-green-700);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        :host-context(.app-dark) .conversa__alteracoes del {
+            color: var(--p-red-300);
+        }
+        :host-context(.app-dark) .conversa__alteracoes ins {
+            color: var(--p-green-300);
+        }
+        /* no celular, cada alteração vira um bloco: campo em cima, antes e depois embaixo */
+        @media (max-width: 575px) {
+            .conversa__alteracoes thead {
+                display: none;
+            }
+            .conversa__alteracoes tr {
+                display: block;
+                padding: 0.4rem 0;
+                border-bottom: 1px solid var(--p-content-border-color);
+            }
+            .conversa__alteracoes :is(th, td) {
+                display: block;
+                border: 0;
+                padding: 0.15rem 0.6rem;
+            }
+            .conversa__alteracoes td::before {
+                content: attr(data-rotulo) ': ';
+                color: var(--p-text-muted-color);
+            }
+        }
+        .conversa__sistema-texto {
+            margin: 0.15rem 0 0;
+            line-height: 1.45;
+            color: var(--p-text-color);
         }
         .conversa__linha {
             display: flex;
@@ -205,6 +365,21 @@ export class ConversaDenuncia {
         const div = document.createElement('div');
         div.textContent = texto;
         return div.innerHTML.replace(/\n/g, '<br>');
+    }
+
+    /** Cor e ícone do registro do sistema, pelo assunto do texto (gerado pelo servidor). */
+    evento(texto: string): { tom: 'ok' | 'alerta' | 'perigo' | 'info' | 'edicao'; icone: string } {
+        const t = texto.toLowerCase();
+        if (t.startsWith('anúncio editado')) return { tom: 'edicao', icone: 'pi-pencil' };
+        // pelo começo do texto: "Correção aceita… encerrada como procedente" é boa notícia, mas cita "procedente"
+        if (/^(correção aceita|solução aprovada|anúncio de volta|anúncio reativado|conta do anunciante reativada|denúncia julgada improcedente)/.test(t)) {
+            return { tom: 'ok', icone: 'pi-check' };
+        }
+        if (/banid|removido do ar/.test(t)) return { tom: 'perigo', icone: 'pi-ban' };
+        if (/procedente|suspens|strike/.test(t)) return { tom: 'alerta', icone: 'pi-exclamation-triangle' };
+        if (/prazo|venc/.test(t)) return { tom: 'info', icone: 'pi-clock' };
+        if (/apuração/.test(t)) return { tom: 'info', icone: 'pi-search' };
+        return { tom: 'info', icone: 'pi-info-circle' };
     }
 
     ehPdf(url: string) {

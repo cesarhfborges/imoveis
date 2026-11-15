@@ -1,5 +1,6 @@
 package br.com.chfb.imoveis.moderation.dto;
 
+import br.com.chfb.imoveis.sharedkernel.event.AnuncioEditadoEvent;
 import java.time.Instant;
 import java.util.List;
 
@@ -108,11 +109,12 @@ public final class ModeracaoDtos {
     }
 
     /**
-     * @param autorFoto foto de perfil do autor (nula: o front mostra as iniciais; para o anunciante, a moderação
-     *                  aparece sempre como "Moderação", sem nome nem foto do administrador)
+     * @param autorFoto  foto de perfil do autor (nula: o front mostra as iniciais; para o anunciante, a moderação
+     *                   aparece sempre como "Moderação", sem nome nem foto do administrador)
+     * @param alteracoes registro "anúncio editado": o que mudou, campo a campo (vazio nas demais mensagens)
      */
     public record MensagemDto(Long id, PapelMensagem papel, String autor, String autorFoto, String texto,
-            List<String> anexos, boolean interna, Instant criadoEm) {
+            List<String> anexos, boolean interna, Instant criadoEm, List<AnuncioEditadoEvent.Alteracao> alteracoes) {
     }
 
     public record ImovelInfo(Long id, String codigo, String titulo, StatusAnuncio status, String fotoCapa,

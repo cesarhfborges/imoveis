@@ -36,6 +36,10 @@ public class DenunciaMensagem extends BaseEntity {
     /** Nota interna: só administradores veem. */
     private boolean interna;
 
+    /** Registro "anúncio editado": as alterações em JSON ([{campo, antes, depois}]). */
+    @Column(columnDefinition = "text")
+    private String alteracoes;
+
     public Denuncia getDenuncia() { return denuncia; }
     public void setDenuncia(Denuncia denuncia) { this.denuncia = denuncia; }
     public Long getAutorId() { return autorId; }
@@ -48,4 +52,6 @@ public class DenunciaMensagem extends BaseEntity {
     public void setAnexos(String anexos) { this.anexos = anexos; }
     public boolean isInterna() { return interna; }
     public void setInterna(boolean interna) { this.interna = interna; }
+    public String getAlteracoes() { return alteracoes; }
+    public void setAlteracoes(String alteracoes) { this.alteracoes = alteracoes; }
 }

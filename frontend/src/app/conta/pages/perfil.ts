@@ -21,6 +21,7 @@ import { mensagemErro } from '@/app/core/services/api.service';
 import { PerfilForm, UFS, Usuario } from '@/app/core/models/models';
 import { PageHeader } from '@/app/shared/components/page-header';
 import { ImageUpload } from '@/app/shared/components/image-upload';
+import { RECORTES } from '@/app/shared/components/image-editor';
 import { TelefoneInput } from '@/app/shared/components/telefone-input';
 import { iniciaisDe } from '@/app/shared/components/avatar';
 
@@ -30,23 +31,7 @@ const MAX_SOBRE = 2000;
 /** Meus dados (qualquer perfil): identificação, contato, atuação profissional (anunciantes), endereço e senha. */
 @Component({
     selector: 'app-perfil-page',
-    imports: [
-        DatePipe,
-        ReactiveFormsModule,
-        InputTextModule,
-        InputMaskModule,
-        InputNumberModule,
-        InputGroupModule,
-        InputGroupAddonModule,
-        SelectModule,
-        TextareaModule,
-        PasswordModule,
-        ButtonModule,
-        TagModule,
-        PageHeader,
-        ImageUpload,
-        TelefoneInput
-    ],
+    imports: [DatePipe, ReactiveFormsModule, InputTextModule, InputMaskModule, InputNumberModule, InputGroupModule, InputGroupAddonModule, SelectModule, TextareaModule, PasswordModule, ButtonModule, TagModule, PageHeader, ImageUpload, TelefoneInput],
     template: `
         <app-page-header titulo="Meus dados" subtitulo="Como você aparece no portal e como os clientes falam com você" />
 
@@ -62,7 +47,8 @@ const MAX_SOBRE = 2000;
                         [permitirUrl]="false"
                         endpoint="/app/conta/foto"
                         aceitar="image/png,image/jpeg,image/webp"
-                        dica="JPG, PNG ou WEBP · até 5 MB · quadrada fica melhor"
+                        dica="JPG, PNG ou WEBP · você enquadra a foto antes de enviar"
+                        [recorte]="recorteFoto"
                         [url]="dados.controls.fotoUrl.value"
                         (urlChange)="mudarFoto($event)"
                     />
@@ -97,7 +83,7 @@ const MAX_SOBRE = 2000;
                             }
                         </ul>
                     } @else {
-                        <p class="text-sm text-green-700 mt-3 mb-0"><i class="pi pi-check-circle mr-1" aria-hidden="true"></i>Tudo preenchido.</p>
+                        <p class="text-sm text-green-700 mt-2! mb-0"><i class="pi pi-check-circle mr-1" aria-hidden="true"></i>Tudo preenchido.</p>
                     }
                 </div>
             </aside>
@@ -153,7 +139,16 @@ const MAX_SOBRE = 2000;
                             @if (anunciante()) {
                                 <div class="flex flex-col gap-2 sm:col-span-2">
                                     <label for="pf-email-contato">E-mail para clientes</label>
-                                    <input pInputText id="pf-email-contato" type="email" formControlName="emailContato" autocomplete="email" placeholder="Deixe vazio para usar o e-mail de acesso" [attr.aria-invalid]="invalido('emailContato')" aria-describedby="pf-email-contato-erro" />
+                                    <input
+                                        pInputText
+                                        id="pf-email-contato"
+                                        type="email"
+                                        formControlName="emailContato"
+                                        autocomplete="email"
+                                        placeholder="Deixe vazio para usar o e-mail de acesso"
+                                        [attr.aria-invalid]="invalido('emailContato')"
+                                        aria-describedby="pf-email-contato-erro"
+                                    />
                                     @if (invalido('emailContato')) {
                                         <small id="pf-email-contato-erro" class="text-red-600">E-mail inválido.</small>
                                     }
@@ -392,6 +387,7 @@ const MAX_SOBRE = 2000;
     `
 })
 export class PerfilPage {
+    readonly recorteFoto = RECORTES.fotoPerfil;
     private conta = inject(ContaService);
     private auth = inject(AuthService);
     private msg = inject(MessageService);

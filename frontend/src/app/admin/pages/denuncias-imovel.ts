@@ -34,7 +34,7 @@ import { AuthService } from '@/app/core/services/auth.service';
 import { PresencaSala } from '@/app/shared/components/presenca-sala';
 import { EditorTexto, htmlVazio } from '@/app/shared/components/editor-texto';
 import { AnexosInput } from '@/app/shared/components/anexos-input';
-import { TextoRicoView } from '@/app/shared/components/texto-rico';
+import { DesfechoDenuncia } from '@/app/shared/components/desfecho-denuncia';
 import { aplicarDenuncia } from '@/app/shared/pages/pendencias-sync';
 import { AcaoImovel, ModeracaoService } from '@/app/core/services/moderacao.service';
 import { ConfigService } from '@/app/core/services/config.service';
@@ -81,7 +81,7 @@ const ACOES: Record<AcaoImovel, { titulo: string; botao: string; severity: 'warn
         PresencaSala,
         EditorTexto,
         AnexosInput,
-        TextoRicoView
+        DesfechoDenuncia
     ],
     template: `
         <app-page-header titulo="Denúncias do anúncio">
@@ -101,9 +101,10 @@ const ACOES: Record<AcaoImovel, { titulo: string; botao: string; severity: 'warn
                         <div class="text-sm text-muted-color mb-3">{{ p.imovel.codigo }} · {{ p.imovel.bairro }}, {{ p.imovel.cidade }}</div>
                         <div class="flex flex-wrap gap-2">
                             <a [routerLink]="['/admin/anuncios', p.imovel.id]" class="p-button p-button-sm p-button-outlined"><i class="pi pi-pencil mr-2" aria-hidden="true"></i>Abrir o anúncio</a>
-                            @if (p.imovel.status === 'ATIVO') {
-                                <a [href]="'/imovel/' + p.imovel.id + '/' + slug(p.imovel.titulo)" target="_blank" rel="noopener" class="p-button p-button-sm p-button-text">Ver no site <i class="pi pi-external-link ml-2" aria-hidden="true"></i></a>
-                            }
+                            <!-- fora do ar, a página do imóvel abre como prévia para a moderação -->
+                            <a [href]="'/imovel/' + p.imovel.id + '/' + slug(p.imovel.titulo)" target="_blank" rel="noopener" class="p-button p-button-sm p-button-text"
+                                >{{ p.imovel.status === 'ATIVO' ? 'Ver no site' : 'Ver prévia' }} <i class="pi pi-external-link ml-2" aria-hidden="true"></i><span class="sr-only"> (abre em nova aba)</span></a
+                            >
                         </div>
                         <div class="flex flex-wrap gap-2 mt-4 pt-4 border-t border-surface">
                             @if (p.imovel.status !== 'SUSPENSO' && p.imovel.status !== 'BANIDO') {
@@ -211,12 +212,7 @@ const ACOES: Record<AcaoImovel, { titulo: string; botao: string; severity: 'warn
                             <h4 [id]="'jul-' + d.id" class="text-sm font-semibold uppercase tracking-wide text-muted-color m-0 mb-2">Julgamento</h4>
                             @if (aberta(d)) {
                                 @if (d.natureza) {
-                                    <p class="text-sm m-0 mb-3">
-                                        <i class="pi pi-exclamation-circle text-red-700 mr-1" aria-hidden="true"></i><strong>Procedente</strong> ({{ natureza(d.natureza) }}) · {{ medida(d.medida) }} · {{ penalidade(d.penalidade) }}
-                                        @if (d.julgadoEm) {
-                                            <span class="text-muted-color"> · em {{ d.julgadoEm | date: 'dd/MM/yyyy HH:mm' }}</span>
-                                        }
-                                    </p>
+                                    <app-desfecho-denuncia [denuncia]="d" [statusAnuncio]="p.imovel.status" visao="admin" />
                                 } @else {
                                     <p class="text-sm text-muted-color m-0 mb-3">Ainda não julgada. Você pode julgar a qualquer momento, com ou sem resposta do anunciante.</p>
                                 }
@@ -232,8 +228,30 @@ const ACOES: Record<AcaoImovel, { titulo: string; botao: string; severity: 'warn
                                         [showDelay]="100"
                                         tooltipStyleClass="!max-w-sm"
                                     />
-                                    <p-button label="Improcedente…" icon="pi pi-times" severity="secondary" [outlined]="true" (onClick)="decisaoDialogo(d, 'improcedente')" [pTooltip]="dicaImprocedente()" tooltipPosition="top" tooltipEvent="both" [showDelay]="100" tooltipStyleClass="!max-w-sm" />
-                                    <p-button [label]="correcao(d) ? 'Aceitar correção…' : 'Aprovar solução…'" icon="pi pi-check" severity="success" [outlined]="true" (onClick)="decisaoDialogo(d, 'aprovar')" [pTooltip]="correcao(d) ? dicaCorrecao : dicaAprovar()" tooltipPosition="top" tooltipEvent="both" [showDelay]="100" tooltipStyleClass="!max-w-sm" />
+                                    <p-button
+                                        label="Improcedente…"
+                                        icon="pi pi-times"
+                                        severity="secondary"
+                                        [outlined]="true"
+                                        (onClick)="decisaoDialogo(d, 'improcedente')"
+                                        [pTooltip]="dicaImprocedente()"
+                                        tooltipPosition="top"
+                                        tooltipEvent="both"
+                                        [showDelay]="100"
+                                        tooltipStyleClass="!max-w-sm"
+                                    />
+                                    <p-button
+                                        [label]="correcao(d) ? 'Aceitar correção…' : 'Aprovar solução…'"
+                                        icon="pi pi-check"
+                                        severity="success"
+                                        [outlined]="true"
+                                        (onClick)="decisaoDialogo(d, 'aprovar')"
+                                        [pTooltip]="correcao(d) ? dicaCorrecao : dicaAprovar()"
+                                        tooltipPosition="top"
+                                        tooltipEvent="both"
+                                        [showDelay]="100"
+                                        tooltipStyleClass="!max-w-sm"
+                                    />
                                     @if (d.status !== 'EM_APURACAO') {
                                         <p-button
                                             label="Abrir apuração…"
@@ -250,20 +268,20 @@ const ACOES: Record<AcaoImovel, { titulo: string; botao: string; severity: 'warn
                                     }
                                 </div>
                             } @else {
-                                <p class="text-sm m-0">
-                                    <strong>{{ situacao(d).label }}</strong>
-                                    @if (d.natureza) {
-                                        ({{ natureza(d.natureza) }}) · {{ medida(d.medida) }} · {{ penalidade(d.penalidade) }}
-                                    }
-                                    @if (d.resolvidoEm) {
-                                        <span class="text-muted-color"> · encerrada em {{ d.resolvidoEm | date: 'dd/MM/yyyy HH:mm' }}</span>
-                                    }
-                                </p>
-                                @if (d.conclusao) {
-                                    <div class="text-sm mt-2"><strong>Conclusão:</strong> <app-texto-rico [texto]="d.conclusao" /></div>
-                                }
-                                <div class="mt-3">
-                                    <p-button label="Rever julgamento…" icon="pi pi-replay" severity="secondary" [outlined]="true" (onClick)="reabrirDialogo(d)" pTooltip="Reabre a denúncia para nova análise e novo julgamento. Um strike dado nela sai da contagem." tooltipPosition="top" tooltipEvent="both" [showDelay]="100" tooltipStyleClass="!max-w-sm" />
+                                <app-desfecho-denuncia [denuncia]="d" [statusAnuncio]="p.imovel.status" visao="admin" />
+                                <div>
+                                    <p-button
+                                        label="Rever julgamento…"
+                                        icon="pi pi-replay"
+                                        severity="secondary"
+                                        [outlined]="true"
+                                        (onClick)="reabrirDialogo(d)"
+                                        pTooltip="Reabre a denúncia para nova análise e novo julgamento. Um strike dado nela sai da contagem."
+                                        tooltipPosition="top"
+                                        tooltipEvent="both"
+                                        [showDelay]="100"
+                                        tooltipStyleClass="!max-w-sm"
+                                    />
                                 </div>
                             }
                         </section>
@@ -274,11 +292,7 @@ const ACOES: Record<AcaoImovel, { titulo: string; botao: string; severity: 'warn
                         @let r = rascunho(d.id);
                         <div class="mt-4 pt-4 border-t border-surface">
                             <span class="font-semibold block mb-1">{{ aberta(d) ? 'Mensagem' : 'Nota interna' }}</span>
-                            <app-editor-texto
-                                [(valor)]="r.texto"
-                                [rotulo]="aberta(d) ? 'Mensagem' : 'Nota interna'"
-                                [placeholder]="aberta(d) ? 'Escreva para o anunciante ou registre uma nota interna' : 'Só administradores veem'"
-                            />
+                            <app-editor-texto [(valor)]="r.texto" [rotulo]="aberta(d) ? 'Mensagem' : 'Nota interna'" [placeholder]="aberta(d) ? 'Escreva para o anunciante ou registre uma nota interna' : 'Só administradores veem'" />
                             <app-anexos-input class="block mt-1" [(anexos)]="r.anexos" />
                             @if (aberta(d)) {
                                 <label class="flex items-center gap-2 cursor-pointer text-sm mt-2">
@@ -289,7 +303,13 @@ const ACOES: Record<AcaoImovel, { titulo: string; botao: string; severity: 'warn
                                     <p class="text-xs text-muted-color mt-2 mb-0"><i class="pi pi-info-circle" aria-hidden="true"></i> Ao enviar, o caso volta para o anunciante e o prazo dele retoma de onde parou.</p>
                                 }
                                 <div class="flex justify-end mt-3">
-                                    <p-button [label]="r.interna ? 'Salvar nota interna' : 'Enviar mensagem'" [icon]="r.interna ? 'pi pi-lock' : 'pi pi-send'" [disabled]="vazio(r.texto)" [loading]="ocupado() === 'msg' + d.id" (onClick)="enviarMensagem(d)" />
+                                    <p-button
+                                        [label]="r.interna ? 'Salvar nota interna' : 'Enviar mensagem'"
+                                        [icon]="r.interna ? 'pi pi-lock' : 'pi pi-send'"
+                                        [disabled]="vazio(r.texto)"
+                                        [loading]="ocupado() === 'msg' + d.id"
+                                        (onClick)="enviarMensagem(d)"
+                                    />
                                 </div>
                             } @else {
                                 <div class="flex justify-end mt-2">
@@ -335,7 +355,14 @@ const ACOES: Record<AcaoImovel, { titulo: string; botao: string; severity: 'warn
             }
         </p-dialog>
 
-        <p-dialog [visible]="!!procedendo()" (visibleChange)="!$event && procedendo.set(null)" [modal]="true" [header]="procedendo()?.natureza ? 'Alterar julgamento' : 'Julgar procedente'" [style]="{ width: '38rem' }" [breakpoints]="{ '640px': '96vw' }">
+        <p-dialog
+            [visible]="!!procedendo()"
+            (visibleChange)="!$event && procedendo.set(null)"
+            [modal]="true"
+            [header]="procedendo()?.natureza ? 'Alterar julgamento' : 'Julgar procedente'"
+            [style]="{ width: '38rem' }"
+            [breakpoints]="{ '640px': '96vw' }"
+        >
             @if (procedendo(); as d) {
                 <p class="mt-0 text-sm text-muted-color">{{ d.tipo.nome }} · gravidade {{ d.gravidade.nome }}</p>
                 <fieldset class="border-0 p-0 m-0 mb-4">
@@ -412,7 +439,13 @@ const ACOES: Record<AcaoImovel, { titulo: string; botao: string; severity: 'warn
                 <app-editor-texto [(valor)]="decTexto" rotulo="Conclusão" altura="6rem" />
                 <div class="flex justify-end gap-2 mt-4">
                     <p-button label="Cancelar" [text]="true" severity="secondary" (onClick)="decidindo.set(null)" />
-                    <p-button [label]="x.tipo === 'improcedente' ? 'Julgar improcedente' : correcao(x.d) ? 'Aceitar correção' : 'Aprovar solução'" [severity]="x.tipo === 'improcedente' ? 'secondary' : 'success'" icon="pi pi-check" [loading]="ocupado() === 'dec'" (onClick)="confirmarDecisao()" />
+                    <p-button
+                        [label]="x.tipo === 'improcedente' ? 'Julgar improcedente' : correcao(x.d) ? 'Aceitar correção' : 'Aprovar solução'"
+                        [severity]="x.tipo === 'improcedente' ? 'secondary' : 'success'"
+                        icon="pi pi-check"
+                        [loading]="ocupado() === 'dec'"
+                        (onClick)="confirmarDecisao()"
+                    />
                 </div>
             }
         </p-dialog>
@@ -572,18 +605,6 @@ export class AdminDenunciasImovelPage {
 
     vazio = htmlVazio;
 
-    natureza(n: Natureza | null) {
-        return NATUREZAS.find((x) => x.value === n)?.label ?? '';
-    }
-
-    medida(m: MedidaAnuncio | null) {
-        return MEDIDAS.find((x) => x.value === m)?.label.toLowerCase() ?? '';
-    }
-
-    penalidade(p: PenalidadeConta | null) {
-        return p === 'STRIKE' ? 'strike na conta' : p === 'BANIR_CONTA' ? 'conta banida' : 'sem penalidade';
-    }
-
     aoMudarMedida() {
         if (this.procMedida === 'CORRIGIR' && this.procPenalidade === 'BANIR_CONTA') this.procPenalidade = null;
     }
@@ -650,12 +671,12 @@ export class AdminDenunciasImovelPage {
                 notaInterna: htmlVazio(this.procNota) ? null : this.procNota
             })
             .subscribe({
-            next: () => {
-                this.procedendo.set(null);
-                this.concluir(d.id, corrigir ? 'Procedente: correção solicitada ao anunciante' : 'Denúncia procedente; medida aplicada');
-            },
-            error: (e) => this.falhar(e)
-        });
+                next: () => {
+                    this.procedendo.set(null);
+                    this.concluir(d.id, corrigir ? 'Procedente: correção solicitada ao anunciante' : 'Denúncia procedente; medida aplicada');
+                },
+                error: (e) => this.falhar(e)
+            });
     }
 
     enviarMensagem(d: Denuncia, forcarInterna = false) {

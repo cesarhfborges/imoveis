@@ -34,6 +34,7 @@ import br.com.chfb.imoveis.listing.repository.ContatoRepository;
 import br.com.chfb.imoveis.listing.repository.FavoritoRepository;
 import br.com.chfb.imoveis.listing.repository.ImovelRepository;
 import br.com.chfb.imoveis.sharedkernel.dto.PageResponse;
+import br.com.chfb.imoveis.sharedkernel.event.AnuncioEditadoEvent;
 import br.com.chfb.imoveis.sharedkernel.event.AnuncioExcluindoEvent;
 import br.com.chfb.imoveis.sharedkernel.exception.BusinessException;
 import br.com.chfb.imoveis.sharedkernel.exception.ForbiddenException;
@@ -177,8 +178,15 @@ public class ImovelService {
         if (!usuario.isAdmin() && imovel.getStatus() == StatusAnuncio.BANIDO) {
             throw new BusinessException(409, "Este anúncio foi banido pela moderação e não pode ser editado");
         }
+        AlteracoesAnuncio antes = AlteracoesAnuncio.retrato(imovel);
         aplicar(imovel, form);
-        return detalhe(imoveis.save(imovel));
+        ImovelDetalhe salvo = detalhe(imoveis.save(imovel));
+        // a moderação registra o que mudou nas denúncias abertas (para conferir a correção pedida)
+        List<AnuncioEditadoEvent.Alteracao> alteracoes = antes.comparar(AlteracoesAnuncio.retrato(imovel));
+        if (!alteracoes.isEmpty()) {
+            eventos.publishEvent(new AnuncioEditadoEvent(imovel.getId(), usuario.id(), usuario.isAdmin(), alteracoes));
+        }
+        return salvo;
     }
 
     @Transactional

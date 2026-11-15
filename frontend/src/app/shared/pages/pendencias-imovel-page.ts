@@ -9,7 +9,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
 import { Subscription, merge, tap } from 'rxjs';
-import { Denuncia, ImovelInfo, MEDIDAS, MedidaAnuncio, PendenciasImovel, correcaoPendente, denunciaAberta, situacaoDenuncia } from '@/app/core/models/models';
+import { Denuncia, ImovelInfo, PendenciasImovel, correcaoPendente, denunciaAberta, situacaoDenuncia } from '@/app/core/models/models';
 import { MembroSala, RealtimeService } from '@/app/core/services/realtime.service';
 import { AuthService } from '@/app/core/services/auth.service';
 import { PresencaSala } from '@/app/shared/components/presenca-sala';
@@ -24,7 +24,7 @@ import { PrazoSlaComponent } from '@/app/shared/components/prazo-sla';
 import { ConversaDenuncia } from '@/app/shared/components/conversa-denuncia';
 import { EditorTexto, htmlVazio } from '@/app/shared/components/editor-texto';
 import { AnexosInput } from '@/app/shared/components/anexos-input';
-import { TextoRicoView } from '@/app/shared/components/texto-rico';
+import { DesfechoDenuncia } from '@/app/shared/components/desfecho-denuncia';
 import { slug } from '@/app/core/pipes/formatos';
 
 /**
@@ -33,7 +33,25 @@ import { slug } from '@/app/core/pipes/formatos';
  */
 @Component({
     selector: 'app-pendencias-imovel-page',
-    imports: [RouterLink, DatePipe, FormsModule, TagModule, ButtonModule, TextareaModule, CheckboxModule, MessageModule, PageHeader, ImovelFoto, StatusTag, PrazoSlaComponent, ConversaDenuncia, PresencaSala, EditorTexto, AnexosInput, TextoRicoView],
+    imports: [
+        RouterLink,
+        DatePipe,
+        FormsModule,
+        TagModule,
+        ButtonModule,
+        TextareaModule,
+        CheckboxModule,
+        MessageModule,
+        PageHeader,
+        ImovelFoto,
+        StatusTag,
+        PrazoSlaComponent,
+        ConversaDenuncia,
+        PresencaSala,
+        EditorTexto,
+        AnexosInput,
+        DesfechoDenuncia
+    ],
     template: `
         <app-page-header titulo="Pendências do anúncio" subtitulo="Leia cada denúncia, corrija o anúncio se for o caso e envie a sua resposta para a moderação."> </app-page-header>
         <div class="-mt-4 mb-4"><app-presenca-sala [conectado]="realtime.conectado()" [outros]="outros()" [descrever]="descreverOutros" /></div>
@@ -57,6 +75,9 @@ import { slug } from '@/app/core/pipes/formatos';
                         <span class="text-sm text-muted-color self-center"
                             ><i class="pi pi-eye-slash mr-1" aria-hidden="true"></i>Fora do site enquanto {{ p.imovel.status === 'BANIDO' ? 'banido' : p.imovel.status === 'SUSPENSO' ? 'suspenso' : 'não estiver ativo' }}</span
                         >
+                        <a [routerLink]="['/imovel', p.imovel.id, slug(p.imovel.titulo)]" target="_blank" rel="noopener" class="p-button p-button-text">
+                            <i class="pi pi-eye mr-2" aria-hidden="true"></i>Ver prévia<span class="sr-only"> (abre em nova aba)</span>
+                        </a>
                     }
                     @if (p.imovel.status !== 'BANIDO') {
                         <a [routerLink]="['/conta/anuncios', p.imovel.id]" class="p-button p-button-outlined"><i class="pi pi-pencil mr-2" aria-hidden="true"></i>Corrigir o anúncio</a>
@@ -96,7 +117,7 @@ import { slug } from '@/app/core/pipes/formatos';
                         <header class="flex flex-col md:flex-row md:items-start gap-3 mb-3">
                             <div class="flex-1">
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <h3 [id]="'den-' + d.id" class="text-lg font-semibold m-0">{{ d.tipo.nome }}</h3>
+                                    <h3 [id]="'den-' + d.id" class="text-lg font-semibold mb-0!">{{ d.tipo.nome }}</h3>
                                     <p-tag [value]="situacao(d).label" [severity]="situacao(d).severity" />
                                 </div>
                                 <div class="text-xs text-muted-color mt-1">Recebida em {{ d.criadoEm | date: 'dd/MM/yyyy HH:mm' }}</div>
@@ -109,16 +130,8 @@ import { slug } from '@/app/core/pipes/formatos';
                             <p class="m-0 whitespace-pre-line">{{ d.descricao }}</p>
                         </div>
 
-                        @if (correcao(d)) {
-                            <div class="rounded-lg border border-red-300 p-3 mb-4 text-sm" role="note">
-                                <i class="pi pi-wrench mr-1" aria-hidden="true"></i>
-                                @if (d.status === 'AGUARDANDO_ANUNCIANTE') {
-                                    <strong>A moderação confirmou a denúncia e pediu uma correção.</strong> Corrija o anúncio e responda abaixo informando o que foi feito, dentro do prazo.
-                                } @else {
-                                    <strong>Correção informada.</strong> A moderação vai validar o que foi feito.
-                                }
-                            </div>
-                        }
+                        <!-- desfecho em destaque: encerrada ou procedente com correção solicitada -->
+                        <app-desfecho-denuncia [denuncia]="d" [statusAnuncio]="p.imovel.status" visao="anunciante" />
 
                         <app-conversa-denuncia [mensagens]="d.mensagens" visao="anunciante" />
 
@@ -132,11 +145,6 @@ import { slug } from '@/app/core/pipes/formatos';
                                     <p-button label="Enviar resposta" icon="pi pi-send" [disabled]="vazio(textos[d.id])" [loading]="enviando() === d.id" (onClick)="responder([d.id], textos[d.id], d.id)" />
                                 </div>
                             </div>
-                        } @else if (d.conclusao) {
-                            <div class="mt-4 mb-0 text-sm"><strong>Conclusão da moderação:</strong> <app-texto-rico [texto]="d.conclusao" /></div>
-                            @if (d.status === 'PROCEDENTE' && d.medida) {
-                                <p class="mt-1 mb-0 text-sm"><strong>Medida:</strong> {{ medida(d.medida) }}</p>
-                            }
                         }
                     </article>
                 }
@@ -174,10 +182,6 @@ export class PendenciasImovelPage {
         return correcaoPendente(d) ? 'Informar a correção' : 'Sua resposta';
     }
     slug = slug;
-
-    medida(m: MedidaAnuncio) {
-        return MEDIDAS.find((x) => x.value === m)?.label ?? m;
-    }
 
     aguardando = computed<Denuncia[]>(() => (this.dados()?.denuncias ?? []).filter((d) => d.status === 'AGUARDANDO_ANUNCIANTE'));
 

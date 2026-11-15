@@ -1,0 +1,43 @@
+/*
+ * RadioButton do PrimeNG: bolinha fora do centro.
+ * Os temas (Aura, Lara, Nora) definem caixa e bolinha em rem (ex.: 1.25rem e 0.75rem). Com o
+ * html em 14px isso vira 17.5px e 10.5px: sobra meio pixel em cada lado e o navegador encaixa a
+ * bolinha (que fica numa camada própria por causa do translateZ) para um dos lados.
+ * Arredondando os dois para pixels PARES, a sobra (caixa − 2px de borda − bolinha) / 2 é sempre
+ * um número inteiro e a bolinha fica exatamente no centro, em qualquer tema e tamanho.
+ * O :root aumenta a especificidade para vencer o CSS que o PrimeNG injeta em tempo de execução.
+ */
+@supports (width: round(1px, 2px)) {
+    :root .p-radiobutton,
+    :root .p-radiobutton .p-radiobutton-box {
+        width: round(var(--p-radiobutton-width), 2px);
+        height: round(var(--p-radiobutton-height), 2px);
+    }
+    :root .p-radiobutton .p-radiobutton-icon {
+        width: round(var(--p-radiobutton-icon-size), 2px);
+        height: round(var(--p-radiobutton-icon-size), 2px);
+        font-size: round(var(--p-radiobutton-icon-size), 2px);
+    }
+
+    :root .p-radiobutton-sm,
+    :root .p-radiobutton-sm .p-radiobutton-box {
+        width: round(var(--p-radiobutton-sm-width), 2px);
+        height: round(var(--p-radiobutton-sm-height), 2px);
+    }
+    :root .p-radiobutton-sm .p-radiobutton-icon {
+        width: round(var(--p-radiobutton-icon-sm-size), 2px);
+        height: round(var(--p-radiobutton-icon-sm-size), 2px);
+        font-size: round(var(--p-radiobutton-icon-sm-size), 2px);
+    }
+
+    :root .p-radiobutton-lg,
+    :root .p-radiobutton-lg .p-radiobutton-box {
+        width: round(var(--p-radiobutton-lg-width), 2px);
+        height: round(var(--p-radiobutton-lg-height), 2px);
+    }
+    :root .p-radiobutton-lg .p-radiobutton-icon {
+        width: round(var(--p-radiobutton-icon-lg-size), 2px);
+        height: round(var(--p-radiobutton-icon-lg-size), 2px);
+        font-size: round(var(--p-radiobutton-icon-lg-size), 2px);
+    }
+}
