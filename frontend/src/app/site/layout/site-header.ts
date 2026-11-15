@@ -9,10 +9,9 @@ import { AuthService } from '@/app/core/services/auth.service';
 import { perfilLabel } from '@/app/core/models/models';
 
 /**
- * Cabeçalho do site público, em forma de "ilha" flutuante (cartão arredondado com
- * vidro fosco) que deixa o fundo da faixa de destaque aparecer em volta.
- *  - desktop: logo · navegação por verbos (Comprar, Alugar…) com traço no item ativo · tema, anunciar, entrar;
- *  - ao rolar a página a ilha encosta mais no topo e ganha sombra;
+ * Cabeçalho do site público: barra cheia, fixa no topo, com fundo sólido e borda inferior.
+ *  - desktop: logo · navegação em abas (traço na cor primária encostado na borda de baixo no item ativo) · tema, anunciar, entrar/conta;
+ *  - ao rolar a página a barra ganha sombra;
  *  - celular/tablet: gaveta lateral com a mesma navegação, anunciar e conta.
  */
 @Component({
@@ -22,41 +21,43 @@ import { perfilLabel } from '@/app/core/models/models';
     host: { style: 'display: contents', '(window:scroll)': 'aoRolar()' },
     template: `
         <header class="cabecalho" [class.cabecalho--rolado]="rolado()">
-            <div class="site-container">
-                <div class="cabecalho__ilha">
-                    <a routerLink="/" class="cabecalho__logo" aria-label="Página inicial"><app-logo [compacto]="true" /></a>
+            <div class="site-container cabecalho__barra">
+                <a routerLink="/" class="cabecalho__logo" aria-label="Página inicial"><app-logo [compacto]="true" /></a>
 
-                    <nav class="cabecalho__nav" aria-label="Principal">
-                        @for (l of links; track l.rota) {
-                            <a [routerLink]="l.rota" routerLinkActive="ativo" #rla="routerLinkActive" [attr.aria-current]="rla.isActive ? 'page' : null" class="cabecalho__link">{{ l.label }}</a>
-                        }
-                    </nav>
-
-                    <div class="cabecalho__acoes">
-                        <span class="cabecalho__tema"><app-theme-mode-toggle /></span>
-
-                        <a routerLink="/anunciar" class="cabecalho__anunciar">
-                            <span class="cabecalho__anunciar-mais" aria-hidden="true"><i class="pi pi-plus"></i></span>
-                            <span>Anunciar</span>
+                <nav class="cabecalho__nav" aria-label="Principal">
+                    @for (l of links; track l.rota) {
+                        <a [routerLink]="l.rota" routerLinkActive="ativo" #rla="routerLinkActive" [attr.aria-current]="rla.isActive ? 'page' : null" class="cabecalho__link">
+                            <i class="pi {{ l.icone }}" aria-hidden="true"></i>
+                            <span>{{ l.label }}</span>
                         </a>
+                    }
+                </nav>
 
-                        @if (auth.logado()) {
-                            <button type="button" class="cabecalho__conta" (click)="menuConta.toggle($event)" aria-haspopup="true" [attr.aria-label]="'Conta de ' + nomeCompleto()">
-                                <span class="cabecalho__avatar" aria-hidden="true">{{ iniciais() }}</span>
-                                <i class="pi pi-chevron-down cabecalho__seta" aria-hidden="true"></i>
-                            </button>
-                            <p-menu #menuConta [model]="itensConta()" [popup]="true" appendTo="body" />
-                        } @else {
-                            <a routerLink="/conta/login" class="cabecalho__entrar">
-                                <span>Entrar</span>
-                                <i class="pi pi-arrow-right" aria-hidden="true"></i>
-                            </a>
-                        }
+                <div class="cabecalho__acoes">
+                    <span class="cabecalho__tema"><app-theme-mode-toggle /></span>
 
-                        <button type="button" class="cabecalho__hamburguer" (click)="menuAberto.set(true)" aria-label="Abrir menu" [attr.aria-expanded]="menuAberto()">
-                            <span></span><span></span>
+                    <a routerLink="/anunciar" class="cabecalho__anunciar">
+                        <i class="pi pi-megaphone" aria-hidden="true"></i>
+                        <span>Anunciar imóvel</span>
+                    </a>
+
+                    @if (auth.logado()) {
+                        <button type="button" class="cabecalho__conta" (click)="menuConta.toggle($event)" aria-haspopup="true" [attr.aria-label]="'Conta de ' + nomeCompleto()">
+                            <span class="cabecalho__avatar" aria-hidden="true">{{ iniciais() }}</span>
+                            <span class="cabecalho__nome">{{ primeiroNome() }}</span>
+                            <i class="pi pi-chevron-down cabecalho__seta" aria-hidden="true"></i>
                         </button>
-                    </div>
+                        <p-menu #menuConta [model]="itensConta()" [popup]="true" appendTo="body" />
+                    } @else {
+                        <a routerLink="/conta/login" class="cabecalho__entrar">
+                            <i class="pi pi-user" aria-hidden="true"></i>
+                            <span>Entrar</span>
+                        </a>
+                    }
+
+                    <button type="button" class="cabecalho__hamburguer" (click)="menuAberto.set(true)" aria-label="Abrir menu" [attr.aria-expanded]="menuAberto()">
+                        <i class="pi pi-bars" aria-hidden="true"></i>
+                    </button>
                 </div>
             </div>
         </header>
@@ -99,13 +100,9 @@ import { perfilLabel } from '@/app/core/models/models';
                             <i class="pi {{ i.icon }}" aria-hidden="true"></i><span>{{ i.label }}</span>
                         </a>
                     }
-                    <button type="button" class="gaveta-site__link gaveta-site__link--simples" (click)="menuAberto.set(false); auth.sair('/')">
-                        <i class="pi pi-sign-out" aria-hidden="true"></i><span>Sair</span>
-                    </button>
+                    <button type="button" class="gaveta-site__link gaveta-site__link--simples" (click)="menuAberto.set(false); auth.sair('/')"><i class="pi pi-sign-out" aria-hidden="true"></i><span>Sair</span></button>
                 } @else {
-                    <a routerLink="/conta/login" (click)="menuAberto.set(false)" class="gaveta-site__entrar">
-                        <i class="pi pi-user" aria-hidden="true"></i> Entrar ou criar conta
-                    </a>
+                    <a routerLink="/conta/login" (click)="menuAberto.set(false)" class="gaveta-site__entrar"> <i class="pi pi-user" aria-hidden="true"></i> Entrar ou criar conta </a>
                 }
             </div>
         </p-drawer>
@@ -138,6 +135,7 @@ export class SiteHeader {
     }
 
     nomeCompleto = computed(() => this.auth.usuario()?.nome ?? '');
+    primeiroNome = computed(() => this.nomeCompleto().trim().split(/\s+/)[0] ?? '');
     iniciais = computed(() => {
         const partes = this.nomeCompleto().trim().split(/\s+/).filter(Boolean);
         const ini = (partes[0]?.[0] ?? '') + (partes.length > 1 ? partes[partes.length - 1][0] : '');

@@ -1,5 +1,4 @@
-import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -35,7 +34,18 @@ export type AbaBusca = 'VENDA' | 'ALUGUEL' | 'NOVO' | 'TEMPORADA';
                 <p-select [options]="bairros()" formControlName="bairro" class="filtros__bairro" placeholder="Bairro (todos)" [showClear]="true" [filter]="true" filterPlaceholder="Filtrar" styleClass="w-full" ariaLabel="Bairro" />
                 <div class="grid grid-cols-2 gap-2 filtros__dupla">
                     <p-select [options]="quartosOpcoes" formControlName="quartos" class="filtros__quartos" optionLabel="label" optionValue="value" placeholder="Quartos" [showClear]="true" styleClass="w-full" ariaLabel="Quartos" />
-                    <p-inputnumber formControlName="precoMax" class="filtros__preco" mode="currency" currency="BRL" locale="pt-BR" [maxFractionDigits]="0" placeholder="Valor até" styleClass="w-full" inputStyleClass="w-full" ariaLabel="Valor máximo" />
+                    <p-inputnumber
+                        formControlName="precoMax"
+                        class="filtros__preco"
+                        mode="currency"
+                        currency="BRL"
+                        locale="pt-BR"
+                        [maxFractionDigits]="0"
+                        placeholder="Valor até"
+                        styleClass="w-full"
+                        inputStyleClass="w-full"
+                        ariaLabel="Valor máximo"
+                    />
                 </div>
                 <p-iconfield class="filtros__texto">
                     <p-inputicon class="pi pi-search" />
@@ -75,13 +85,20 @@ export class FiltrosBusca {
         q: new FormControl<string | null>(null)
     });
 
-    private ufSel = toSignal(this.form.controls.uf.valueChanges, { initialValue: null as string | null });
-    private cidadeSel = toSignal(this.form.controls.cidade.valueChanges, { initialValue: null as string | null });
+    /** Espelho de UF/cidade em signals (mantido à mão, porque o preenchimento vindo de `valor` usa emitEvent: false). */
+    private ufSel = signal<string | null>(null);
+    private cidadeSel = signal<string | null>(null);
 
     ufs = computed(() => [...new Set(this.opcoes().localidades.map((l) => l.uf))]);
     cidades = computed(() => {
         const uf = this.ufSel();
-        return [...new Set(this.opcoes().localidades.filter((l) => !uf || l.uf === uf).map((l) => l.cidade))];
+        return [
+            ...new Set(
+                this.opcoes()
+                    .localidades.filter((l) => !uf || l.uf === uf)
+                    .map((l) => l.cidade)
+            )
+        ];
     });
     bairros = computed(() => {
         const cidade = this.cidadeSel();
@@ -93,22 +110,37 @@ export class FiltrosBusca {
         this.imoveis.opcoes().subscribe({ next: (o) => this.opcoes.set(o), error: () => undefined });
         effect(() => {
             const v = this.valor();
-            this.aba.set(v.lancamento ? 'NOVO' : ((v.finalidade as AbaBusca) ?? 'VENDA'));
-            this.form.setValue(
-                {
-                    tipo: v.tipo?.[0] ?? null,
-                    uf: v.uf ?? null,
-                    cidade: v.cidade ?? null,
-                    bairro: v.bairro ?? null,
-                    quartos: v.quartos ?? null,
-                    precoMax: v.precoMax ?? null,
-                    q: v.q ?? null
-                },
-                { emitEvent: false }
-            );
+            // untracked: o writeValue dos componentes do PrimeNG lê signals internos; sem isso o effect
+            // passaria a depender deles e desfaria cada nova seleção, voltando o formulário ao filtro anterior.
+            untracked(() => this.preencher(v));
         });
-        this.form.controls.uf.valueChanges.subscribe(() => this.form.patchValue({ cidade: null, bairro: null }));
-        this.form.controls.cidade.valueChanges.subscribe(() => this.form.controls.bairro.setValue(null, { emitEvent: false }));
+        this.form.controls.uf.valueChanges.subscribe((uf) => {
+            this.ufSel.set(uf);
+            this.cidadeSel.set(null);
+            this.form.patchValue({ cidade: null, bairro: null }, { emitEvent: false });
+        });
+        this.form.controls.cidade.valueChanges.subscribe((cidade) => {
+            this.cidadeSel.set(cidade);
+            this.form.controls.bairro.setValue(null, { emitEvent: false });
+        });
+    }
+
+    private preencher(v: ImovelFiltro) {
+        this.aba.set(v.lancamento ? 'NOVO' : ((v.finalidade as AbaBusca) ?? 'VENDA'));
+        this.form.setValue(
+            {
+                tipo: v.tipo?.[0] ?? null,
+                uf: v.uf ?? null,
+                cidade: v.cidade ?? null,
+                bairro: v.bairro ?? null,
+                quartos: v.quartos ?? null,
+                precoMax: v.precoMax ?? null,
+                q: v.q ?? null
+            },
+            { emitEvent: false }
+        );
+        this.ufSel.set(v.uf ?? null);
+        this.cidadeSel.set(v.cidade ?? null);
     }
 
     enviar() {

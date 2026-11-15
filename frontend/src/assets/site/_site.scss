@@ -22,11 +22,23 @@
 }
 
 html {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family:
+        'Inter',
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        Roboto,
+        sans-serif;
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family:
+        'Inter',
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        Roboto,
+        sans-serif;
 }
 
 .sr-only {
@@ -85,67 +97,42 @@ body {
 }
 
 /* ---------------------------------------------------------------- cabeçalho
-   "Ilha" flutuante: a faixa externa é transparente e só o cartão arredondado
-   aparece. Nas páginas com faixa de destaque (.hero) o hero sobe por baixo do
-   cabeçalho, então o gradiente aparece em volta da ilha. */
+   Barra cheia, fixa no topo, fundo sólido e borda inferior. A navegação funciona
+   como abas: o item ativo ganha um traço na cor primária encostado na borda. */
 :root {
-    --cabecalho-altura: 5.25rem; /* 0.625rem + 4rem + 0.625rem */
+    --cabecalho-altura: 4.25rem;
 }
 
 .cabecalho {
     position: sticky;
     top: 0;
     z-index: 50;
-    padding: 0.625rem 0;
-    pointer-events: none; /* a faixa transparente não bloqueia cliques; a ilha reativa */
-    transition: padding 0.25s;
-    &--rolado {
-        padding: 0.375rem 0;
-    }
-}
-
-.cabecalho__ilha {
-    pointer-events: auto;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    height: 4rem;
-    padding: 0 0.5rem 0 1.1rem;
-    border-radius: 20px;
-    background: color-mix(in srgb, var(--site-cartao), transparent 6%);
-    backdrop-filter: saturate(1.8) blur(16px);
-    -webkit-backdrop-filter: saturate(1.8) blur(16px);
-    border: 1px solid color-mix(in srgb, var(--site-borda), transparent 20%);
-    box-shadow:
-        0 1px 0 rgb(255 255 255 / 0.6) inset,
-        0 12px 32px -18px rgb(15 23 42 / 0.35);
+    background: color-mix(in srgb, var(--site-cartao), transparent 4%);
+    backdrop-filter: saturate(1.6) blur(12px);
+    -webkit-backdrop-filter: saturate(1.6) blur(12px);
+    border-bottom: 1px solid var(--site-borda);
     transition: box-shadow 0.25s;
-    .cabecalho--rolado & {
-        box-shadow:
-            0 1px 0 rgb(255 255 255 / 0.6) inset,
-            0 18px 40px -16px rgb(15 23 42 / 0.45);
+    &--rolado {
+        box-shadow: 0 6px 20px -12px rgb(15 23 42 / 0.3);
     }
 }
 
-.app-dark .cabecalho__ilha {
-    box-shadow:
-        0 1px 0 rgb(255 255 255 / 0.04) inset,
-        0 12px 32px -14px rgb(0 0 0 / 0.7);
+.app-dark .cabecalho--rolado {
+    box-shadow: 0 6px 20px -10px rgb(0 0 0 / 0.7);
 }
 
-/* faixas de destaque passam por baixo da ilha (exceto com o aviso de demonstração entre os dois) */
-.site-root:not(:has(.aviso-demo)) .site-main > * > .hero:first-child {
-    margin-top: calc(-1 * var(--cabecalho-altura));
-    padding-top: calc(var(--cabecalho-altura) + 2.5rem);
-    @media (min-width: 992px) {
-        padding-top: calc(var(--cabecalho-altura) + 4rem);
-    }
+.cabecalho__barra {
+    display: flex;
+    align-items: stretch;
+    gap: 1.5rem;
+    height: var(--cabecalho-altura);
 }
 
 .cabecalho__logo {
     flex-shrink: 0;
     display: inline-flex;
-    border-radius: 8px;
+    align-items: center;
+    border-radius: 6px;
     &:focus-visible {
         outline: 2px solid var(--p-primary-color);
         outline-offset: 4px;
@@ -154,11 +141,8 @@ body {
 
 .cabecalho__nav {
     display: none;
-    align-items: center;
+    align-items: stretch;
     gap: 0.25rem;
-    margin-left: 0.75rem;
-    padding-left: 1rem;
-    border-left: 1px solid var(--site-borda);
     @media (min-width: 1100px) {
         display: flex;
     }
@@ -166,50 +150,67 @@ body {
 
 .cabecalho__link {
     position: relative;
-    padding: 0.55rem 0.8rem;
-    border-radius: 10px;
-    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.85rem;
+    font-size: 0.94rem;
     font-weight: 500;
-    letter-spacing: -0.005em;
     color: var(--p-text-muted-color);
     white-space: nowrap;
     transition: color 0.2s;
-    /* traço curto embaixo do texto: cresce no hover, fica cheio no ativo */
+    i {
+        font-size: 0.9rem;
+        opacity: 0.75;
+        transition:
+            color 0.2s,
+            opacity 0.2s;
+    }
+    /* traço na borda de baixo da barra: aparece no hover, fica forte no ativo */
     &::after {
         content: '';
         position: absolute;
-        left: 50%;
-        bottom: 0.15rem;
-        width: 1.25rem;
+        left: 0.6rem;
+        right: 0.6rem;
+        bottom: -1px;
         height: 3px;
-        border-radius: 3px;
+        border-radius: 3px 3px 0 0;
         background: var(--p-primary-color);
-        transform: translateX(-50%) scaleX(0);
-        transition: transform 0.2s ease;
+        opacity: 0;
+        transform: scaleX(0.4);
+        transition:
+            opacity 0.2s,
+            transform 0.2s ease;
     }
     &:hover {
         color: var(--p-text-color);
         &::after {
-            transform: translateX(-50%) scaleX(0.5);
+            opacity: 0.35;
+            transform: scaleX(1);
         }
     }
     &.ativo {
-        color: var(--p-text-color);
-        font-weight: 650;
+        color: var(--p-primary-color);
+        font-weight: 600;
+        i {
+            opacity: 1;
+        }
         &::after {
-            transform: translateX(-50%) scaleX(1);
+            opacity: 1;
+            transform: scaleX(1);
         }
     }
     &:focus-visible {
         outline: 2px solid var(--p-primary-color);
-        outline-offset: 0;
+        outline-offset: -6px;
+        border-radius: 8px;
     }
 }
 
 .cabecalho__acoes {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.5rem;
     margin-left: auto;
 }
 
@@ -218,9 +219,9 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: 14px;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
     border: 0;
     background: transparent;
     color: var(--p-text-muted-color);
@@ -243,75 +244,24 @@ body {
     background: var(--p-surface-800);
 }
 
-.cabecalho__anunciar {
+/* botões de texto da direita: mesma altura e raio discreto */
+.cabecalho__anunciar,
+.cabecalho__entrar {
     display: none;
     align-items: center;
-    gap: 0.55rem;
-    height: 2.75rem;
-    padding: 0 0.9rem 0 0.45rem;
-    border-radius: 14px;
-    font-size: 0.93rem;
+    gap: 0.5rem;
+    height: 2.5rem;
+    padding: 0 1rem;
+    border-radius: 8px;
+    font-size: 0.92rem;
     font-weight: 600;
-    color: var(--p-text-color);
-    transition: background 0.2s;
-    &:hover {
-        background: var(--p-surface-100);
-        .cabecalho__anunciar-mais {
-            transform: rotate(90deg);
-        }
-    }
-    &:focus-visible {
-        outline: 2px solid var(--p-primary-color);
-        outline-offset: 0;
-    }
-    @media (min-width: 768px) {
-        display: inline-flex;
-    }
-}
-
-.app-dark .cabecalho__anunciar:hover {
-    background: var(--p-surface-800);
-}
-
-.cabecalho__anunciar-mais {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.85rem;
-    height: 1.85rem;
-    border-radius: 10px;
-    color: var(--p-primary-color);
-    background: color-mix(in srgb, var(--p-primary-color), transparent 86%);
-    transition: transform 0.25s ease;
+    white-space: nowrap;
+    transition:
+        background 0.2s,
+        border-color 0.2s,
+        color 0.2s;
     i {
-        font-size: 0.75rem;
-        font-weight: 700;
-    }
-}
-
-/* "Entrar": botão neutro e escuro (inverte no modo escuro) */
-.cabecalho__entrar {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.55rem;
-    height: 2.75rem;
-    padding: 0 1.1rem;
-    margin-left: 0.25rem;
-    border-radius: 14px;
-    font-size: 0.93rem;
-    font-weight: 600;
-    color: #fff;
-    background: var(--p-surface-900, #0f172a);
-    transition: opacity 0.2s;
-    i {
-        font-size: 0.75rem;
-        transition: transform 0.2s;
-    }
-    &:hover {
-        opacity: 0.88;
-        i {
-            transform: translateX(3px);
-        }
+        font-size: 0.85rem;
     }
     &:focus-visible {
         outline: 2px solid var(--p-primary-color);
@@ -319,20 +269,37 @@ body {
     }
 }
 
-.app-dark .cabecalho__entrar {
-    color: var(--p-surface-900, #0f172a);
-    background: var(--p-surface-0, #fff);
+.cabecalho__anunciar {
+    color: var(--p-primary-color);
+    border: 1px solid color-mix(in srgb, var(--p-primary-color), transparent 55%);
+    &:hover {
+        background: color-mix(in srgb, var(--p-primary-color), transparent 92%);
+        border-color: var(--p-primary-color);
+    }
+    @media (min-width: 768px) {
+        display: inline-flex;
+    }
+}
+
+.cabecalho__entrar {
+    display: inline-flex;
+    color: var(--p-primary-contrast-color);
+    background: var(--p-primary-color);
+    border: 1px solid var(--p-primary-color);
+    &:hover {
+        background: var(--p-primary-hover-color);
+        border-color: var(--p-primary-hover-color);
+    }
 }
 
 .cabecalho__conta {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    height: 2.75rem;
-    padding: 0 0.6rem 0 0.35rem;
-    margin-left: 0.25rem;
-    border-radius: 14px;
-    border: 0;
+    gap: 0.5rem;
+    height: 2.5rem;
+    padding: 0 0.65rem 0 0.25rem;
+    border-radius: 999px;
+    border: 1px solid var(--site-borda);
     background: transparent;
     color: var(--p-text-color);
     cursor: pointer;
@@ -350,6 +317,19 @@ body {
     background: var(--p-surface-800);
 }
 
+.cabecalho__nome {
+    display: none;
+    max-width: 9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9rem;
+    font-weight: 600;
+    @media (min-width: 768px) {
+        display: inline;
+    }
+}
+
 .cabecalho__seta {
     font-size: 0.7rem;
     color: var(--p-text-muted-color);
@@ -360,30 +340,19 @@ body {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: 2.1rem;
-    height: 2.1rem;
-    border-radius: 11px;
-    font-size: 0.78rem;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.02em;
     color: var(--p-primary-contrast-color);
-    background: linear-gradient(135deg, var(--p-primary-color), var(--p-primary-active-color));
+    background: var(--p-primary-color);
 }
 
 .cabecalho__hamburguer {
-    flex-direction: column;
-    gap: 5px;
-    span {
-        display: block;
-        width: 18px;
-        height: 2px;
-        border-radius: 2px;
-        background: currentColor;
-    }
-    span:nth-child(2) {
-        width: 12px;
-        align-self: center;
-        transform: translateX(3px);
+    i {
+        font-size: 1.1rem;
     }
     @media (min-width: 1100px) {
         display: none;
@@ -989,7 +958,9 @@ body {
     border-radius: var(--site-raio);
     overflow: hidden;
     box-shadow: 0 2px 6px rgb(0 0 0 / 0.08);
-    transition: transform 0.15s, box-shadow 0.15s;
+    transition:
+        transform 0.15s,
+        box-shadow 0.15s;
     &:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 16px rgb(0 0 0 / 0.12);
@@ -1016,8 +987,7 @@ body {
     color: #fff;
     padding: 2.75rem 0 3.5rem;
     background:
-        radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--p-primary-500), transparent 55%), transparent 55%),
-        linear-gradient(160deg, var(--p-primary-950, #0b1a33) 0%, var(--p-primary-800, #152a4a) 55%, var(--p-primary-700, #1c3c6d) 100%);
+        radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--p-primary-500), transparent 55%), transparent 55%), linear-gradient(160deg, var(--p-primary-950, #0b1a33) 0%, var(--p-primary-800, #152a4a) 55%, var(--p-primary-700, #1c3c6d) 100%);
     @media (min-width: 992px) {
         padding: 4.5rem 0 5rem;
     }
@@ -1034,9 +1004,7 @@ body {
         content: '';
         position: absolute;
         inset: 0;
-        background-image:
-            linear-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+        background-image: linear-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px);
         background-size: 44px 44px;
         mask-image: radial-gradient(ellipse 70% 80% at 30% 40%, #000 30%, transparent 75%);
     }
