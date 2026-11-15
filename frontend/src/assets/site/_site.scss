@@ -1511,57 +1511,269 @@ body {
     font-size: 0.8rem;
 }
 
+/* cabeçalho do anúncio: selos · título · endereço · código/publicação/compartilhar */
+/* dentro do cartão de valores: separado do preço por uma linha */
+.detalhe__cabecalho {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--site-borda);
+}
+
+/* preço à esquerda, custos à direita (empilham no celular) */
+.detalhe__preco-linha {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+}
+
+.detalhe__selos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.6rem;
+}
+
+.detalhe__selo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--p-text-muted-color);
+    background: var(--p-surface-100);
+    &--forte {
+        color: var(--p-primary-contrast-color);
+        background: var(--p-primary-color);
+    }
+    &--novo {
+        color: #92400e;
+        background: #fef3c7;
+    }
+}
+
+.app-dark .detalhe__selo {
+    background: var(--p-surface-800);
+    &--forte {
+        background: var(--p-primary-color);
+    }
+    &--novo {
+        color: #fde68a;
+        background: rgb(146 64 14 / 0.45);
+    }
+}
+
 .detalhe__titulo {
-    color: var(--p-primary-color);
-    font-size: 1.3rem;
-    font-weight: 800;
-    text-transform: uppercase;
     margin: 0;
+    font-size: clamp(1.35rem, 1.1rem + 1vw, 1.85rem);
+    font-weight: 750;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    color: var(--p-text-color);
+}
+
+.detalhe__endereco {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+    font-size: 1rem;
+    color: var(--p-text-color);
+    i {
+        color: var(--p-primary-color);
+    }
+    &:hover .detalhe__endereco-mapa {
+        text-decoration: underline;
+    }
+}
+
+.detalhe__endereco-mapa {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--p-primary-color);
+}
+
+.detalhe__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--p-text-muted-color);
+    strong {
+        color: var(--p-text-color);
+        font-weight: 600;
+    }
+}
+
+.detalhe__compartilhar {
+    display: inline-flex;
+    gap: 0.25rem;
+    margin-left: auto;
+}
+
+.detalhe__icone-acao {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    border: 1px solid var(--site-borda);
+    background: var(--site-cartao);
+    color: var(--p-text-muted-color);
+    cursor: pointer;
+    transition:
+        color 0.2s,
+        border-color 0.2s;
+    &:hover {
+        color: var(--p-primary-color);
+        border-color: var(--p-primary-color);
+    }
+    &:focus-visible {
+        outline: 2px solid var(--p-primary-color);
+        outline-offset: 2px;
+    }
+}
+
+/* cartão de valores: preço em destaque, custos mensais e formas de pagamento */
+.detalhe__valores {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.25rem;
+    padding: 1.25rem;
+    border: 1px solid var(--site-borda);
+    border-left: 4px solid var(--p-primary-color);
+    border-radius: 10px;
+    background: var(--site-cartao);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.05);
+}
+
+.detalhe__rotulo {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--p-text-muted-color);
 }
 
 .detalhe__preco {
-    color: var(--p-primary-color);
-    font-size: 1.5rem;
-}
-
-.local-pilula {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: var(--p-surface-100);
-    border-radius: 999px;
-    padding: 0.4rem 1.2rem 0.4rem 0.6rem;
-    font-weight: 700;
-    font-size: 0.8rem;
-    text-transform: uppercase;
+    display: block;
+    font-size: clamp(1.6rem, 1.3rem + 1.2vw, 2.2rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
     color: var(--p-primary-color);
 }
 
-.app-dark .local-pilula {
-    background: var(--p-surface-800);
-}
-
-.detalhe__fatos {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.4rem 1.5rem;
-    margin: 1.25rem 0;
-    font-size: 0.9rem;
-    @media (min-width: 768px) {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-    div {
-        display: flex;
-        gap: 0.35rem;
-    }
+.detalhe__custos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 2rem;
+    margin: 0;
     dt {
-        font-weight: 700;
-    }
-    dt::after {
-        content: ':';
+        font-size: 0.78rem;
+        color: var(--p-text-muted-color);
     }
     dd {
         margin: 0;
+        font-weight: 650;
+        small {
+            font-weight: 400;
+            color: var(--p-text-muted-color);
+        }
+    }
+}
+
+.detalhe__condicoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    li {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.35rem 0.8rem;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #166534;
+        background: #dcfce7;
+    }
+}
+
+.app-dark .detalhe__condicoes li {
+    color: #bbf7d0;
+    background: rgb(22 101 52 / 0.45);
+}
+
+/* no desktop o contato fica na coluna lateral; aqui só no celular/tablet */
+.detalhe__contato-rapido {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 0.5rem;
+    @media (min-width: 992px) {
+        display: none;
+    }
+}
+
+/* ficha: números principais em cartões com ícone */
+.detalhe__ficha {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+    gap: 0.6rem;
+    margin: 1.25rem 0 0;
+    > div {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.15rem;
+        padding: 0.9rem 1rem;
+        border: 1px solid var(--site-borda);
+        border-radius: 10px;
+        background: var(--site-cartao);
+    }
+    i {
+        order: 0;
+        margin-bottom: 0.35rem;
+        font-size: 1.1rem;
+        color: var(--p-primary-color);
+    }
+    /* o número aparece acima do rótulo (no HTML o dt vem antes, como manda a lista) */
+    dd {
+        order: 1;
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 750;
+        line-height: 1.2;
+    }
+    dt {
+        order: 2;
+        font-size: 0.8rem;
+        color: var(--p-text-muted-color);
+    }
+}
+
+/* âncoras não ficam escondidas sob o cabeçalho fixo */
+.detalhe [id] {
+    scroll-margin-top: calc(var(--cabecalho-altura) + 1rem);
+}
+
+.detalhe__endereco-completo {
+    display: flex;
+    gap: 0.6rem;
+    margin: 0 0 1rem;
+    i {
+        margin-top: 0.2rem;
+        color: var(--p-primary-color);
     }
 }
 
@@ -1615,17 +1827,27 @@ body {
 }
 
 .trilha {
-    margin-top: 1.5rem;
-    padding: 0.9rem 1rem;
-    border: 1px solid var(--site-borda);
-    border-radius: 6px;
-    background: var(--site-cartao);
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.82rem;
     color: var(--p-text-muted-color);
     a {
-        color: var(--p-primary-color);
+        color: var(--p-text-muted-color);
+        &:hover {
+            color: var(--p-primary-color);
+            text-decoration: underline;
+        }
+    }
+    i {
+        font-size: 0.65rem;
+        opacity: 0.6;
+    }
+    span {
+        color: var(--p-text-color);
+        font-weight: 600;
     }
 }
 
@@ -1792,6 +2014,15 @@ h2[class*='mt-'] {
                 color: var(--site-verde);
             }
         }
+    }
+}
+
+.lista-doc__status {
+    margin-left: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    .sim & {
+        color: var(--site-verde);
     }
 }
 
@@ -2308,4 +2539,55 @@ html.rolagem-travada body {
 .visualizador {
     overscroll-behavior: contain;
     touch-action: none;
+}
+
+/* ---------------------------------------------------------------- carrossel de fotos (galeria e tela cheia)
+   Todas as fotos ficam lado a lado numa faixa; --i é a foto atual e a diretiva appDeslizar
+   põe --deslize-x/--deslize-y no container enquanto o dedo arrasta, então a faixa acompanha
+   o dedo (já mostrando a vizinha) e, ao soltar, encaixa na foto nova com transição. */
+.carrossel-trilho {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    transform: translate3d(calc(var(--i, 0) * -100% + var(--deslize-x, 0px)), var(--deslize-y, 0px), 0);
+    transition: transform 0.35s cubic-bezier(0.22, 0.8, 0.25, 1);
+    will-change: transform;
+}
+
+.carrossel-slide {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    user-select: none;
+    -webkit-user-select: none;
+    img {
+        -webkit-user-drag: none;
+    }
+}
+
+.deslizando > .carrossel-trilho {
+    transition: none;
+}
+
+.visualizador {
+    overflow: hidden;
+}
+
+.visualizador__slide {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 3.5rem;
+    @media (max-width: 575px) {
+        padding: 3.5rem 0.25rem;
+    }
+    .visualizador__foto {
+        max-height: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .carrossel-trilho {
+        transition: none;
+    }
 }

@@ -2,7 +2,6 @@ import { Component, computed, inject, input, signal, effect } from '@angular/cor
 import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TagModule } from 'primeng/tag';
 import { MessageService } from 'primeng/api';
 import { DOCUMENTACAO, ImovelDetalhe, ImovelResumo, finalidadeLabel } from '@/app/core/models/models';
 import { ImovelService } from '@/app/core/services/imovel.service';
@@ -19,7 +18,7 @@ import { EmptyState } from '@/app/shared/components/empty-state';
 /** Página do imóvel. */
 @Component({
     selector: 'app-detalhe-page',
-    imports: [RouterLink, ButtonModule, SkeletonModule, TagModule, PrecoPipe, ValorM2Pipe, TempoAtrasPipe, GaleriaFotos, ContatoForm, MapaOsm, ImovelCardMini, EmptyState],
+    imports: [RouterLink, ButtonModule, SkeletonModule, PrecoPipe, ValorM2Pipe, TempoAtrasPipe, GaleriaFotos, ContatoForm, MapaOsm, ImovelCardMini, EmptyState],
     template: `
         @if (erro()) {
             <div class="site-container py-10">
@@ -33,109 +32,122 @@ import { EmptyState } from '@/app/shared/components/empty-state';
             @let i = imovel()!;
             <div class="site-container detalhe">
                 <div class="detalhe__principal">
+                    <nav class="trilha" aria-label="Você está em">
+                        <a routerLink="/">Início</a>
+                        <i class="pi pi-angle-right" aria-hidden="true"></i>
+                        <a [routerLink]="rotaFinalidade()">Imóveis {{ finalidadeLabel(i.finalidade).toLowerCase() }}</a>
+                        <i class="pi pi-angle-right" aria-hidden="true"></i>
+                        <a [routerLink]="rotaFinalidade()" [queryParams]="{ cidade: i.cidade }">{{ i.cidade }}</a>
+                        <i class="pi pi-angle-right" aria-hidden="true"></i>
+                        <a [routerLink]="rotaFinalidade()" [queryParams]="{ cidade: i.cidade, bairro: i.bairro }">{{ i.bairro }}</a>
+                        <i class="pi pi-angle-right" aria-hidden="true"></i>
+                        <span aria-current="page">{{ i.codigo }}</span>
+                    </nav>
+
                     <app-galeria-fotos [fotos]="i.fotos" [alt]="i.titulo" [tipo]="i.tipo" [semente]="i.id" />
 
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
-                        @if (i.anunciante?.telefone) {
-                            <a [href]="'tel:' + i.anunciante!.telefone" class="botao-contorno justify-center"><i class="pi pi-phone" aria-hidden="true"></i> Ligue agora</a>
-                        }
-                        <a href="#contato" class="botao-contorno justify-center"><i class="pi pi-envelope" aria-hidden="true"></i> Enviar e-mail</a>
-                        <button type="button" class="botao-contorno justify-center" (click)="copiarLink()"><i class="pi pi-link" aria-hidden="true"></i> Copiar link</button>
-                        <a [href]="linkWhatsapp()" target="_blank" rel="noopener" class="botao-contorno justify-center"><i class="pi pi-whatsapp" aria-hidden="true"></i> Compartilhe</a>
-                    </div>
-
-                    <div class="flex flex-wrap items-start justify-between gap-3 mt-6">
-                        <h1 class="detalhe__titulo">{{ i.titulo }}</h1>
-                        <span class="flex gap-2">
-                            @if (i.lancamento) {
-                                <p-tag value="Imóvel novo" />
-                            }
-                            <p-tag [value]="finalidadeLabel(i.finalidade)" severity="secondary" />
-                        </span>
-                    </div>
-                    <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1 mt-2">
-                        <span class="text-lg">R$ <strong class="detalhe__preco">{{ precoSemRs() }}</strong></span>
-                        @if (i.finalidade === 'VENDA' && i.areaUtil) {
-                            <span>Valor R$/m²: <strong class="text-primary text-lg">{{ i.preco | valorM2: i.areaUtil }}</strong></span>
-                        }
-                    </div>
-                    @if (i.aceitaFinanciamento) {
-                        <div class="faixa-financiamento" role="note" aria-label="Condições de pagamento">
-                            <span class="faixa-financiamento__icone"><i class="pi pi-wallet" aria-hidden="true"></i></span>
-                            <div class="flex-1 min-w-0">
-                                <div class="faixa-financiamento__titulo">Aceita financiamento</div>
-                                <div class="faixa-financiamento__texto">Este imóvel pode ser comprado com financiamento bancário.</div>
+                    <!-- o que é, onde fica e quanto custa, num cartão só -->
+                    <section class="detalhe__valores" aria-labelledby="detalhe-titulo">
+                        <header class="detalhe__cabecalho">
+                            <div class="detalhe__selos">
+                                <span class="detalhe__selo detalhe__selo--forte">{{ finalidadeLabel(i.finalidade) }}</span>
+                                <span class="detalhe__selo">{{ i.tipoDescricao }}</span>
+                                @if (i.lancamento) {
+                                    <span class="detalhe__selo detalhe__selo--novo"><i class="pi pi-sparkles" aria-hidden="true"></i> Imóvel novo</span>
+                                }
                             </div>
-                            <div class="flex flex-wrap gap-2">
+                            <h1 id="detalhe-titulo" class="detalhe__titulo">{{ i.titulo }}</h1>
+                            <a [href]="ancora('local-titulo')" (click)="irPara($event, 'local-titulo')" class="detalhe__endereco">
+                                <i class="pi pi-map-marker" aria-hidden="true"></i>
+                                <span>{{ i.bairro }}, {{ i.cidade }}/{{ i.uf }}</span>
+                                <span class="detalhe__endereco-mapa">Ver no mapa</span>
+                            </a>
+                            <div class="detalhe__meta">
+                                <span
+                                    >Código <strong>{{ i.codigo }}</strong></span
+                                >
+                                <span aria-hidden="true">·</span>
+                                <span>Publicado {{ i.criadoEm | tempoAtras }}</span>
+                                <span class="detalhe__compartilhar">
+                                    <button type="button" class="detalhe__icone-acao" (click)="copiarLink()" aria-label="Copiar link do anúncio" title="Copiar link"><i class="pi pi-link" aria-hidden="true"></i></button>
+                                    <a [href]="linkWhatsapp()" target="_blank" rel="noopener" class="detalhe__icone-acao" aria-label="Compartilhar no WhatsApp" title="Compartilhar no WhatsApp"><i class="pi pi-whatsapp" aria-hidden="true"></i></a>
+                                </span>
+                            </div>
+                        </header>
+
+                        <div class="detalhe__preco-linha">
+                            <div class="detalhe__valor-principal">
+                                <span class="detalhe__rotulo">{{ rotuloPreco() }}</span>
+                                <span class="detalhe__preco">{{ i.preco | preco: i.finalidade }}</span>
+                            </div>
+                            @if (i.condominio || i.iptu || (i.finalidade === 'VENDA' && i.areaUtil)) {
+                                <dl class="detalhe__custos">
+                                    @if (i.condominio) {
+                                        <div>
+                                            <dt>Condomínio</dt>
+                                            <dd>{{ i.condominio | preco }}<small>/mês</small></dd>
+                                        </div>
+                                    }
+                                    @if (i.iptu) {
+                                        <div>
+                                            <dt>IPTU</dt>
+                                            <dd>{{ i.iptu | preco }}</dd>
+                                        </div>
+                                    }
+                                    @if (i.finalidade === 'VENDA' && i.areaUtil) {
+                                        <div>
+                                            <dt>Valor do m²</dt>
+                                            <dd>{{ i.preco | valorM2: i.areaUtil }}</dd>
+                                        </div>
+                                    }
+                                </dl>
+                            }
+                        </div>
+                        @if (i.aceitaFinanciamento || i.aceitaFgts || i.aceitaPermuta) {
+                            <ul class="detalhe__condicoes" aria-label="Formas de pagamento aceitas">
+                                @if (i.aceitaFinanciamento) {
+                                    <li><i class="pi pi-wallet" aria-hidden="true"></i> Aceita financiamento</li>
+                                }
                                 @if (i.aceitaFgts) {
-                                    <span class="faixa-financiamento__extra"><i class="pi pi-check" aria-hidden="true"></i> Aceita FGTS</span>
+                                    <li><i class="pi pi-check" aria-hidden="true"></i> Aceita FGTS</li>
                                 }
                                 @if (i.aceitaPermuta) {
-                                    <span class="faixa-financiamento__extra"><i class="pi pi-check" aria-hidden="true"></i> Aceita permuta</span>
+                                    <li><i class="pi pi-sync" aria-hidden="true"></i> Aceita permuta</li>
                                 }
-                            </div>
-                        </div>
-                    } @else if (i.aceitaFgts || i.aceitaPermuta) {
-                        <div class="flex flex-wrap gap-2 mt-3">
-                            @if (i.aceitaFgts) {
-                                <span class="selo-condicao selo-condicao--cheio"><i class="pi pi-check" aria-hidden="true"></i> Aceita FGTS</span>
+                            </ul>
+                        }
+                        <div class="detalhe__contato-rapido">
+                            @if (i.anunciante?.telefone) {
+                                <a [href]="'tel:' + i.anunciante!.telefone" class="botao-contorno justify-center"><i class="pi pi-phone" aria-hidden="true"></i> Ligar</a>
                             }
-                            @if (i.aceitaPermuta) {
-                                <span class="selo-condicao selo-condicao--cheio"><i class="pi pi-check" aria-hidden="true"></i> Aceita permuta</span>
-                            }
+                            <a [href]="ancora('contato')" (click)="irPara($event, 'contato')" class="botao-contorno justify-center"><i class="pi pi-envelope" aria-hidden="true"></i> Enviar mensagem</a>
                         </div>
-                    }
-                    <div class="local-pilula mt-3"><i class="pi pi-map-marker" aria-hidden="true"></i> {{ i.cidade }} - {{ i.bairro }}</div>
+                    </section>
 
-                    <dl class="detalhe__fatos">
-                        <div><dt>Publicado</dt><dd>{{ i.criadoEm | tempoAtras }}</dd></div>
-                        <div><dt>Código</dt><dd>{{ i.codigo }}</dd></div>
-                        <div><dt>Tipo</dt><dd>{{ i.tipoDescricao }}</dd></div>
-                        @if (i.areaUtil) {
-                            <div><dt>Área útil</dt><dd>{{ i.areaUtil }} m²</dd></div>
-                        }
-                        @if (i.quartos) {
-                            <div><dt>Quartos</dt><dd>{{ i.quartos }}</dd></div>
-                        }
-                        @if (i.suites) {
-                            <div><dt>Suítes</dt><dd>{{ i.suites }}</dd></div>
-                        }
-                        @if (i.banheiros) {
-                            <div><dt>Banheiros</dt><dd>{{ i.banheiros }}</dd></div>
-                        }
-                        @if (i.vagas) {
-                            <div><dt>Vagas</dt><dd>{{ i.vagas }}</dd></div>
-                        }
-                        @if (i.condominio) {
-                            <div><dt>Condomínio</dt><dd>{{ i.condominio | preco }}</dd></div>
-                        }
-                        @if (i.iptu) {
-                            <div><dt>IPTU</dt><dd>{{ i.iptu | preco }}</dd></div>
-                        }
-                    </dl>
+                    <!-- 3. como é: números principais -->
+                    @if (ficha().length) {
+                        <section aria-labelledby="ficha-titulo">
+                            <h2 id="ficha-titulo" class="sr-only">Principais características</h2>
+                            <dl class="detalhe__ficha">
+                                @for (f of ficha(); track f.rotulo) {
+                                    <div>
+                                        <i class="pi {{ f.icone }}" aria-hidden="true"></i>
+                                        <dt>{{ f.rotulo }}</dt>
+                                        <dd>{{ f.valor }}</dd>
+                                    </div>
+                                }
+                            </dl>
+                        </section>
+                    }
 
                     <section class="bloco" aria-labelledby="desc-titulo">
                         <h2 id="desc-titulo">Descrição</h2>
                         <div class="detalhe__descricao" [class.recolhida]="!descricaoAberta()">{{ i.descricao || 'O anunciante ainda não escreveu uma descrição.' }}</div>
-                        <button type="button" class="text-primary font-semibold mt-2" (click)="descricaoAberta.set(!descricaoAberta())" [attr.aria-expanded]="descricaoAberta()">
-                            {{ descricaoAberta() ? 'Ver menos' : 'Ver mais' }} <i class="pi" [class.pi-angle-up]="descricaoAberta()" [class.pi-angle-down]="!descricaoAberta()" aria-hidden="true"></i>
-                        </button>
-                    </section>
-
-                    <section class="bloco" aria-labelledby="doc-titulo">
-                        <h2 id="doc-titulo">Documentação e condições</h2>
-                        <ul class="lista-doc">
-                            @for (d of documentacao; track d.campo) {
-                                @let sim = !!i[d.campo];
-                                <li [class.sim]="sim">
-                                    <i class="pi" [class.pi-check-circle]="sim" [class.pi-times-circle]="!sim" aria-hidden="true"></i>
-                                    <span>
-                                        <strong>{{ d.label }}:</strong> {{ sim ? 'Sim' : 'Não' }}
-                                        <span class="block text-xs text-muted-color">{{ d.dica }}</span>
-                                    </span>
-                                </li>
-                            }
-                        </ul>
+                        @if (i.descricao) {
+                            <button type="button" class="text-primary font-semibold mt-2" (click)="descricaoAberta.set(!descricaoAberta())" [attr.aria-expanded]="descricaoAberta()">
+                                {{ descricaoAberta() ? 'Ver menos' : 'Ver mais' }} <i class="pi" [class.pi-angle-up]="descricaoAberta()" [class.pi-angle-down]="!descricaoAberta()" aria-hidden="true"></i>
+                            </button>
+                        }
                     </section>
 
                     @if (i.caracteristicas.length) {
@@ -149,21 +161,40 @@ import { EmptyState } from '@/app/shared/components/empty-state';
                         </section>
                     }
 
+                    <section class="bloco" aria-labelledby="doc-titulo">
+                        <h2 id="doc-titulo">Documentação e condições</h2>
+                        <ul class="lista-doc">
+                            @for (d of documentacao; track d.campo) {
+                                @let sim = !!i[d.campo];
+                                <li [class.sim]="sim">
+                                    <i class="pi" [class.pi-check-circle]="sim" [class.pi-minus-circle]="!sim" aria-hidden="true"></i>
+                                    <span>
+                                        <strong>{{ d.label }}</strong>
+                                        <span class="lista-doc__status">{{ sim ? 'Sim' : 'Não' }}</span>
+                                        <span class="block text-xs text-muted-color">{{ d.dica }}</span>
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+                    </section>
+
                     <section class="bloco" aria-labelledby="local-titulo">
                         <h2 id="local-titulo">Localização</h2>
-                        <p class="text-primary font-semibold uppercase text-sm">{{ i.uf }} - {{ i.cidade }} - {{ i.bairro }}{{ i.endereco ? ' - ' + i.endereco : '' }}</p>
+                        <p class="detalhe__endereco-completo">
+                            <i class="pi pi-map-marker" aria-hidden="true"></i>
+                            <span>
+                                @if (i.endereco) {
+                                    <strong class="block">{{ i.endereco }}</strong>
+                                }
+                                {{ i.bairro }}, {{ i.cidade }}/{{ i.uf }}{{ i.cep ? ' · CEP ' + i.cep : '' }}
+                            </span>
+                        </p>
                         @if (pontos().length) {
                             <app-mapa-osm [pontos]="pontos()" [cliqueParaCarregar]="true" altura="320px" />
                         } @else {
                             <p class="text-muted-color">O anunciante não informou a posição no mapa.</p>
                         }
                     </section>
-
-                    <nav class="trilha" aria-label="Você está em">
-                        <a routerLink="/">Início</a> / <a [routerLink]="rotaFinalidade()">Imóveis {{ finalidadeLabel(i.finalidade).toLowerCase() }}</a> /
-                        <a [routerLink]="rotaFinalidade()" [queryParams]="{ cidade: i.cidade }">{{ i.cidade }}</a> /
-                        <a [routerLink]="rotaFinalidade()" [queryParams]="{ cidade: i.cidade, bairro: i.bairro }">{{ i.bairro }}</a> / <span>{{ i.codigo }}</span>
-                    </nav>
                 </div>
 
                 <aside class="detalhe__lateral" aria-label="Contato">
@@ -226,11 +257,23 @@ export class DetalhePage {
     documentacao = DOCUMENTACAO;
 
     favorito = computed(() => this.conta.favoritos().has(Number(this.id())));
-    precoSemRs = computed(() => {
+    rotuloPreco = computed(() => {
+        const f = this.imovel()?.finalidade;
+        return f === 'ALUGUEL' ? 'Aluguel' : f === 'TEMPORADA' ? 'Diária' : 'Valor de venda';
+    });
+    /** Números principais do imóvel, em cartões com ícone (só os informados). */
+    ficha = computed(() => {
         const i = this.imovel();
-        if (!i) return '';
-        const v = i.preco.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
-        return v + (i.finalidade === 'ALUGUEL' ? '/mês' : i.finalidade === 'TEMPORADA' ? '/dia' : '');
+        if (!i) return [];
+        const m2 = (v: number) => v.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' m²';
+        const itens: { icone: string; valor: string; rotulo: string }[] = [];
+        if (i.areaUtil) itens.push({ icone: 'pi-expand', valor: m2(i.areaUtil), rotulo: 'Área útil' });
+        if (i.areaTotal && i.areaTotal !== i.areaUtil) itens.push({ icone: 'pi-th-large', valor: m2(i.areaTotal), rotulo: 'Área total' });
+        if (i.quartos) itens.push({ icone: 'pi-moon', valor: String(i.quartos), rotulo: i.quartos === 1 ? 'Quarto' : 'Quartos' });
+        if (i.suites) itens.push({ icone: 'pi-star', valor: String(i.suites), rotulo: i.suites === 1 ? 'Suíte' : 'Suítes' });
+        if (i.banheiros) itens.push({ icone: 'pi-inbox', valor: String(i.banheiros), rotulo: i.banheiros === 1 ? 'Banheiro' : 'Banheiros' });
+        if (i.vagas) itens.push({ icone: 'pi-car', valor: String(i.vagas), rotulo: i.vagas === 1 ? 'Vaga' : 'Vagas' });
+        return itens;
     });
     pontos = computed<PontoMapa[]>(() => {
         const i = this.imovel();
@@ -258,7 +301,6 @@ export class DetalhePage {
         });
     }
 
-
     iniciais(nome: string) {
         return nome
             .split(' ')
@@ -267,6 +309,22 @@ export class DetalhePage {
             .map((p) => p[0])
             .join('')
             .toUpperCase();
+    }
+
+    /** Endereço da própria página com o fragmento (o <base href="/"> faria "#x" apontar para a home). */
+    ancora(id: string) {
+        return this.router.url.split('#')[0] + '#' + id;
+    }
+
+    /** Rola até a seção (respeitando o scroll-margin do cabeçalho fixo) e leva o foco para ela. */
+    irPara(e: Event, id: string) {
+        const alvo = document.getElementById(id);
+        if (!alvo) return;
+        e.preventDefault();
+        const reduzido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        alvo.scrollIntoView({ behavior: reduzido ? 'auto' : 'smooth', block: 'start' });
+        if (!alvo.hasAttribute('tabindex')) alvo.setAttribute('tabindex', '-1');
+        alvo.focus({ preventScroll: true });
     }
 
     copiarLink() {
