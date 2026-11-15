@@ -1,4 +1,4 @@
-package br.com.chfb.imoveis.moderation.util;
+package br.com.chfb.imoveis.platform.texto;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -6,7 +6,7 @@ import org.jsoup.nodes.Entities;
 import org.jsoup.safety.Safelist;
 
 /**
- * Texto das mensagens das pendências, vindo do editor (HTML do Quill).
+ * Texto rico vindo do editor (HTML do Quill): mensagens das pendências, avisos do site etc.
  * Tudo passa por uma lista de tags permitidas antes de gravar: sem scripts, estilos, imagens embutidas
  * ou atributos de evento. Texto simples (sem tags) é convertido para parágrafos.
  */

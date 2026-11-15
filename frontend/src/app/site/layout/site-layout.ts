@@ -3,11 +3,12 @@ import { RouterOutlet } from '@angular/router';
 import { SiteHeader } from './site-header';
 import { SiteFooter } from './site-footer';
 import { DemoModeService } from '@/app/core/interceptors/demo.interceptor';
+import { Avisos } from '@/app/shared/components/avisos';
 
 /** Moldura do site público (acesso livre, sem login). */
 @Component({
     selector: 'app-site-layout',
-    imports: [RouterOutlet, SiteHeader, SiteFooter],
+    imports: [RouterOutlet, SiteHeader, SiteFooter, Avisos],
     template: `
         <a href="#conteudo" class="pular-link">Pular para o conteúdo</a>
         <app-site-header />
@@ -21,6 +22,7 @@ import { DemoModeService } from '@/app/core/interceptors/demo.interceptor';
             <router-outlet />
         </main>
         <app-site-footer />
+        <app-avisos area="SITE" />
     `,
     host: { class: 'site-root' }
 })

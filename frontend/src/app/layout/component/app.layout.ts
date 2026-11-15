@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
+import { Avisos } from '@/app/shared/components/avisos';
 import { AppTopbar } from './app.topbar';
 import { AppSidebar } from './app.sidebar';
 import { AppFooter } from './app.footer';
@@ -7,7 +8,7 @@ import { LayoutService } from '@/app/layout/service/layout.service';
 
 @Component({
     selector: 'app-layout',
-    imports: [AppTopbar, AppSidebar, RouterModule, AppFooter],
+    imports: [AppTopbar, AppSidebar, RouterModule, AppFooter, Avisos],
     template: `<div class="layout-wrapper" [class]="containerClass()">
         <app-topbar></app-topbar>
         <app-sidebar></app-sidebar>
@@ -18,10 +19,13 @@ import { LayoutService } from '@/app/layout/service/layout.service';
             <app-footer></app-footer>
         </div>
         <div class="layout-mask"></div>
-    </div> `
+    </div>
+    <app-avisos [area]="areaAvisos" />`
 })
 export class AppLayout {
     layoutService = inject(LayoutService);
+    /** Painel do admin ou da conta (a rota diz qual). */
+    areaAvisos: 'ADMIN' | 'CONTA' = inject(ActivatedRoute).snapshot.data['area'] === 'admin' ? 'ADMIN' : 'CONTA';
 
     constructor() {
         effect(() => {

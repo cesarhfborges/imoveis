@@ -86,6 +86,7 @@ export class AppMenu {
                     items: [
                         { label: 'Usuários e permissões', icon: 'pi pi-fw pi-users', routerLink: ['/admin/usuarios'] },
                         { label: 'Configurações do site', icon: 'pi pi-fw pi-cog', routerLink: ['/admin/configuracoes'] },
+                        { label: 'Avisos e cookies', icon: 'pi pi-fw pi-megaphone', routerLink: ['/admin/avisos'] },
                         { label: 'Calendário', icon: 'pi pi-fw pi-calendar', routerLink: ['/admin/calendario'] },
                         { label: 'Tokens da API', icon: 'pi pi-fw pi-key', routerLink: ['/admin/api'] }
                     ]

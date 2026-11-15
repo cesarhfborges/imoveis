@@ -71,6 +71,7 @@ export const appRoutes: Routes = [
             { path: 'calendario', loadComponent: () => import('./app/admin/pages/calendario').then((m) => m.CalendarioPage) },
             { path: 'usuarios', loadComponent: () => import('./app/admin/pages/usuarios').then((m) => m.UsuariosPage) },
             { path: 'configuracoes', loadComponent: () => import('./app/admin/pages/configuracoes').then((m) => m.ConfiguracoesPage) },
+            { path: 'avisos', loadComponent: () => import('./app/admin/pages/avisos').then((m) => m.AvisosPage) },
             { path: 'api', loadComponent: () => import('./app/shared/pages/api-tokens-page').then((m) => m.ApiTokensPage) },
             { path: 'perfil', loadComponent: () => import('./app/conta/pages/perfil').then((m) => m.PerfilPage) }
         ]

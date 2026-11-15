@@ -2,11 +2,12 @@ import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AppLogo } from './app-logo';
 import { AppFloatingConfigurator } from '@/app/layout/component/app.floatingconfigurator';
+import { Avisos } from './avisos';
 
 /** Moldura das telas de login/cadastro (estilo das páginas de autenticação do Sakai). */
 @Component({
     selector: 'app-auth-card',
-    imports: [RouterLink, AppLogo, AppFloatingConfigurator],
+    imports: [RouterLink, AppLogo, AppFloatingConfigurator, Avisos],
     template: `
         <app-floating-configurator />
         <main class="bg-surface-50 dark:bg-surface-950 flex items-center justify-center min-h-screen px-4 py-16">
@@ -25,6 +26,7 @@ import { AppFloatingConfigurator } from '@/app/layout/component/app.floatingconf
                 </div>
             </div>
         </main>
+        <app-avisos area="SITE" />
     `
 })
 export class AuthCard {

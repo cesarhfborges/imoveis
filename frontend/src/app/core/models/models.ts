@@ -724,3 +724,113 @@ export function duracaoMinutos(min: number | null | undefined): string {
     if (horas === 0) return `${m} min`;
     return m ? `${horas} h ${m} min` : `${horas} h`;
 }
+
+// ---------------------------------------------------------------- avisos do site
+
+export type TipoAviso = 'MENSAGEM' | 'DRAWER' | 'DIALOG';
+export type AcaoAceite = 'FECHAR' | 'LINK';
+export type PublicoAviso = 'TODOS' | 'VISITANTES' | 'LOGADOS';
+export type AreaAviso = 'SITE' | 'CONTA' | 'ADMIN';
+export type SeveridadeAviso = 'info' | 'success' | 'warn' | 'error' | 'secondary' | 'contrast';
+
+/** O que o site recebe para exibir um aviso. */
+export interface AvisoPublico {
+    id: number;
+    versao: number;
+    titulo: string | null;
+    mensagem: string;
+    tipo: TipoAviso;
+    posicao: string;
+    severidade: SeveridadeAviso;
+    icone: string | null;
+    dispensavel: boolean;
+    modal: boolean;
+    textoAceite: string | null;
+    acaoAceite: AcaoAceite;
+    linkAceite: string | null;
+    novaAba: boolean;
+    textoLink: string | null;
+    urlLink: string | null;
+    ordem: number;
+    /** logado: a versão que ele já aceitou */
+    versaoAceita: number | null;
+}
+
+/** Cadastro completo (painel). */
+export interface Aviso extends Omit<AvisoPublico, 'versaoAceita'> {
+    nome: string;
+    publico: PublicoAviso;
+    areas: AreaAviso[];
+    ativo: boolean;
+    inicioEm: string | null;
+    fimEm: string | null;
+    versaoEm: string;
+    aceitesVersaoAtual: number;
+    atualizadoEm: string;
+}
+
+export interface AvisoForm {
+    nome: string;
+    titulo: string | null;
+    mensagem: string;
+    tipo: TipoAviso;
+    posicao: string;
+    severidade: SeveridadeAviso;
+    icone: string | null;
+    dispensavel: boolean;
+    modal: boolean;
+    textoAceite: string | null;
+    acaoAceite: AcaoAceite;
+    linkAceite: string | null;
+    novaAba: boolean;
+    textoLink: string | null;
+    urlLink: string | null;
+    publico: PublicoAviso;
+    areas: AreaAviso[];
+    ativo: boolean;
+    ordem: number;
+    inicioEm: string | null;
+    fimEm: string | null;
+    novaVersao: boolean;
+}
+
+/** Posições que cada componente do PrimeNG aceita (mesma regra do servidor). */
+export const POSICOES_AVISO: Record<TipoAviso, { value: string; label: string }[]> = {
+    MENSAGEM: [
+        { value: 'top', label: 'Topo da página' },
+        { value: 'bottom', label: 'Rodapé da página' }
+    ],
+    DRAWER: [
+        { value: 'right', label: 'Direita' },
+        { value: 'left', label: 'Esquerda' },
+        { value: 'top', label: 'Topo' },
+        { value: 'bottom', label: 'Rodapé' },
+        { value: 'full', label: 'Tela cheia' }
+    ],
+    DIALOG: [
+        { value: 'center', label: 'Centro' },
+        { value: 'top', label: 'Topo' },
+        { value: 'bottom', label: 'Rodapé' },
+        { value: 'left', label: 'Esquerda' },
+        { value: 'right', label: 'Direita' },
+        { value: 'topleft', label: 'Canto superior esquerdo' },
+        { value: 'topright', label: 'Canto superior direito' },
+        { value: 'bottomleft', label: 'Canto inferior esquerdo' },
+        { value: 'bottomright', label: 'Canto inferior direito' }
+    ]
+};
+
+export const TIPOS_AVISO: { value: TipoAviso; label: string; icone: string; dica: string }[] = [
+    { value: 'MENSAGEM', label: 'Mensagem', icone: 'pi pi-minus', dica: 'Barra fixa no topo ou no rodapé (p-message). Não bloqueia a página.' },
+    { value: 'DIALOG', label: 'Diálogo', icone: 'pi pi-window-maximize', dica: 'Janela (p-dialog) no centro ou numa borda/canto. Pode bloquear a página (modal).' },
+    { value: 'DRAWER', label: 'Drawer', icone: 'pi pi-arrow-right-arrow-left', dica: 'Painel lateral (p-drawer) que desliza de uma borda ou ocupa a tela.' }
+];
+
+export const SEVERIDADES_AVISO: { value: SeveridadeAviso; label: string }[] = [
+    { value: 'secondary', label: 'Cinza (padrão)' },
+    { value: 'info', label: 'Informação (azul)' },
+    { value: 'success', label: 'Sucesso (verde)' },
+    { value: 'warn', label: 'Atenção (amarelo)' },
+    { value: 'error', label: 'Erro (vermelho)' },
+    { value: 'contrast', label: 'Contraste (escuro)' }
+];

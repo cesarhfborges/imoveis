@@ -59,7 +59,7 @@ import br.com.chfb.imoveis.moderation.entity.PenalidadeConta;
 import br.com.chfb.imoveis.moderation.entity.StatusDenuncia;
 import br.com.chfb.imoveis.moderation.entity.TipoDenuncia;
 import br.com.chfb.imoveis.moderation.repository.DenunciaRepository;
-import br.com.chfb.imoveis.moderation.util.TextoRico;
+import br.com.chfb.imoveis.platform.texto.TextoRico;
 import br.com.chfb.imoveis.moderation.repository.GravidadeRepository;
 import br.com.chfb.imoveis.moderation.repository.TipoDenunciaRepository;
 import br.com.chfb.imoveis.sharedkernel.dto.PageResponse;
