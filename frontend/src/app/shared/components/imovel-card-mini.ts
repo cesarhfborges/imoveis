@@ -1,15 +1,16 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ImovelResumo } from '@/app/core/models/models';
 import { PrecoPipe, slug } from '@/app/core/pipes/formatos';
 import { ImovelFoto } from './imovel-foto';
+import { ConfigService } from '@/app/core/services/config.service';
 
 /** Cartão compacto (vitrine de destaques e "imóveis similares"). */
 @Component({
     selector: 'app-imovel-card-mini',
     imports: [RouterLink, ImovelFoto, PrecoPipe],
     template: `
-        <a [routerLink]="link()" class="card-mini">
+        <a [routerLink]="link()" [attr.target]="alvo()" [attr.rel]="alvo() ? 'noopener' : null" class="card-mini">
             <div class="relative aspect-[4/3]">
                 <app-imovel-foto class="w-full h-full" [src]="imovel().fotoCapa" [tipo]="imovel().tipo" [semente]="imovel().id" [alt]="imovel().titulo" [mostrarTexto]="false" />
                 <span class="card-mini__preco">{{ imovel().preco | preco: imovel().finalidade }}</span>
@@ -35,10 +36,14 @@ import { ImovelFoto } from './imovel-foto';
                     }
                 </div>
             </div>
+            @if (alvo()) {
+                <span class="sr-only">(abre em nova janela)</span>
+            }
         </a>
     `
 })
 export class ImovelCardMini {
     imovel = input.required<ImovelResumo>();
+    alvo = inject(ConfigService).alvoAnuncio;
     link = computed(() => ['/imovel', this.imovel().id, slug(this.imovel().titulo)]);
 }

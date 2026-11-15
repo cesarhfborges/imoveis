@@ -28,14 +28,16 @@ public record ConfiguracaoDto(
         @Size(max = 20) String temaSurface,
         @NotBlank @Pattern(regexp = "light|dark|auto") String temaModo,
         boolean moderarAnuncios,
-        boolean permitirCadastroCorretor) {
+        boolean permitirCadastroCorretor,
+        boolean abrirAnuncioNovaJanela) {
 
     public static ConfiguracaoDto of(Configuracao c) {
         return new ConfiguracaoDto(c.getNomeApp(), c.getSlogan(), c.getLogoUrl(), c.getLogoEscuroUrl(),
                 c.getFaviconUrl(), c.getSeoTitulo(), c.getSeoDescricao(), c.getSeoPalavrasChave(), c.getSeoImagemUrl(),
                 c.getEmailContato(), c.getTelefoneContato(), c.getWhatsapp(), c.getEndereco(), c.getInstagram(),
                 c.getFacebook(), c.getTextoRodape(), c.getTemaPreset(), c.getTemaPrimaria(), c.getTemaSurface(),
-                c.getTemaModo(), c.isModerarAnuncios(), c.isPermitirCadastroCorretor());
+                c.getTemaModo(), c.isModerarAnuncios(), c.isPermitirCadastroCorretor(),
+                c.isAbrirAnuncioNovaJanela());
     }
 
     public void aplicar(Configuracao c) {
@@ -61,5 +63,6 @@ public record ConfiguracaoDto(
         c.setTemaModo(temaModo);
         c.setModerarAnuncios(moderarAnuncios);
         c.setPermitirCadastroCorretor(permitirCadastroCorretor);
+        c.setAbrirAnuncioNovaJanela(abrirAnuncioNovaJanela);
     }
 }

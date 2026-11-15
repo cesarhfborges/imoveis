@@ -139,6 +139,7 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                         <div class="flex flex-col gap-4">
                             <label class="flex items-center gap-3"><p-toggleswitch formControlName="moderarAnuncios" inputId="cf-mod" /> Anúncios novos de corretores precisam de aprovação de um administrador</label>
                             <label class="flex items-center gap-3"><p-toggleswitch formControlName="permitirCadastroCorretor" inputId="cf-cad" /> Permitir que corretores e imobiliárias se cadastrem pelo site</label>
+                            <label class="flex items-center gap-3"><p-toggleswitch formControlName="abrirAnuncioNovaJanela" inputId="cf-janela" /> Abrir os anúncios do site em uma nova janela (desligado: abre na mesma janela)</label>
                         </div>
                     </p-tabpanel>
                 </p-tabpanels>
@@ -183,7 +184,8 @@ export class ConfiguracoesPage {
         facebook: [''],
         textoRodape: [''],
         moderarAnuncios: [false],
-        permitirCadastroCorretor: [true]
+        permitirCadastroCorretor: [true],
+        abrirAnuncioNovaJanela: [false]
     });
 
     constructor() {
@@ -213,7 +215,8 @@ export class ConfiguracoesPage {
             facebook: c.facebook ?? '',
             textoRodape: c.textoRodape ?? '',
             moderarAnuncios: c.moderarAnuncios,
-            permitirCadastroCorretor: c.permitirCadastroCorretor
+            permitirCadastroCorretor: c.permitirCadastroCorretor,
+            abrirAnuncioNovaJanela: c.abrirAnuncioNovaJanela
         });
         this.tema.set({ preset: c.temaPreset as PresetName, primary: c.temaPrimaria, surface: c.temaSurface, mode: c.temaModo });
     }

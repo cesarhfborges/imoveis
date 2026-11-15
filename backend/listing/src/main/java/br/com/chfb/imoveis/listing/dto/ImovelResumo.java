@@ -27,6 +27,7 @@ public record ImovelResumo(
         String cidade,
         String bairro,
         String endereco,
+        String numero,
         BigDecimal latitude,
         BigDecimal longitude,
         String descricaoCurta,

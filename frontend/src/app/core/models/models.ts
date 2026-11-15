@@ -75,6 +75,7 @@ export interface ImovelResumo {
     cidade: string;
     bairro: string;
     endereco: string | null;
+    numero: string | null;
     latitude: number | null;
     longitude: number | null;
     descricaoCurta: string | null;
@@ -138,6 +139,7 @@ export interface ImovelDetalhe {
     cidade: string;
     bairro: string;
     endereco: string | null;
+    numero: string | null;
     cep: string | null;
     latitude: number | null;
     longitude: number | null;
@@ -174,6 +176,7 @@ export interface ImovelForm {
     cidade: string;
     bairro: string;
     endereco: string | null;
+    numero: string | null;
     cep: string | null;
     latitude: number | null;
     longitude: number | null;
@@ -392,6 +395,8 @@ export interface Configuracao {
     temaSurface: string | null;
     temaModo: TemaModo;
     moderarAnuncios: boolean;
+    /** Ao clicar num anúncio no site: abre em nova janela (true) ou na mesma (false). */
+    abrirAnuncioNovaJanela: boolean;
     permitirCadastroCorretor: boolean;
 }
 
@@ -411,6 +416,15 @@ export const DOCUMENTACAO: { campo: 'aceitaFinanciamento' | 'aceitaFgts' | 'acei
     { campo: 'escrituraRegistrada', label: 'Escritura registrada', dica: 'Documentação em cartório regularizada' },
     { campo: 'quitado', label: 'Imóvel quitado', dica: 'Sem saldo devedor de financiamento' }
 ];
+
+/**
+ * Título público do anúncio: sempre composto pelo endereço (logradouro, bairro e cidade/UF),
+ * nunca pelo texto livre do anunciante — esse vira só o título da descrição.
+ */
+export function tituloAnuncio(i: { endereco?: string | null; numero?: string | null; bairro?: string | null; cidade?: string | null; uf?: string | null }): string {
+    const cidade = [i.cidade?.trim(), i.uf?.trim().toUpperCase()].filter(Boolean).join('/');
+    return [i.endereco?.trim(), i.numero?.trim(), i.bairro?.trim(), cidade].filter(Boolean).join(', ');
+}
 
 export function tipoLabel(t: TipoImovel | string | null | undefined): string {
     return TIPOS.find((x) => x.value === t)?.label ?? String(t ?? '');

@@ -11,7 +11,7 @@ import { ConfigService } from '@/app/core/services/config.service';
     imports: [RouterLink, AuthCard, LoginForm],
     template: `
         <app-auth-card titulo="Acessar conta" subtitulo="Entre como cliente para salvar favoritos ou como corretor para gerenciar anúncios.">
-            <app-login-form area="conta" (entrou)="entrou()" />
+            <app-login-form area="conta" (entrou)="entrou($event)" />
             <p class="text-center mt-6 mb-0">Ainda não tem conta? <a routerLink="/conta/cadastro" class="text-primary font-semibold hover:underline">Cadastre-se</a></p>
             <p class="text-center mt-2 mb-0 text-sm text-muted-color">Quer anunciar? <a routerLink="/anunciar" class="text-primary hover:underline">Cadastro de corretor/imobiliária</a></p>
         </app-auth-card>
@@ -26,9 +26,13 @@ export class ContaLoginPage {
         inject(ConfigService).definirTitulo('Acessar conta');
     }
 
-    entrou() {
+    entrou(event: any) {
         this.conta.carregarFavoritos();
         const voltar: string | undefined = this.route.snapshot.queryParams['voltar'];
-        this.router.navigateByUrl(voltar && voltar.startsWith('/') && !voltar.startsWith('/admin') ? voltar : '/conta');
+        if (event.perfil === 'CLIENTE') {
+            void this.router.navigateByUrl('/');
+        } else {
+            void this.router.navigateByUrl(voltar && voltar.startsWith('/') && !voltar.startsWith('/admin') ? voltar : '/conta');
+        }
     }
 }

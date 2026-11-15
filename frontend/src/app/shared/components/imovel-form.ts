@@ -1,4 +1,5 @@
-import { Component, effect, inject, input, output, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormArray, FormControl, FormGroup, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -9,7 +10,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { ButtonModule } from 'primeng/button';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { MessageService } from 'primeng/api';
-import { DOCUMENTACAO, FINALIDADES, Finalidade, ImovelDetalhe, ImovelForm as ImovelFormDto, ORIGENS_FOTO, OrigemFoto, TIPOS, TipoImovel } from '@/app/core/models/models';
+import { DOCUMENTACAO, FINALIDADES, Finalidade, ImovelDetalhe, ImovelForm as ImovelFormDto, ORIGENS_FOTO, OrigemFoto, TIPOS, TipoImovel, UFS, tituloAnuncio } from '@/app/core/models/models';
 import { ImageUpload } from './image-upload';
 import { MapaOsm } from './mapa-osm';
 import { ImovelFoto } from './imovel-foto';
@@ -27,11 +28,10 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
     imports: [ReactiveFormsModule, InputTextModule, InputNumberModule, TextareaModule, SelectModule, ToggleSwitchModule, CheckboxModule, ButtonModule, AutoCompleteModule, ImageUpload, MapaOsm, ImovelFoto],
     template: `
         <form [formGroup]="form" (ngSubmit)="enviar()" class="flex flex-col gap-6" novalidate>
-            <section class="card m-0 flex flex-col gap-4">
-                <h2 class="text-lg font-semibold m-0">Informações</h2>
-                <div class="flex flex-col gap-2">
-                    <label for="im-titulo">Título do anúncio *</label>
-                    <input pInputText id="im-titulo" formControlName="titulo" maxlength="160" placeholder="Ex.: Apartamento 3 quartos com varanda" />
+            <section class="card m-0 flex flex-col gap-4" aria-labelledby="im-info-titulo">
+                <div>
+                    <h2 id="im-info-titulo" class="text-lg font-semibold m-0">Informações e localização</h2>
+                    <p class="text-sm text-muted-color mt-1 mb-0">O título do anúncio é montado a partir do endereço.</p>
                 </div>
                 <div class="grid gap-4 md:grid-cols-3">
                     <div class="flex flex-col gap-2">
@@ -47,12 +47,59 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
                         <p-inputnumber inputId="im-preco" formControlName="preco" mode="currency" currency="BRL" locale="pt-BR" [maxFractionDigits]="0" styleClass="w-full" inputStyleClass="w-full" />
                     </div>
                 </div>
+                <div class="flex flex-wrap gap-6">
+                    <label class="flex items-center gap-2"><p-toggleswitch formControlName="lancamento" inputId="im-lanc" /> Imóvel novo / lançamento</label>
+                </div>
+                <div class="grid gap-4 grid-cols-2 md:grid-cols-12">
+                    <div class="flex flex-col gap-2 col-span-2 md:col-span-3">
+                        <label for="im-cep">CEP</label>
+                        <input pInputText id="im-cep" formControlName="cep" maxlength="9" inputmode="numeric" autocomplete="postal-code" />
+                    </div>
+                    <div class="flex flex-col gap-2 col-span-2 md:col-span-7">
+                        <label for="im-end">Logradouro</label>
+                        <input pInputText id="im-end" formControlName="endereco" maxlength="200" placeholder="Rua, quadra, conjunto..." autocomplete="address-line1" />
+                    </div>
+                    <div class="flex flex-col gap-2 col-span-2 md:col-span-2">
+                        <label for="im-num">Número</label>
+                        <input pInputText id="im-num" formControlName="numero" maxlength="20" placeholder="Ex.: 12, s/n" />
+                    </div>
+                    <div class="flex flex-col gap-2 col-span-2 md:col-span-5">
+                        <label for="im-bairro">Bairro *</label>
+                        <input pInputText id="im-bairro" formControlName="bairro" />
+                    </div>
+                    <div class="flex flex-col gap-2 md:col-span-5">
+                        <label for="im-cidade">Cidade *</label>
+                        <input pInputText id="im-cidade" formControlName="cidade" autocomplete="address-level2" />
+                    </div>
+                    <div class="flex flex-col gap-2 md:col-span-2">
+                        <label for="im-uf">UF *</label>
+                        <p-select inputId="im-uf" formControlName="uf" [options]="ufs" placeholder="UF" [filter]="true" styleClass="w-full" appendTo="body" />
+                    </div>
+                </div>
+                <div class="flex flex-col gap-1 p-3 rounded-border border border-surface">
+                    <span class="text-xs text-muted-color">Título do anúncio (gerado automaticamente)</span>
+                    <strong class="text-base">{{ tituloPrevia() || 'Preencha endereço, bairro e cidade' }}</strong>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <p-button type="button" label="Localizar endereço no mapa" icon="pi pi-map-marker" [outlined]="true" [loading]="geocodificando()" (onClick)="localizar()" />
+                    <span class="text-sm text-muted-color">ou clique no mapa para marcar a posição exata.</span>
+                    @if (form.controls.latitude.value != null) {
+                        <span class="text-xs text-muted-color">({{ form.controls.latitude.value }}, {{ form.controls.longitude.value }})</span>
+                    }
+                </div>
+                <app-mapa-osm [selecionavel]="true" [centro]="centro()" [zoom]="11" altura="320px" (posicaoSelecionada)="marcar($event.lat, $event.lng)" />
+            </section>
+
+            <section class="card m-0 flex flex-col gap-4" aria-labelledby="im-desc-titulo">
+                <h2 id="im-desc-titulo" class="text-lg font-semibold m-0">Descrição</h2>
+                <div class="flex flex-col gap-2">
+                    <label for="im-titulo">Título da descrição *</label>
+                    <input pInputText id="im-titulo" formControlName="titulo" maxlength="160" placeholder="Ex.: Apartamento 3 quartos com varanda" aria-describedby="im-titulo-dica" />
+                    <small id="im-titulo-dica" class="text-muted-color">Aparece como subtítulo, logo acima do texto da descrição.</small>
+                </div>
                 <div class="flex flex-col gap-2">
                     <label for="im-desc">Descrição</label>
                     <textarea pTextarea id="im-desc" formControlName="descricao" rows="6" [autoResize]="true"></textarea>
-                </div>
-                <div class="flex flex-wrap gap-6">
-                    <label class="flex items-center gap-2"><p-toggleswitch formControlName="lancamento" inputId="im-lanc" /> Imóvel novo / lançamento</label>
                 </div>
             </section>
 
@@ -90,39 +137,6 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
                 </div>
             </section>
 
-            <section class="card m-0 flex flex-col gap-4">
-                <h2 class="text-lg font-semibold m-0">Localização</h2>
-                <div class="grid gap-4 md:grid-cols-4">
-                    <div class="flex flex-col gap-2">
-                        <label for="im-uf">UF *</label>
-                        <input pInputText id="im-uf" formControlName="uf" maxlength="2" class="uppercase" />
-                    </div>
-                    <div class="flex flex-col gap-2 md:col-span-3">
-                        <label for="im-cidade">Cidade *</label>
-                        <input pInputText id="im-cidade" formControlName="cidade" />
-                    </div>
-                    <div class="flex flex-col gap-2 md:col-span-2">
-                        <label for="im-bairro">Bairro *</label>
-                        <input pInputText id="im-bairro" formControlName="bairro" />
-                    </div>
-                    <div class="flex flex-col gap-2 md:col-span-2">
-                        <label for="im-cep">CEP</label>
-                        <input pInputText id="im-cep" formControlName="cep" maxlength="9" />
-                    </div>
-                    <div class="flex flex-col gap-2 md:col-span-4">
-                        <label for="im-end">Endereço</label>
-                        <input pInputText id="im-end" formControlName="endereco" placeholder="Rua, quadra, conjunto..." />
-                    </div>
-                </div>
-                <div class="flex flex-wrap items-center gap-3">
-                    <p-button type="button" label="Localizar endereço no mapa" icon="pi pi-map-marker" [outlined]="true" [loading]="geocodificando()" (onClick)="localizar()" />
-                    <span class="text-sm text-muted-color">ou clique no mapa para marcar a posição exata.</span>
-                    @if (form.controls.latitude.value != null) {
-                        <span class="text-xs text-muted-color">({{ form.controls.latitude.value }}, {{ form.controls.longitude.value }})</span>
-                    }
-                </div>
-                <app-mapa-osm [selecionavel]="true" [centro]="centro()" [zoom]="11" altura="320px" (posicaoSelecionada)="marcar($event.lat, $event.lng)" />
-            </section>
 
             <section class="card m-0 flex flex-col gap-4">
                 <div class="flex flex-wrap items-end justify-between gap-3">
@@ -227,10 +241,11 @@ export class ImovelFormComponent {
         suites: this.fb.control<number | null>(null),
         banheiros: this.fb.control<number | null>(null),
         vagas: this.fb.control<number | null>(null),
-        uf: ['DF', [Validators.required, Validators.pattern(/^[A-Za-z]{2}$/)]],
+        uf: ['DF', [Validators.required, Validators.pattern(new RegExp(`^(${UFS.join('|')})$`))]],
         cidade: ['', Validators.required],
         bairro: ['', Validators.required],
         endereco: [''],
+        numero: [''],
         cep: [''],
         latitude: this.fb.control<number | null>(null),
         longitude: this.fb.control<number | null>(null),
@@ -244,6 +259,11 @@ export class ImovelFormComponent {
         fotos: this.fb.array<FotoGrupo>([])
     });
 
+    private valores = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+    /** Prévia do título público, composto pelo endereço. */
+    tituloPrevia = computed(() => tituloAnuncio(this.valores()));
+
+    readonly ufs = UFS;
     readonly maxFotos = MAX_FOTOS;
     readonly origens = ORIGENS_FOTO;
     /** Seletor "aplicar a todas": volta a ficar vazio depois de aplicar. */
@@ -259,7 +279,7 @@ export class ImovelFormComponent {
             if (!v) return;
             this.fotos.clear();
             v.fotos.forEach((f) => this.fotos.push(this.novaFoto(f.url, f.origem)));
-            this.form.patchValue({ ...v, descricao: v.descricao ?? '', endereco: v.endereco ?? '', cep: v.cep ?? '', caracteristicas: [...v.caracteristicas] });
+            this.form.patchValue({ ...v, uf: v.uf?.toUpperCase() ?? 'DF', descricao: v.descricao ?? '', endereco: v.endereco ?? '', numero: v.numero ?? '', cep: v.cep ?? '', caracteristicas: [...v.caracteristicas] });
             this.centro.set(v.latitude != null && v.longitude != null ? [v.latitude, v.longitude] : null);
         });
     }
@@ -292,7 +312,7 @@ export class ImovelFormComponent {
     /** Busca as coordenadas do endereço no Nominatim (geocodificação gratuita do OpenStreetMap). */
     async localizar() {
         const v = this.form.getRawValue();
-        const q = [v.endereco, v.bairro, v.cidade, v.uf, 'Brasil'].filter(Boolean).join(', ');
+        const q = [[v.endereco, v.numero].filter(Boolean).join(' '), v.bairro, v.cidade, v.uf, 'Brasil'].filter(Boolean).join(', ');
         if (!v.cidade) {
             this.msg.add({ severity: 'warn', summary: 'Localização', detail: 'Preencha ao menos a cidade.' });
             return;
@@ -319,10 +339,10 @@ export class ImovelFormComponent {
     enviar() {
         if (this.form.invalid) {
             this.form.markAllAsTouched();
-            this.msg.add({ severity: 'warn', summary: 'Confira o formulário', detail: 'Preencha título, preço, UF, cidade e bairro.' });
+            this.msg.add({ severity: 'warn', summary: 'Confira o formulário', detail: 'Preencha preço, UF, cidade, bairro e o título da descrição.' });
             return;
         }
         const v = this.form.getRawValue();
-        this.salvar.emit({ ...v, preco: v.preco ?? 0, uf: v.uf.toUpperCase(), descricao: v.descricao || null, endereco: v.endereco || null, cep: v.cep || null });
+        this.salvar.emit({ ...v, preco: v.preco ?? 0, uf: v.uf.toUpperCase(), descricao: v.descricao || null, endereco: v.endereco || null, numero: v.numero.trim() || null, cep: v.cep || null });
     }
 }

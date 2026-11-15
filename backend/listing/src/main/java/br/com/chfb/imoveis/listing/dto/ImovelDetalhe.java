@@ -32,6 +32,7 @@ public record ImovelDetalhe(
         String cidade,
         String bairro,
         String endereco,
+        String numero,
         String cep,
         BigDecimal latitude,
         BigDecimal longitude,

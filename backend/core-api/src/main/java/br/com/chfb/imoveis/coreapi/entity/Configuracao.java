@@ -64,6 +64,8 @@ public class Configuracao extends BaseEntity {
     private boolean moderarAnuncios;
     @Column(name = "permitir_cadastro_corretor")
     private boolean permitirCadastroCorretor = true;
+    @Column(name = "abrir_anuncio_nova_janela")
+    private boolean abrirAnuncioNovaJanela;
 
     public String getNomeApp() { return nomeApp; }
     public void setNomeApp(String nomeApp) { this.nomeApp = nomeApp; }
@@ -107,6 +109,8 @@ public class Configuracao extends BaseEntity {
     public void setTemaModo(String temaModo) { this.temaModo = temaModo; }
     public boolean isModerarAnuncios() { return moderarAnuncios; }
     public void setModerarAnuncios(boolean moderarAnuncios) { this.moderarAnuncios = moderarAnuncios; }
+    public boolean isAbrirAnuncioNovaJanela() { return abrirAnuncioNovaJanela; }
+    public void setAbrirAnuncioNovaJanela(boolean abrirAnuncioNovaJanela) { this.abrirAnuncioNovaJanela = abrirAnuncioNovaJanela; }
     public boolean isPermitirCadastroCorretor() { return permitirCadastroCorretor; }
     public void setPermitirCadastroCorretor(boolean permitirCadastroCorretor) { this.permitirCadastroCorretor = permitirCadastroCorretor; }
 }

@@ -5,6 +5,7 @@ import { ImovelResumo } from '@/app/core/models/models';
 import { PrecoPipe, TempoAtrasPipe, ValorM2Pipe, slug } from '@/app/core/pipes/formatos';
 import { ImovelFoto } from './imovel-foto';
 import { AuthService } from '@/app/core/services/auth.service';
+import { ConfigService } from '@/app/core/services/config.service';
 
 /**
  * Cartão horizontal de resultado de busca: foto à esquerda com selos,
@@ -16,7 +17,7 @@ import { AuthService } from '@/app/core/services/auth.service';
     imports: [RouterLink, ImovelFoto, PrecoPipe, ValorM2Pipe, TempoAtrasPipe, AnuncianteFoto],
     template: `
         <article class="imovel-card group">
-            <a [routerLink]="link()" class="imovel-card__foto" [attr.aria-label]="'Ver ' + imovel().titulo">
+            <a [routerLink]="link()" [attr.target]="alvo()" [attr.rel]="alvo() ? 'noopener' : null" class="imovel-card__foto" [attr.aria-label]="'Ver ' + endereco() + (alvo() ? ' (abre em nova janela)' : '')">
                 <app-imovel-foto class="w-full h-full" [src]="imovel().fotoCapa" [tipo]="imovel().tipo" [semente]="imovel().id" [alt]="imovel().titulo" />
                 @if (imovel().lancamento) {
                     <span class="imovel-card__selo imovel-card__selo--topo">Imóvel novo</span>
@@ -37,8 +38,8 @@ import { AuthService } from '@/app/core/services/auth.service';
             <div class="imovel-card__corpo">
                 <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0">
-                        <a [routerLink]="link()" class="imovel-card__endereco">{{ endereco() }}</a>
-                        <a [routerLink]="link()" class="imovel-card__titulo">{{ imovel().titulo }}</a>
+                        <a [routerLink]="link()" [attr.target]="alvo()" [attr.rel]="alvo() ? 'noopener' : null" class="imovel-card__endereco">{{ endereco() }}@if (alvo()) {<span class="sr-only"> (abre em nova janela)</span>}</a>
+                        <a [routerLink]="link()" [attr.target]="alvo()" [attr.rel]="alvo() ? 'noopener' : null" class="imovel-card__titulo">{{ imovel().titulo }}@if (alvo()) {<span class="sr-only"> (abre em nova janela)</span>}</a>
                     </div>
                     <button type="button" class="imovel-card__fav" [class.ativo]="favorito()" (click)="favoritar.emit(imovel())" [attr.aria-label]="favorito() ? 'Remover dos favoritos' : 'Salvar nos favoritos'" [attr.aria-pressed]="favorito()">
                         <i class="pi" [class.pi-heart-fill]="favorito()" [class.pi-heart]="!favorito()"></i>
@@ -92,9 +93,10 @@ export class ImovelCard {
     favoritar = output<ImovelResumo>();
     contatar = output<ImovelResumo>();
 
+    alvo = inject(ConfigService).alvoAnuncio;
     link = computed(() => ['/imovel', this.imovel().id, slug(this.imovel().titulo)]);
     endereco = computed(() => {
         const i = this.imovel();
-        return [i.endereco, i.bairro, i.cidade].filter(Boolean).join(', ');
+        return [i.endereco, i.numero, i.bairro, i.cidade].filter(Boolean).join(', ');
     });
 }

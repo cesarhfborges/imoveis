@@ -4,7 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { SkeletonModule } from 'primeng/skeleton';
 import { MessageService } from 'primeng/api';
-import { DOCUMENTACAO, ImovelDetalhe, ImovelResumo, finalidadeLabel, statusInfo } from '@/app/core/models/models';
+import { DOCUMENTACAO, ImovelDetalhe, ImovelResumo, finalidadeLabel, statusInfo, tituloAnuncio } from '@/app/core/models/models';
 import { GestaoAnunciosService, ImovelService } from '@/app/core/services/imovel.service';
 import { ContaService } from '@/app/core/services/conta.service';
 import { AuthService } from '@/app/core/services/auth.service';
@@ -57,7 +57,7 @@ import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
                         <span aria-current="page">{{ i.codigo }}</span>
                     </nav>
 
-                    <app-galeria-fotos [fotos]="i.fotos" [alt]="i.titulo" [tipo]="i.tipo" [semente]="i.id" />
+                    <app-galeria-fotos [fotos]="i.fotos" [alt]="tituloAnuncio(i)" [tipo]="i.tipo" [semente]="i.id" />
 
                     <!-- o que é, onde fica e quanto custa, num cartão só -->
                     <section class="detalhe__valores" aria-labelledby="detalhe-titulo">
@@ -69,10 +69,9 @@ import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
                                     <span class="detalhe__selo detalhe__selo--novo"><i class="pi pi-sparkles" aria-hidden="true"></i> Imóvel novo</span>
                                 }
                             </div>
-                            <h1 id="detalhe-titulo" class="detalhe__titulo">{{ i.titulo }}</h1>
+                            <h1 id="detalhe-titulo" class="detalhe__titulo">{{ tituloAnuncio(i) }}</h1>
                             <a [href]="ancora('local-titulo')" (click)="irPara($event, 'local-titulo')" class="detalhe__endereco">
                                 <i class="pi pi-map-marker" aria-hidden="true"></i>
-                                <span>{{ i.bairro }}, {{ i.cidade }}/{{ i.uf }}</span>
                                 <span class="detalhe__endereco-mapa">Ver no mapa</span>
                             </a>
                             <div class="detalhe__meta">
@@ -155,6 +154,9 @@ import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
 
                     <section class="bloco" aria-labelledby="desc-titulo">
                         <h2 id="desc-titulo">Descrição</h2>
+                        @if (i.titulo) {
+                            <h3 class="detalhe__descricao-titulo">{{ i.titulo }}</h3>
+                        }
                         <div class="detalhe__descricao" [class.recolhida]="!descricaoAberta()">{{ i.descricao || 'O anunciante ainda não escreveu uma descrição.' }}</div>
                         @if (i.descricao) {
                             <button type="button" class="text-primary font-semibold mt-2" (click)="descricaoAberta.set(!descricaoAberta())" [attr.aria-expanded]="descricaoAberta()">
@@ -197,7 +199,7 @@ import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
                             <i class="pi pi-map-marker" aria-hidden="true"></i>
                             <span>
                                 @if (i.endereco) {
-                                    <strong class="block">{{ i.endereco }}</strong>
+                                    <strong class="block">{{ i.endereco }}{{ i.numero ? ', ' + i.numero : '' }}</strong>
                                 }
                                 {{ i.bairro }}, {{ i.cidade }}/{{ i.uf }}{{ i.cep ? ' · CEP ' + i.cep : '' }}
                             </span>
@@ -285,6 +287,7 @@ export class DetalhePage {
     descricaoAberta = signal(false);
     denunciaAberta = signal(false);
     finalidadeLabel = finalidadeLabel;
+    tituloAnuncio = tituloAnuncio;
     documentacao = DOCUMENTACAO;
 
     favorito = computed(() => this.conta.favoritos().has(Number(this.id())));
@@ -308,13 +311,16 @@ export class DetalhePage {
     });
     pontos = computed<PontoMapa[]>(() => {
         const i = this.imovel();
-        return i?.latitude != null && i.longitude != null ? [{ id: i.id, lat: i.latitude, lng: i.longitude, titulo: i.titulo, subtitulo: `${i.bairro}, ${i.cidade}` }] : [];
+        return i?.latitude != null && i.longitude != null ? [{ id: i.id, lat: i.latitude, lng: i.longitude, titulo: `${i.tipoDescricao} · ${finalidadeLabel(i.finalidade)}`, subtitulo: tituloAnuncio(i) }] : [];
     });
     rotaFinalidade = computed(() => {
         const i = this.imovel();
         return i?.lancamento ? '/imovel-novo' : i?.finalidade === 'ALUGUEL' ? '/aluguel' : i?.finalidade === 'TEMPORADA' ? '/temporada' : '/venda';
     });
-    linkWhatsapp = computed(() => 'https://wa.me/?text=' + encodeURIComponent((this.imovel()?.titulo ?? '') + ' ' + location.href));
+    linkWhatsapp = computed(() => {
+        const i = this.imovel();
+        return 'https://wa.me/?text=' + encodeURIComponent((i ? tituloAnuncio(i) + ' ' : '') + location.href);
+    });
 
     constructor() {
         effect(() => {
@@ -324,7 +330,7 @@ export class DetalhePage {
             this.imoveis.detalhe(id).subscribe({
                 next: (i) => {
                     this.imovel.set(i);
-                    this.config.definirTitulo(i.titulo);
+                    this.config.definirTitulo(tituloAnuncio(i));
                 },
                 // fora do ar a consulta pública não acha: a moderação e o dono veem a prévia pela área de gestão
                 error: () => this.carregarPrevia(id)
@@ -343,7 +349,7 @@ export class DetalhePage {
         this.gestao.obter(area, id).subscribe({
             next: (i) => {
                 this.imovel.set(i);
-                this.config.definirTitulo('Prévia: ' + i.titulo);
+                this.config.definirTitulo('Prévia: ' + tituloAnuncio(i));
             },
             error: () => this.erro.set(true)
         });

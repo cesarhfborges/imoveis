@@ -77,6 +77,9 @@ public class Imovel extends BaseEntity {
     @Column(length = 200)
     private String endereco;
 
+    @Column(length = 20)
+    private String numero;
+
     @Column(length = 9)
     private String cep;
 
@@ -162,6 +165,8 @@ public class Imovel extends BaseEntity {
     public void setBairro(String bairro) { this.bairro = bairro; }
     public String getEndereco() { return endereco; }
     public void setEndereco(String endereco) { this.endereco = endereco; }
+    public String getNumero() { return numero; }
+    public void setNumero(String numero) { this.numero = numero; }
     public String getCep() { return cep; }
     public void setCep(String cep) { this.cep = cep; }
     public BigDecimal getLatitude() { return latitude; }

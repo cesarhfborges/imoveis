@@ -50,6 +50,7 @@ final class AlteracoesAnuncio {
         c.put("Banheiros", numero(i.getBanheiros()));
         c.put("Vagas", numero(i.getVagas()));
         c.put("Endereço", i.getEndereco());
+        c.put("Número", i.getNumero());
         c.put("Bairro", i.getBairro());
         c.put("Cidade", i.getCidade());
         c.put("UF", i.getUf());

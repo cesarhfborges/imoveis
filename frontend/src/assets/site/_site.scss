@@ -1829,6 +1829,14 @@ body {
     }
 }
 
+.detalhe__descricao-titulo {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--p-text-color);
+}
+
 .detalhe__descricao {
     white-space: pre-line;
     line-height: 1.6;

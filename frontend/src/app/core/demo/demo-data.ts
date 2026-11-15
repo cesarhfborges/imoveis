@@ -183,6 +183,7 @@ export function criarDemoDb(): DemoDb {
             cidade,
             bairro,
             endereco,
+            numero: null,
             cep: null,
             latitude: lat,
             longitude: lng,

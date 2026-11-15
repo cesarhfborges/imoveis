@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { Meta, Title } from '@angular/platform-browser';
 import { Observable, catchError, firstValueFrom, of, tap } from 'rxjs';
@@ -28,7 +28,8 @@ export const CONFIG_PADRAO: Configuracao = {
     temaSurface: null,
     temaModo: 'auto',
     moderarAnuncios: false,
-    permitirCadastroCorretor: true
+    permitirCadastroCorretor: true,
+    abrirAnuncioNovaJanela: false
 };
 
 /** Configuração global (nome, logos, SEO e tema) definida em /admin/configuracoes. */
@@ -41,6 +42,8 @@ export class ConfigService {
     private doc = inject(DOCUMENT);
 
     readonly config = signal<Configuracao>(CONFIG_PADRAO);
+    /** Alvo dos links de anúncio no site, conforme a configuração ("_blank" = nova janela). */
+    readonly alvoAnuncio = computed(() => (this.config().abrirAnuncioNovaJanela ? '_blank' : null));
 
     async carregar(): Promise<void> {
         const c = await firstValueFrom(this.api.get<Configuracao>('/app/public/configuracao').pipe(catchError(() => of(CONFIG_PADRAO))));

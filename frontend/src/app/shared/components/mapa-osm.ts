@@ -45,6 +45,8 @@ export class MapaOsm implements AfterViewInit, OnDestroy {
     selecionavel = input(false);
     cliqueParaCarregar = input(false);
     zoomRoda = input<'livre' | 'ctrl'>('ctrl');
+    /** Links "Ver imóvel" dos balões abrem em nova janela. */
+    linksNovaJanela = input(false);
     posicaoSelecionada = output<{ lat: number; lng: number }>();
 
     alvo = viewChild.required<ElementRef<HTMLDivElement>>('alvo');
@@ -63,6 +65,7 @@ export class MapaOsm implements AfterViewInit, OnDestroy {
         effect(() => {
             const pts = this.pontos();
             const c = this.centro();
+            this.linksNovaJanela(); // redesenha os balões se a configuração mudar
             if (this.mapa) {
                 this.desenhar(pts, c);
             }
@@ -127,7 +130,7 @@ export class MapaOsm implements AfterViewInit, OnDestroy {
         for (const p of pts) {
             const m = this.L.marker([p.lat, p.lng], { icon: this.icone(), title: p.titulo, keyboard: true });
             const html = `<div class="text-sm"><strong>${esc(p.titulo)}</strong>${p.subtitulo ? `<br><span>${esc(p.subtitulo)}</span>` : ''}${p.preco ? `<br><b class="text-primary">${esc(p.preco)}</b>` : ''}${
-                p.link ? `<br><a href="${esc(p.link)}">Ver imóvel</a>` : ''
+                p.link ? `<br><a href="${esc(p.link)}"${this.linksNovaJanela() ? ' target="_blank" rel="noopener">Ver imóvel<span class="sr-only"> (abre em nova janela)</span>' : '>Ver imóvel'}</a>` : ''
             }</div>`;
             m.bindPopup(html);
             m.addTo(this.camada);

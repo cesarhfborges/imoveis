@@ -315,6 +315,7 @@ public class ImovelService {
         i.setCidade(f.cidade().trim());
         i.setBairro(f.bairro().trim());
         i.setEndereco(f.endereco());
+        i.setNumero(f.numero() == null || f.numero().isBlank() ? null : f.numero().trim());
         i.setCep(f.cep());
         i.setLatitude(f.latitude());
         i.setLongitude(f.longitude());
@@ -340,7 +341,7 @@ public class ImovelService {
         return new ImovelResumo(i.getId(), i.getCodigo(), i.getTitulo(), i.getFinalidade(), i.getTipo(),
                 i.getTipo().getDescricao(), i.getStatus(), i.getPreco(), i.getCondominio(), i.getAreaUtil(),
                 i.getQuartos(), i.getSuites(), i.getBanheiros(), i.getVagas(), i.getUf(), i.getCidade(), i.getBairro(),
-                i.getEndereco(), i.getLatitude(), i.getLongitude(), resumir(i.getDescricao()),
+                i.getEndereco(), i.getNumero(), i.getLatitude(), i.getLongitude(), resumir(i.getDescricao()),
                 anunciante == null ? null : anunciante.creci(), anunciante == null ? null : anunciante.fotoUrl(),
                 i.getFotos().isEmpty() ? null : i.getFotos().get(0).getUrl(),
                 !i.getFotos().isEmpty() && i.getFotos().get(0).getOrigem() == OrigemFoto.IA, i.getFotos().size(), i.isLancamento(),
@@ -422,7 +423,7 @@ public class ImovelService {
         return new ImovelDetalhe(i.getId(), i.getCodigo(), i.getTitulo(), i.getDescricao(), i.getFinalidade(),
                 i.getTipo(), i.getTipo().getDescricao(), i.getStatus(), i.getPreco(), i.getCondominio(), i.getIptu(),
                 i.getAreaUtil(), i.getAreaTotal(), i.getQuartos(), i.getSuites(), i.getBanheiros(), i.getVagas(),
-                i.getUf(), i.getCidade(), i.getBairro(), i.getEndereco(), i.getCep(), i.getLatitude(), i.getLongitude(),
+                i.getUf(), i.getCidade(), i.getBairro(), i.getEndereco(), i.getNumero(), i.getCep(), i.getLatitude(), i.getLongitude(),
                 i.isLancamento(), i.isDestaque(),
                 i.isAceitaFinanciamento(), i.isAceitaFgts(), i.isAceitaPermuta(), i.isEscrituraRegistrada(), i.isQuitado(),
                 i.getFotos().stream().map(FotoDto::of).toList(), Set.copyOf(i.getCaracteristicas()),
