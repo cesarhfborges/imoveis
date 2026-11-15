@@ -25,7 +25,5 @@ import { perfilLabel } from '@/app/core/models/models';
 export class AcessoNegadoPage {
     private auth = inject(AuthService);
     area = inject(ActivatedRoute).snapshot.queryParams['area'] ?? 'conta';
-    texto = this.auth.logado()
-        ? `Você está conectado como ${perfilLabel(this.auth.perfil()).toLowerCase()}, e esta área pede outro perfil.`
-        : 'Faça login para continuar.';
+    texto = this.auth.logado() ? `Você está conectado como ${perfilLabel(this.auth.perfil()).toLowerCase()}, e esta área pede outro perfil.` : 'Faça login para continuar.';
 }

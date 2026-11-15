@@ -2,7 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { ThemeService } from '@/app/core/services/theme.service';
 import { TemaModo } from '@/app/core/models/models';
 
-/** Botão que alterna Claro → Escuro → Automático (segue o sistema). */
+/** Botão que alterna Claro → Escuro → Automático (segue o sistema). Vale só para a sessão do navegador. */
 @Component({
     selector: 'app-theme-mode-toggle',
     template: `
@@ -29,6 +29,6 @@ export class ThemeModeToggle {
 
     proximo() {
         const i = this.ordem.indexOf(this.theme.mode());
-        this.theme.update({ mode: this.ordem[(i + 1) % this.ordem.length] });
+        this.theme.setMode(this.ordem[(i + 1) % this.ordem.length]);
     }
 }

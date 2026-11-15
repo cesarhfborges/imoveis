@@ -49,7 +49,7 @@ function responder(demo: DemoModeService, req: HttpRequest<unknown>): Observable
     return defer(() => {
         try {
             const body = demo.api.handle(req as HttpRequest<any>);
-            if (req.url.endsWith('/app/uploads') && req.body instanceof FormData) {
+            if ((req.url.endsWith('/app/uploads') || req.url.endsWith('/app/conta/foto')) && req.body instanceof FormData) {
                 return from(lerArquivo(req.body.get('arquivo') as File)).pipe(switchMap((url) => of(new HttpResponse({ status: 201, body: { url }, url: req.url }))));
             }
             return of(new HttpResponse({ status: 200, body, url: req.url }));

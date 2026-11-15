@@ -41,7 +41,9 @@ import { StatCard } from '@/app/shared/components/stat-card';
 
         <div class="card mt-6">
             <h2 class="text-lg font-semibold mt-0">Seus perfis de acesso</h2>
-            <p class="text-muted-color">Com esta conta você pode entrar como: <strong>{{ perfisTexto() }}</strong>. Use o menu do usuário, no topo, para trocar entre cliente e corretor.</p>
+            <p class="text-muted-color">
+                Com esta conta você pode entrar como: <strong>{{ perfisTexto() }}</strong>. Use o menu do usuário, no topo, para trocar entre cliente e corretor.
+            </p>
             @if (!auth.sessao().perfisDisponiveis.includes('CORRETOR')) {
                 <p class="mb-0">É corretor ou imobiliária? <a routerLink="/anunciar" class="text-primary font-semibold hover:underline">Saiba como anunciar</a>.</p>
             }

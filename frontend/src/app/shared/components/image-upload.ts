@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, input, output, signal } from '@angular/core';
 import { from, mergeMap, map, catchError, of } from 'rxjs';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
@@ -7,6 +7,10 @@ import { UploadService } from '@/app/core/services/conta.service';
 import { mensagemErro } from '@/app/core/services/api.service';
 
 let seq = 0;
+
+function rotuloOuImagem(r: string) {
+    return r || 'Imagem';
+}
 
 /** Mesmo limite do servidor (spring.servlet.multipart.max-file-size). */
 const TAMANHO_MAXIMO = 5 * 1024 * 1024;
@@ -23,9 +27,21 @@ interface ItemEnvio {
     arquivo: File;
 }
 
+/** Extensões mostradas na dica, a partir dos tipos aceitos. */
+const EXTENSOES: Record<string, string> = {
+    'image/png': 'PNG',
+    'image/jpeg': 'JPG',
+    'image/webp': 'WEBP',
+    'image/gif': 'GIF',
+    'image/x-icon': 'ICO',
+    'image/svg+xml': 'SVG'
+};
+
 /**
  * Campo de imagem.
- *  - modo simples (padrão): colar uma URL ou enviar UM arquivo, com prévia — emite (urlChange);
+ *  - modo simples (padrão): foto, logo ou ícone com prévia grande. Clicar na prévia (ou arrastar um arquivo
+ *    sobre ela) envia; dá para remover ou, se permitido, usar o endereço de uma imagem. Emite (urlChange).
+ *    [formato]: circulo (foto de perfil), quadrado (ícone), retangulo (logo) ou largo (imagem de compartilhamento);
  *  - modo múltiplo ([multiplo]="true"): arrastar e soltar ou escolher VÁRIOS arquivos de uma vez.
  *    Sobem em paralelo (3 por vez) e cada URL é emitida em (urlAdicionada) na ordem em que os
  *    arquivos foram escolhidos. Falhas ficam na lista com "tentar de novo".
@@ -35,34 +51,76 @@ interface ItemEnvio {
     imports: [InputTextModule, ButtonModule],
     template: `
         @if (!multiplo()) {
-            <div class="flex flex-col gap-2">
-                <label [for]="id" class="font-medium">{{ rotulo() }}</label>
-                <div class="flex items-center gap-3">
-                    <div class="w-14 h-14 rounded-border border border-surface flex items-center justify-center overflow-hidden shrink-0 bg-surface-50 dark:bg-surface-800">
-                        @if (url()) {
-                            <img [src]="url()" [alt]="'Prévia: ' + rotulo()" class="max-w-full max-h-full object-contain" />
+            <div class="foto-campo" [class]="'foto-campo foto-campo--' + formato()" [class.foto-campo--vertical]="vertical()">
+                <span class="foto-campo__rotulo" [id]="id + '-rotulo'">{{ rotulo() }}</span>
+                <div class="foto-campo__corpo">
+                    <button
+                        type="button"
+                        class="foto-campo__previa"
+                        [class.foto-campo__previa--escura]="fundoEscuro()"
+                        [class.foto-campo__previa--vazia]="!mostrarImagem()"
+                        [class.foto-campo__previa--arrastando]="arrastando()"
+                        [disabled]="enviandoUm()"
+                        (click)="arquivo.click()"
+                        (dragover)="aoArrastarUm($event)"
+                        (dragleave)="arrastando.set(false)"
+                        (drop)="aoSoltarUm($event)"
+                        [attr.aria-label]="(url() ? 'Trocar ' : 'Enviar ') + rotulo()"
+                        [attr.aria-describedby]="id + '-dica'"
+                    >
+                        @if (mostrarImagem()) {
+                            <img [src]="url()" alt="" (error)="falhou.set(true)" />
+                        } @else if (url() && falhou()) {
+                            <span class="foto-campo__vazio foto-campo__vazio--erro">
+                                <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+                                <small>Não foi possível carregar</small>
+                            </span>
+                        } @else if (iniciais()) {
+                            <span class="foto-campo__iniciais" aria-hidden="true">{{ iniciais() }}</span>
                         } @else {
-                            <i class="pi pi-image text-muted-color" aria-hidden="true"></i>
+                            <span class="foto-campo__vazio">
+                                <i class="pi pi-image" aria-hidden="true"></i>
+                                <small>Arraste ou clique</small>
+                            </span>
+                        }
+                        <span class="foto-campo__sobreposicao" aria-hidden="true">
+                            <i class="pi pi-camera"></i>
+                            <span>{{ url() ? 'Trocar' : 'Enviar' }}</span>
+                        </span>
+                        @if (enviandoUm()) {
+                            <span class="foto-campo__carregando" aria-hidden="true"><i class="pi pi-spin pi-spinner"></i></span>
+                        }
+                    </button>
+
+                    <div class="foto-campo__info">
+                        <div class="flex flex-wrap gap-2" [class.justify-center]="vertical()">
+                            <p-button [label]="url() ? 'Trocar' : 'Enviar imagem'" icon="pi pi-upload" size="small" [outlined]="true" [loading]="enviandoUm()" (onClick)="arquivo.click()" />
+                            @if (url()) {
+                                <p-button label="Remover" icon="pi pi-trash" size="small" [text]="true" severity="secondary" (onClick)="definir(null)" [ariaLabel]="'Remover ' + rotulo()" />
+                            }
+                        </div>
+                        <small class="foto-campo__dica" [id]="id + '-dica'">{{ dica() || descricaoFormatos() }}</small>
+                        @if (permitirUrl()) {
+                            <button type="button" class="foto-campo__link" (click)="mostrarUrl.update((v) => !v)" [attr.aria-expanded]="mostrarUrl()" [attr.aria-controls]="id + '-url'">
+                                <i class="pi" [class.pi-link]="!mostrarUrl()" [class.pi-chevron-up]="mostrarUrl()" aria-hidden="true"></i>
+                                {{ mostrarUrl() ? 'Fechar' : 'Usar o endereço de uma imagem' }}
+                            </button>
+                            @if (mostrarUrl()) {
+                                <div class="flex gap-2" [id]="id + '-url'">
+                                    <label [for]="id" class="sr-only">Endereço da imagem ({{ rotulo() }})</label>
+                                    <input #campoUrlUm pInputText [id]="id" type="url" class="flex-1 min-w-0 p-inputtext-sm" placeholder="https://..." [value]="url() ?? ''" (keydown.enter)="$event.preventDefault(); usarUrl(campoUrlUm)" />
+                                    <p-button label="Usar" size="small" (onClick)="usarUrl(campoUrlUm)" />
+                                </div>
+                            }
                         }
                     </div>
-                    <input pInputText [id]="id" class="flex-1 min-w-0" [value]="url() ?? ''" (change)="definir($any($event.target).value)" placeholder="https://... ou envie um arquivo" />
-                    <input #arquivo type="file" class="hidden" [accept]="aceitar()" (change)="enviarUm($any($event.target).files); arquivo.value = ''" [attr.aria-label]="'Arquivo para ' + rotulo()" />
-                    <p-button icon="pi pi-upload" [outlined]="true" [loading]="enviandoUm()" (onClick)="arquivo.click()" [ariaLabel]="'Enviar arquivo para ' + rotulo()" />
-                    @if (url()) {
-                        <p-button icon="pi pi-times" [text]="true" severity="secondary" (onClick)="definir(null)" [ariaLabel]="'Remover ' + rotulo()" />
-                    }
                 </div>
+                <input #arquivo type="file" class="hidden" [accept]="aceitar()" (change)="enviarUm($any($event.target).files); arquivo.value = ''" tabindex="-1" aria-hidden="true" />
+                <p class="sr-only" aria-live="polite">{{ anuncio() }}</p>
             </div>
         } @else {
             <div class="upload-multi">
-                <div
-                    class="upload-multi__zona"
-                    [class.arrastando]="arrastando()"
-                    [class.desativada]="lotado()"
-                    (dragover)="aoArrastar($event)"
-                    (dragleave)="aoSair($event)"
-                    (drop)="aoSoltar($event)"
-                >
+                <div class="upload-multi__zona" [class.arrastando]="arrastando()" [class.desativada]="lotado()" (dragover)="aoArrastar($event)" (dragleave)="aoSair($event)" (drop)="aoSoltar($event)">
                     <span class="upload-multi__icone" aria-hidden="true"><i class="pi pi-images"></i></span>
                     @if (lotado()) {
                         <strong>Limite de {{ limite() }} fotos atingido</strong>
@@ -113,6 +171,197 @@ interface ItemEnvio {
                 </div>
             </div>
         }
+    `,
+    styles: `
+        .foto-campo {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .foto-campo__rotulo {
+            font-weight: 500;
+        }
+        .foto-campo__corpo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .foto-campo--vertical .foto-campo__corpo {
+            flex-direction: column;
+            text-align: center;
+        }
+        .foto-campo--vertical .foto-campo__rotulo {
+            text-align: center;
+        }
+        .foto-campo__previa {
+            position: relative;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 0;
+            cursor: pointer;
+            border-radius: 12px;
+            border: 1px solid var(--p-content-border-color);
+            background: var(--p-surface-50);
+            color: var(--p-text-muted-color);
+            transition:
+                border-color 0.15s,
+                box-shadow 0.15s;
+        }
+        :host-context(.app-dark) .foto-campo__previa {
+            background: var(--p-surface-800);
+        }
+        .foto-campo__previa--vazia {
+            border: 2px dashed var(--p-content-border-color);
+        }
+        .foto-campo__previa--escura,
+        :host-context(.app-dark) .foto-campo__previa--escura {
+            background: var(--p-surface-900);
+            color: var(--p-surface-300);
+        }
+        .foto-campo__previa:hover:not(:disabled),
+        .foto-campo__previa--arrastando {
+            border-color: var(--p-primary-color);
+        }
+        .foto-campo__previa--arrastando {
+            box-shadow: 0 0 0 4px color-mix(in srgb, var(--p-primary-color), transparent 80%);
+        }
+        .foto-campo__previa:focus-visible {
+            outline: 2px solid var(--p-primary-color);
+            outline-offset: 3px;
+        }
+        .foto-campo__previa img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 6px;
+        }
+        /* tamanhos por formato */
+        .foto-campo--circulo .foto-campo__previa {
+            width: 8rem;
+            height: 8rem;
+            border-radius: 50%;
+        }
+        .foto-campo--circulo .foto-campo__previa img {
+            object-fit: cover;
+            padding: 0;
+        }
+        .foto-campo--quadrado .foto-campo__previa {
+            width: 5.5rem;
+            height: 5.5rem;
+        }
+        .foto-campo--retangulo .foto-campo__previa {
+            width: 12rem;
+            height: 6rem;
+        }
+        .foto-campo--largo .foto-campo__previa {
+            width: 14rem;
+            height: 7.3rem;
+        }
+        .foto-campo--largo .foto-campo__previa img {
+            object-fit: cover;
+            padding: 0;
+        }
+        .foto-campo__vazio {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.75rem;
+            padding: 0.5rem;
+        }
+        .foto-campo__vazio i {
+            font-size: 1.5rem;
+        }
+        .foto-campo__vazio--erro {
+            color: var(--p-red-600);
+        }
+        .foto-campo__iniciais {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--p-primary-contrast-color);
+            background: var(--p-primary-color);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .foto-campo__sobreposicao {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #fff;
+            background: rgba(15, 23, 42, 0.55);
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+        .foto-campo__sobreposicao i {
+            font-size: 1.25rem;
+        }
+        .foto-campo__previa:hover:not(:disabled) .foto-campo__sobreposicao,
+        .foto-campo__previa:focus-visible .foto-campo__sobreposicao,
+        .foto-campo__previa--arrastando .foto-campo__sobreposicao {
+            opacity: 1;
+        }
+        .foto-campo__carregando {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #fff;
+            background: rgba(15, 23, 42, 0.55);
+        }
+        .foto-campo__info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            min-width: 0;
+            flex: 1 1 12rem;
+        }
+        .foto-campo--vertical .foto-campo__info {
+            align-items: center;
+            flex-basis: auto;
+            width: 100%;
+        }
+        .foto-campo__dica {
+            color: var(--p-text-muted-color);
+        }
+        .foto-campo__link {
+            align-self: flex-start;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0;
+            border: 0;
+            background: none;
+            font-size: 0.85rem;
+            color: var(--p-primary-color);
+            cursor: pointer;
+        }
+        .foto-campo--vertical .foto-campo__link {
+            align-self: center;
+        }
+        .foto-campo__link:hover {
+            text-decoration: underline;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .foto-campo__previa,
+            .foto-campo__sobreposicao {
+                transition: none;
+            }
+        }
     `
 })
 export class ImageUpload {
@@ -123,17 +372,45 @@ export class ImageUpload {
     rotulo = input('Imagem');
     url = input<string | null>(null);
     aceitar = input('image/png,image/jpeg,image/webp,image/gif,image/x-icon');
+    /** Para onde enviar (a foto de perfil usa um endpoint liberado a qualquer usuário logado). */
+    endpoint = input('/app/uploads');
     /** Ativa o envio de vários arquivos de uma vez. */
     multiplo = input(false);
     /** Modo múltiplo: total de imagens permitido e quantas já existem (para calcular as vagas). */
     limite = input<number | null>(null);
     quantidadeAtual = input(0);
 
+    /** Modo simples: forma da prévia. */
+    formato = input<'circulo' | 'quadrado' | 'retangulo' | 'largo'>('retangulo');
+    /** Modo simples: prévia em cima e botões embaixo, centralizados (ex.: coluna lateral do perfil). */
+    vertical = input(false);
+    /** Modo simples: prévia em fundo escuro (ex.: logo para o tema escuro). */
+    fundoEscuro = input(false);
+    /** Modo simples: iniciais mostradas sem imagem (foto de perfil). */
+    iniciais = input<string | null>(null);
+    /** Modo simples: texto de ajuda (padrão: formatos e tamanho máximo). */
+    dica = input<string | null>(null);
+    /** Modo simples: oferece "usar o endereço de uma imagem". */
+    permitirUrl = input(true);
+
     urlChange = output<string | null>();
     urlAdicionada = output<string>();
 
     readonly tamanhoMaximo = TAMANHO_MAXIMO;
     enviandoUm = signal(false);
+    falhou = signal(false);
+    mostrarUrl = signal(false);
+    mostrarImagem = computed(() => !!this.url() && !this.falhou());
+    descricaoFormatos = computed(() => {
+        const ext = [...new Set(this.tipos().map((t) => EXTENSOES[t] ?? t.replace('image/', '').toUpperCase()))];
+        return ext.join(', ') + ' · até 5 MB';
+    });
+    private tipos = computed(() =>
+        this.aceitar()
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean)
+    );
     arrastando = signal(false);
     fila = signal<ItemEnvio[]>([]);
     anuncio = signal('');
@@ -148,6 +425,11 @@ export class ImageUpload {
 
     constructor() {
         inject(DestroyRef).onDestroy(() => this.fila().forEach((i) => URL.revokeObjectURL(i.previa)));
+        // imagem nova: tenta carregar de novo
+        effect(() => {
+            this.url();
+            this.falhou.set(false);
+        });
     }
 
     // ------------------------------------------------------------ modo simples
@@ -155,13 +437,46 @@ export class ImageUpload {
         this.urlChange.emit(v?.trim() || null);
     }
 
+    usarUrl(campo: HTMLInputElement) {
+        const v = campo.value.trim();
+        if (v && !/^(https?:\/\/|\/)/i.test(v)) {
+            this.msg.add({ severity: 'warn', summary: rotuloOuImagem(this.rotulo()), detail: 'Informe um endereço começando com https://' });
+            return;
+        }
+        this.definir(v || null);
+        this.mostrarUrl.set(false);
+    }
+
+    aoArrastarUm(e: DragEvent) {
+        if (this.enviandoUm()) return;
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+        this.arrastando.set(true);
+    }
+
+    aoSoltarUm(e: DragEvent) {
+        e.preventDefault();
+        this.arrastando.set(false);
+        this.enviarUm(e.dataTransfer?.files ?? null);
+    }
+
     enviarUm(files: FileList | null) {
         const f = files?.[0];
         if (!f) return;
+        if (!this.tipos().includes(f.type)) {
+            this.msg.add({ severity: 'warn', summary: rotuloOuImagem(this.rotulo()), detail: 'Formato não aceito. Use ' + this.descricaoFormatos().split(' · ')[0] + '.' });
+            return;
+        }
+        if (f.size > TAMANHO_MAXIMO) {
+            this.msg.add({ severity: 'warn', summary: rotuloOuImagem(this.rotulo()), detail: 'O arquivo tem mais de 5 MB.' });
+            return;
+        }
         this.enviandoUm.set(true);
-        this.upload.enviar(f).subscribe({
+        this.anuncio.set('Enviando ' + this.rotulo() + '…');
+        this.upload.enviar(f, this.endpoint()).subscribe({
             next: (r) => {
                 this.enviandoUm.set(false);
+                this.anuncio.set(this.rotulo() + ' enviada.');
                 this.urlChange.emit(r.url);
             },
             error: (e) => {
@@ -192,7 +507,9 @@ export class ImageUpload {
 
     enviarVarios(files: FileList | null) {
         if (!files?.length) return;
-        const tipos = this.aceitar().split(',').map((t) => t.trim());
+        const tipos = this.aceitar()
+            .split(',')
+            .map((t) => t.trim());
         let arquivos = Array.from(files).filter((f) => tipos.includes(f.type));
         const ignorados = files.length - arquivos.length;
         const vagas = this.vagas();
@@ -246,7 +563,7 @@ export class ImageUpload {
                     if (it.arquivo.size > TAMANHO_MAXIMO) {
                         return of({ it, ordem, url: null as string | null, erro: 'Maior que 5 MB' });
                     }
-                    return this.upload.enviar(it.arquivo).pipe(
+                    return this.upload.enviar(it.arquivo, this.endpoint()).pipe(
                         map((r) => ({ it, ordem, url: r.url as string | null, erro: '' })),
                         catchError((e) => of({ it, ordem, url: null as string | null, erro: mensagemErro(e) }))
                     );

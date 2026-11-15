@@ -21,6 +21,8 @@
     <modules>
         <module>shared-kernel</module>
         <module>listing</module>
+        <module>platform</module>
+        <module>moderation</module>
         <module>core-api</module>
     </modules>
 
@@ -44,6 +46,16 @@
             <dependency>
                 <groupId>br.com.chfb</groupId>
                 <artifactId>listing</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>br.com.chfb</groupId>
+                <artifactId>platform</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>br.com.chfb</groupId>
+                <artifactId>moderation</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

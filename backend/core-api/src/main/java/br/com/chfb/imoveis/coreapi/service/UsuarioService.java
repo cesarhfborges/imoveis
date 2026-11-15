@@ -2,6 +2,7 @@ package br.com.chfb.imoveis.coreapi.service;
 
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -24,11 +25,13 @@ import br.com.chfb.imoveis.sharedkernel.dto.PageResponse;
 import br.com.chfb.imoveis.sharedkernel.exception.BusinessException;
 import br.com.chfb.imoveis.sharedkernel.exception.NotFoundException;
 import br.com.chfb.imoveis.sharedkernel.port.AnuncianteProvider;
+import br.com.chfb.imoveis.sharedkernel.port.UsuarioDiretorio;
+import br.com.chfb.imoveis.sharedkernel.port.ContaModeracao;
 import br.com.chfb.imoveis.sharedkernel.security.AuthUser;
 import br.com.chfb.imoveis.sharedkernel.security.Perfil;
 
 @Service
-public class UsuarioService implements AnuncianteProvider {
+public class UsuarioService implements AnuncianteProvider, UsuarioDiretorio, ContaModeracao {
 
     private final UsuarioRepository usuarios;
     private final PasswordEncoder encoder;
@@ -54,6 +57,48 @@ public class UsuarioService implements AnuncianteProvider {
         }
         return usuarios.findAllById(ids).stream().map(this::info)
                 .collect(Collectors.toMap(AnuncianteInfo::id, Function.identity()));
+    }
+
+    // --------------------------------------------------------- UsuarioDiretorio
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Long> administradores() {
+        return usuarios.idsAtivosPorPapel(Perfil.ADMIN);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean contaAtiva(Long usuarioId) {
+        return usuarioId != null && usuarios.existsByIdAndAtivoTrue(usuarioId);
+    }
+
+    // --------------------------------------------------------- ContaModeracao
+
+    @Override
+    @Transactional
+    public boolean banir(Long usuarioId, String motivo) {
+        Usuario u = usuarios.findById(usuarioId).orElse(null);
+        if (u == null || !u.isAtivo()) {
+            return false;
+        }
+        u.setAtivo(false);
+        u.setBanidoEm(java.time.Instant.now());
+        u.setBanidoMotivo(motivo == null ? null : motivo.length() > 300 ? motivo.substring(0, 300) : motivo);
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean reativar(Long usuarioId) {
+        Usuario u = usuarios.findById(usuarioId).orElse(null);
+        if (u == null || u.getBanidoEm() == null) {
+            return false;
+        }
+        u.setAtivo(true);
+        u.setBanidoEm(null);
+        u.setBanidoMotivo(null);
+        return true;
     }
 
     private AnuncianteInfo info(Usuario u) {
@@ -91,10 +136,44 @@ public class UsuarioService implements AnuncianteProvider {
     public UsuarioDto atualizarPerfil(AuthUser auth, PerfilForm form) {
         Usuario u = obter(auth.id());
         u.setNome(form.nome().trim());
-        u.setTelefone(form.telefone());
-        u.setCreci(form.creci());
-        u.setFotoUrl(form.fotoUrl());
+        u.setTelefone(vazioNulo(form.telefone()));
+        u.setFotoUrl(vazioNulo(form.fotoUrl()));
+        u.setWhatsapp(vazioNulo(form.whatsapp()));
+        u.setEmailContato(vazioNulo(form.emailContato()));
+        u.setCep(vazioNulo(form.cep()));
+        u.setLogradouro(vazioNulo(form.logradouro()));
+        u.setNumero(vazioNulo(form.numero()));
+        u.setComplemento(vazioNulo(form.complemento()));
+        u.setBairro(vazioNulo(form.bairro()));
+        u.setCidade(vazioNulo(form.cidade()));
+        u.setUf(vazioNulo(form.uf()));
+        // dados profissionais: só para anunciantes (corretor/imobiliária)
+        if (u.getPapeis().contains(Perfil.CORRETOR)) {
+            u.setCreci(vazioNulo(form.creci()));
+            u.setCreciUf(vazioNulo(form.creciUf()));
+            u.setRazaoSocial("IMOBILIARIA".equals(u.getTipoAnunciante()) ? vazioNulo(form.razaoSocial()) : null);
+            u.setSite(vazioNulo(form.site()));
+            u.setInstagram(instagram(form.instagram()));
+            u.setFacebook(vazioNulo(form.facebook()));
+            u.setSobre(vazioNulo(form.sobre()));
+            u.setRegioesAtuacao(vazioNulo(form.regioesAtuacao()));
+            u.setAtuandoDesde(form.atuandoDesde());
+        }
         return UsuarioDto.of(u);
+    }
+
+    private static String vazioNulo(String v) {
+        return v == null || v.isBlank() ? null : v.trim();
+    }
+
+    /** Guarda o usuário do Instagram sem "@" nem o endereço completo. */
+    private static String instagram(String v) {
+        String s = vazioNulo(v);
+        if (s == null) {
+            return null;
+        }
+        s = s.replaceFirst("^(https?://)?(www\\.)?instagram\\.com/", "").replaceFirst("^@", "").replaceAll("/+$", "");
+        return s.isBlank() ? null : s;
     }
 
     @Transactional
@@ -161,6 +240,11 @@ public class UsuarioService implements AnuncianteProvider {
         u.setEmail(email);
         u.setTelefone(f.telefone());
         u.setCreci(f.creci());
+        if (f.ativo() && !u.isAtivo()) {
+            // reativar a conta tira o banimento
+            u.setBanidoEm(null);
+            u.setBanidoMotivo(null);
+        }
         u.setAtivo(f.ativo());
         EnumSet<Perfil> papeis = EnumSet.noneOf(Perfil.class);
         papeis.addAll(f.papeis());

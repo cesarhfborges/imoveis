@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Observable, catchError, of, tap } from 'rxjs';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
-import { ApiToken, ApiTokenCriado, Dashboard, ImovelResumo, PageResponse, Perfil, Usuario, UsuarioAdminForm } from '@/app/core/models/models';
+import { ApiToken, ApiTokenCriado, Dashboard, ImovelResumo, PageResponse, Perfil, PerfilForm, Usuario, UsuarioAdminForm } from '@/app/core/models/models';
 
 /** Dados da própria conta, favoritos e tokens de API. */
 @Injectable({ providedIn: 'root' })
@@ -44,7 +44,7 @@ export class ContaService {
         return this.api.get('/app/conta/perfil');
     }
 
-    salvarPerfil(dados: { nome: string; telefone: string | null; creci: string | null; fotoUrl: string | null }): Observable<Usuario> {
+    salvarPerfil(dados: PerfilForm): Observable<Usuario> {
         return this.api.put('/app/conta/perfil', dados);
     }
 
@@ -96,9 +96,12 @@ export class AdminService {
 export class UploadService {
     private api = inject(ApiService);
 
-    enviar(arquivo: File): Observable<{ url: string }> {
+    /**
+     * @param endpoint `/app/uploads` (anúncios, logo: corretor e admin) ou `/app/conta/foto` (foto de perfil: qualquer usuário logado)
+     */
+    enviar(arquivo: File, endpoint = '/app/uploads'): Observable<{ url: string }> {
         const fd = new FormData();
         fd.append('arquivo', arquivo);
-        return this.api.post('/app/uploads', fd);
+        return this.api.post(endpoint, fd);
     }
 }

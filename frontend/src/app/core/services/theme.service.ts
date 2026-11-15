@@ -52,12 +52,15 @@ export const SURFACES: ColorOption[] = [
 
 const PRIMARY_NAMES = ['emerald', 'green', 'lime', 'orange', 'amber', 'yellow', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose'];
 
-const STORAGE_KEY = 'imoveis.tema';
+/** Modo (claro/escuro/automático) escolhido pelo usuário: só nesta sessão do navegador. */
+const SESSION_KEY = 'imoveis.tema.modo';
+/** Preferência antiga (cores por visitante, no localStorage): não existe mais, é apagada. */
+const LEGADO_KEY = 'imoveis.tema';
 
 /**
  * Tema do site: preset (Aura/Lara/Nora), cor primária, surface e modo (claro, escuro ou automático).
- * O padrão vem da configuração do sistema (definida em /admin/configuracoes); cada visitante
- * pode ajustar o seu pelo seletor de tema, que fica salvo no navegador.
+ * Tudo vem da configuração do sistema (definida em /admin/configuracoes). O usuário só troca o modo,
+ * e essa troca vale apenas para a sessão do navegador: não altera a configuração do sistema.
  */
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
@@ -66,7 +69,6 @@ export class ThemeService {
 
     private siteDefault = signal<ThemeChoice>({ preset: 'Aura', primary: 'marinho', surface: null, mode: 'auto' });
     readonly choice = signal<ThemeChoice>({ preset: 'Aura', primary: 'marinho', surface: null, mode: 'auto' });
-    readonly hasUserOverride = signal(false);
 
     readonly mode = computed(() => this.choice().mode);
     readonly surfaces = SURFACES;
@@ -94,51 +96,56 @@ export class ThemeService {
         return list;
     }
 
-    /** Define o padrão do site (vindo da configuração) e aplica, respeitando a escolha salva do visitante. */
+    /** Define o tema do sistema (vindo da configuração) e aplica, com o modo da sessão, se o usuário trocou. */
     initFromSite(def: Partial<ThemeChoice>) {
-        const site: ThemeChoice = {
+        try {
+            localStorage.removeItem(LEGADO_KEY);
+        } catch {
+            /* ignore */
+        }
+        this.siteDefault.set({
             preset: (def.preset && def.preset in PRESETS ? def.preset : 'Aura') as PresetName,
             primary: def.primary || 'marinho',
             surface: def.surface ?? null,
             mode: def.mode ?? 'auto'
-        };
-        this.siteDefault.set(site);
-        const saved = this.readSaved();
-        this.hasUserOverride.set(!!saved);
-        this.apply({ ...site, ...(saved ?? {}) }, false);
+        });
+        this.restaurar();
     }
 
-    /** Altera parte do tema; persist=true salva como preferência do visitante. */
-    update(part: Partial<ThemeChoice>, persist = true) {
-        this.apply({ ...this.choice(), ...part }, persist);
-    }
-
-    /** Volta para o tema definido pela administração. */
-    resetToSite() {
+    /** Troca o modo (claro, escuro ou automático) só nesta sessão do navegador. */
+    setMode(mode: TemaModo) {
         try {
-            localStorage.removeItem(STORAGE_KEY);
+            sessionStorage.setItem(SESSION_KEY, mode);
         } catch {
             /* ignore */
         }
-        this.hasUserOverride.set(false);
-        this.apply(this.siteDefault(), false);
+        this.apply({ ...this.choice(), mode });
     }
 
-    apply(choice: ThemeChoice, persist: boolean) {
+    /** Reaplica o tema do sistema com o modo da sessão (ex.: ao sair da pré-visualização das configurações). */
+    restaurar() {
+        const modo = this.modoDaSessao();
+        this.apply({ ...this.siteDefault(), ...(modo ? { mode: modo } : {}) });
+    }
+
+    /** Descarta o modo da sessão e aplica exatamente o tema do sistema. */
+    resetToSite() {
+        try {
+            sessionStorage.removeItem(SESSION_KEY);
+        } catch {
+            /* ignore */
+        }
+        this.apply(this.siteDefault());
+    }
+
+    /** Aplica o tema na tela (sem salvar nada). */
+    apply(choice: ThemeChoice) {
         this.choice.set(choice);
         this.layout.layoutConfig.update((c) => ({ ...c, preset: choice.preset, primary: choice.primary, surface: choice.surface }));
         const preset = PRESETS[choice.preset] ?? Aura;
         const surface = SURFACES.find((s) => s.name === choice.surface)?.palette;
         $t().preset(preset).preset(this.presetExt(choice)).surfacePalette(surface).use({ useDefaultOptions: true });
         this.syncDark();
-        if (persist) {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(choice));
-                this.hasUserOverride.set(true);
-            } catch {
-                /* ignore */
-            }
-        }
     }
 
     isDark(): boolean {
@@ -155,10 +162,10 @@ export class ThemeService {
         document.documentElement.classList.toggle('app-dark', dark);
     }
 
-    private readSaved(): ThemeChoice | null {
+    private modoDaSessao(): TemaModo | null {
         try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            return raw ? (JSON.parse(raw) as ThemeChoice) : null;
+            const m = sessionStorage.getItem(SESSION_KEY);
+            return m === 'light' || m === 'dark' || m === 'auto' ? m : null;
         } catch {
             return null;
         }
@@ -169,7 +176,19 @@ export class ThemeService {
         if (color.name === 'noir') {
             return {
                 semantic: {
-                    primary: { 50: '{surface.50}', 100: '{surface.100}', 200: '{surface.200}', 300: '{surface.300}', 400: '{surface.400}', 500: '{surface.500}', 600: '{surface.600}', 700: '{surface.700}', 800: '{surface.800}', 900: '{surface.900}', 950: '{surface.950}' },
+                    primary: {
+                        50: '{surface.50}',
+                        100: '{surface.100}',
+                        200: '{surface.200}',
+                        300: '{surface.300}',
+                        400: '{surface.400}',
+                        500: '{surface.500}',
+                        600: '{surface.600}',
+                        700: '{surface.700}',
+                        800: '{surface.800}',
+                        900: '{surface.900}',
+                        950: '{surface.950}'
+                    },
                     colorScheme: {
                         light: {
                             primary: { color: '{primary.950}', contrastColor: '#ffffff', hoverColor: '{primary.800}', activeColor: '{primary.700}' },

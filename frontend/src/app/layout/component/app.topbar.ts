@@ -1,10 +1,8 @@
 import { Component, computed, inject } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { MenuItem, MessageService } from 'primeng/api';
-import { StyleClassModule } from 'primeng/styleclass';
 import { MenuModule } from 'primeng/menu';
 import { TagModule } from 'primeng/tag';
-import { AppConfigurator } from './app.configurator';
 import { LayoutService } from '@/app/layout/service/layout.service';
 import { AuthService } from '@/app/core/services/auth.service';
 import { ConfigService } from '@/app/core/services/config.service';
@@ -12,10 +10,11 @@ import { mensagemErro } from '@/app/core/services/api.service';
 import { Perfil, perfilLabel } from '@/app/core/models/models';
 import { AppLogo } from '@/app/shared/components/app-logo';
 import { ThemeModeToggle } from '@/app/shared/components/theme-mode-toggle';
+import { NotificacoesSino } from '@/app/shared/components/notificacoes-sino';
 
 @Component({
     selector: 'app-topbar',
-    imports: [RouterModule, StyleClassModule, MenuModule, TagModule, AppConfigurator, AppLogo, ThemeModeToggle],
+    imports: [RouterModule, MenuModule, TagModule, AppLogo, ThemeModeToggle, NotificacoesSino],
     template: ` <div class="layout-topbar">
         <div class="layout-topbar-logo-container">
             <button class="layout-menu-button layout-topbar-action" (click)="layoutService.onMenuToggle()" aria-label="Abrir ou fechar o menu">
@@ -32,22 +31,9 @@ import { ThemeModeToggle } from '@/app/shared/components/theme-mode-toggle';
         <div class="layout-topbar-actions">
             <div class="layout-config-menu">
                 <app-theme-mode-toggle />
-                <div class="relative">
-                    <button
-                        class="layout-topbar-action layout-topbar-action-highlight"
-                        pStyleClass="@next"
-                        enterFromClass="hidden"
-                        enterActiveClass="animate-scalein"
-                        leaveToClass="hidden"
-                        leaveActiveClass="animate-fadeout"
-                        [hideOnOutsideClick]="true"
-                        aria-label="Cores do tema"
-                    >
-                        <i class="pi pi-palette"></i>
-                    </button>
-                    <app-configurator />
-                </div>
             </div>
+
+            <app-notificacoes-sino botaoClasse="layout-topbar-action" />
 
             <button type="button" class="layout-topbar-action !w-auto !rounded-full px-3 gap-2" (click)="menu.toggle($event)" aria-label="Menu do usuário">
                 <i class="pi pi-user"></i>

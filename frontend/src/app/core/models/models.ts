@@ -2,20 +2,8 @@
 
 export type Perfil = 'CLIENTE' | 'CORRETOR' | 'ADMIN';
 export type Finalidade = 'VENDA' | 'ALUGUEL' | 'TEMPORADA';
-export type StatusAnuncio = 'PENDENTE' | 'ATIVO' | 'PAUSADO' | 'CONCLUIDO' | 'BLOQUEADO';
-export type TipoImovel =
-    | 'APARTAMENTO'
-    | 'CASA'
-    | 'CASA_CONDOMINIO'
-    | 'COBERTURA'
-    | 'KITNET'
-    | 'FLAT'
-    | 'LOTE'
-    | 'SALA'
-    | 'LOJA'
-    | 'GALPAO'
-    | 'PREDIO'
-    | 'CHACARA';
+export type StatusAnuncio = 'PENDENTE' | 'ATIVO' | 'PAUSADO' | 'CONCLUIDO' | 'BLOQUEADO' | 'SUSPENSO' | 'BANIDO';
+export type TipoImovel = 'APARTAMENTO' | 'CASA' | 'CASA_CONDOMINIO' | 'COBERTURA' | 'KITNET' | 'FLAT' | 'LOTE' | 'SALA' | 'LOJA' | 'GALPAO' | 'PREDIO' | 'CHACARA';
 export type TemaModo = 'light' | 'dark' | 'auto';
 
 export const TIPOS: { value: TipoImovel; label: string }[] = [
@@ -44,8 +32,13 @@ export const STATUS: { value: StatusAnuncio; label: string; severity: 'success' 
     { value: 'PENDENTE', label: 'Pendente', severity: 'warn' },
     { value: 'PAUSADO', label: 'Pausado', severity: 'secondary' },
     { value: 'CONCLUIDO', label: 'Vendido/Alugado', severity: 'info' },
-    { value: 'BLOQUEADO', label: 'Bloqueado', severity: 'danger' }
+    { value: 'BLOQUEADO', label: 'Bloqueado', severity: 'danger' },
+    { value: 'SUSPENSO', label: 'Suspenso (moderação)', severity: 'warn' },
+    { value: 'BANIDO', label: 'Banido', severity: 'danger' }
 ];
+
+/** Status aplicados pela moderação: só administradores tiram o anúncio deles. */
+export const STATUS_MODERACAO: StatusAnuncio[] = ['SUSPENSO', 'BANIDO'];
 
 export interface PageResponse<T> {
     content: T[];
@@ -306,7 +299,51 @@ export interface Usuario {
     perfisPermitidos: Perfil[];
     ultimoAcesso: string | null;
     criadoEm: string;
+    razaoSocial?: string | null;
+    whatsapp?: string | null;
+    emailContato?: string | null;
+    site?: string | null;
+    instagram?: string | null;
+    facebook?: string | null;
+    sobre?: string | null;
+    creciUf?: string | null;
+    regioesAtuacao?: string | null;
+    atuandoDesde?: number | null;
+    cep?: string | null;
+    logradouro?: string | null;
+    numero?: string | null;
+    complemento?: string | null;
+    bairro?: string | null;
+    cidade?: string | null;
+    uf?: string | null;
 }
+
+/** O que o próprio usuário edita em "Meus dados". */
+export interface PerfilForm {
+    nome: string;
+    telefone: string | null;
+    creci: string | null;
+    fotoUrl: string | null;
+    razaoSocial: string | null;
+    whatsapp: string | null;
+    emailContato: string | null;
+    site: string | null;
+    instagram: string | null;
+    facebook: string | null;
+    sobre: string | null;
+    creciUf: string | null;
+    regioesAtuacao: string | null;
+    atuandoDesde: number | null;
+    cep: string | null;
+    logradouro: string | null;
+    numero: string | null;
+    complemento: string | null;
+    bairro: string | null;
+    cidade: string | null;
+    uf: string | null;
+}
+
+export const UFS = ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'];
 
 export interface UsuarioAdminForm {
     nome: string;
@@ -389,4 +426,301 @@ export function statusInfo(s: StatusAnuncio) {
 
 export function perfilLabel(p: Perfil | null | undefined): string {
     return p === 'ADMIN' ? 'Administrador' : p === 'CORRETOR' ? 'Corretor' : p === 'CLIENTE' ? 'Cliente' : '';
+}
+
+// ---------------------------------------------------------------- notificações
+
+export interface Notificacao {
+    id: number;
+    tipo: string;
+    titulo: string;
+    mensagem: string | null;
+    icone: string | null;
+    link: string | null;
+    lida: boolean;
+    criadoEm: string;
+}
+
+// ---------------------------------------------------------------- calendário
+
+export interface DiaExpediente {
+    /** ISO: 1 = segunda ... 7 = domingo */
+    diaSemana: number;
+    ativo: boolean;
+    /** "HH:mm" (00:00 a 24:00) */
+    inicio: string;
+    fim: string;
+}
+
+export interface Feriado {
+    id: number;
+    titulo: string;
+    /** data/hora local "aaaa-mm-ddThh:mm" */
+    inicio: string;
+    fim: string;
+    recorrente: boolean;
+}
+
+export interface Calendario {
+    fuso: string;
+    expediente: DiaExpediente[];
+    feriados: Feriado[];
+}
+
+// ---------------------------------------------------------------- moderação (denúncias)
+
+export type CorTag = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast';
+export type AcaoAutomatica = 'NENHUMA' | 'SUSPENDER' | 'BANIR';
+export type StatusDenuncia = 'AGUARDANDO_ANUNCIANTE' | 'EM_ANALISE' | 'EM_APURACAO' | 'RESOLVIDA' | 'IMPROCEDENTE' | 'PROCEDENTE' | 'ANUNCIO_BANIDO';
+export type PapelMensagem = 'ANUNCIANTE' | 'ADMIN' | 'SISTEMA';
+export type Natureza = 'ERRO' | 'MA_FE';
+export type MedidaAnuncio = 'MANTER' | 'CORRIGIR' | 'SUSPENDER' | 'BANIR';
+export type PenalidadeConta = 'NENHUMA' | 'STRIKE' | 'BANIR_CONTA';
+
+/** Gravidade nas telas de denúncia. */
+export interface GravidadeResumo {
+    id: number;
+    nome: string;
+    cor: CorTag;
+}
+
+/** Gravidade cadastrada, com a regra de banimento automático da conta. */
+export interface Gravidade extends GravidadeResumo {
+    ordem: number;
+    ativo: boolean;
+    banirContaAuto: boolean;
+    /** denúncias procedentes até o banimento */
+    banirApos: number | null;
+    /** considerar só os últimos N meses (nulo = todo o histórico) */
+    janelaMeses: number | null;
+}
+
+export const CORES_TAG: { value: CorTag; label: string }[] = [
+    { value: 'info', label: 'Azul' },
+    { value: 'success', label: 'Verde' },
+    { value: 'warn', label: 'Laranja' },
+    { value: 'danger', label: 'Vermelho' },
+    { value: 'secondary', label: 'Cinza' },
+    { value: 'contrast', label: 'Escuro' }
+];
+
+/** Mesma regra do backend: sem espaços nas pontas, minúsculas, sem acentos ("Gráve " = "grave"). */
+export function chaveGravidade(nome: string): string {
+    return nome.trim().replace(/\s+/g, ' ').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+}
+
+export const NATUREZAS: { value: Natureza; label: string; dica: string }[] = [
+    { value: 'ERRO', label: 'Informação incorreta', dica: 'Erro do anunciante, sem intenção de enganar' },
+    { value: 'MA_FE', label: 'Má-fé', dica: 'Mentira, captação, golpe ou anúncio falso' }
+];
+
+export const MEDIDAS: { value: MedidaAnuncio; label: string; dica: string }[] = [
+    { value: 'CORRIGIR', label: 'Solicitar correção', dica: 'O anunciante corrige no prazo; a denúncia fica aberta até você aceitar a correção' },
+    { value: 'MANTER', label: 'Manter o anúncio', dica: 'Encerra; o anúncio continua (ou volta) no ar' },
+    { value: 'SUSPENDER', label: 'Suspender o anúncio', dica: 'Encerra; fora da busca até um administrador reativar' },
+    { value: 'BANIR', label: 'Remover o anúncio do ar', dica: 'Encerra; o anúncio é banido de vez e as outras pendências dele são encerradas' }
+];
+
+export const PENALIDADES: { value: PenalidadeConta; label: string; dica: string }[] = [
+    { value: 'STRIKE', label: 'Strike', dica: 'Conta para o banimento automático da conta, conforme a regra da gravidade' },
+    { value: 'NENHUMA', label: 'Sem penalidade', dica: 'Fica só no histórico do anunciante' },
+    { value: 'BANIR_CONTA', label: 'Banir a conta agora', dica: 'Banimento direto (ex.: conteúdo ilegal): a conta fica inativa e todos os anúncios saem do ar' }
+];
+
+export const ACOES_AUTOMATICAS: { value: AcaoAutomatica; label: string }[] = [
+    { value: 'NENHUMA', label: 'Nenhuma ação' },
+    { value: 'SUSPENDER', label: 'Suspender o anúncio' },
+    { value: 'BANIR', label: 'Banir o anúncio' }
+];
+
+export const STATUS_DENUNCIA: Record<StatusDenuncia, { label: string; severity: CorTag }> = {
+    AGUARDANDO_ANUNCIANTE: { label: 'Aguardando anunciante', severity: 'warn' },
+    EM_ANALISE: { label: 'Em análise', severity: 'info' },
+    EM_APURACAO: { label: 'Em apuração', severity: 'contrast' },
+    RESOLVIDA: { label: 'Resolvida', severity: 'success' },
+    IMPROCEDENTE: { label: 'Improcedente', severity: 'secondary' },
+    PROCEDENTE: { label: 'Procedente', severity: 'danger' },
+    ANUNCIO_BANIDO: { label: 'Anúncio banido', severity: 'danger' }
+};
+
+export interface TipoDenuncia {
+    id: number;
+    nome: string;
+    descricao: string | null;
+    gravidade: GravidadeResumo;
+    slaMinutos: number;
+    suspenderAoAbrir: boolean;
+    ativo: boolean;
+    ordem: number;
+}
+
+export interface TipoDenunciaPublico {
+    id: number;
+    nome: string;
+    descricao: string | null;
+}
+
+export interface ModeracaoConfig {
+    automacaoAtiva: boolean;
+    aprovarReativaAnuncio: boolean;
+    ajusteSlaMinutos: number;
+    etapa1Acao: AcaoAutomatica;
+    etapa1PrazoMinutos: number;
+    etapa2Acao: AcaoAutomatica;
+    avisoMinutos: number;
+    atualizadoEm?: string | null;
+}
+
+export interface PrazoSla {
+    prazoEm: string | null;
+    slaMinutos: number | null;
+    minutosRestantes: number | null;
+    vencido: boolean;
+    correndoAgora: boolean;
+    retomaEm: string | null;
+    etapa: number;
+    /** Prazo parado (aguardando a moderação): minutos úteis que faltavam quando parou. */
+    minutosNaPausa: number | null;
+}
+
+export interface ImovelInfo {
+    id: number;
+    codigo: string;
+    titulo: string;
+    status: StatusAnuncio;
+    fotoCapa: string | null;
+    cidade: string;
+    bairro: string;
+}
+
+export interface MinhaDenuncia {
+    id: number;
+    imovel: ImovelInfo | null;
+    tipo: string;
+    /** o denunciante só sabe se está em análise ou resolvida */
+    situacao: 'EM_ANALISE' | 'RESOLVIDA';
+    criadoEm: string;
+    resolvidoEm: string | null;
+}
+
+export interface MensagemDenuncia {
+    id: number;
+    papel: PapelMensagem;
+    autor: string;
+    /** Foto de perfil do autor (nula: mostrar as iniciais). */
+    autorFoto: string | null;
+    texto: string;
+    anexos: string[];
+    interna: boolean;
+    criadoEm: string;
+}
+
+export interface Denuncia {
+    id: number;
+    tipo: TipoDenunciaPublico;
+    gravidade: GravidadeResumo;
+    descricao: string;
+    status: StatusDenuncia;
+    prazo: PrazoSla;
+    denuncianteNome: string | null;
+    denuncianteEmail: string | null;
+    criadoEm: string;
+    resolvidoEm: string | null;
+    conclusao: string | null;
+    natureza: Natureza | null;
+    medida: MedidaAnuncio | null;
+    /** só para administradores: consequência para a conta (procedente) */
+    penalidade: PenalidadeConta | null;
+    /** quando foi julgada procedente */
+    julgadoEm: string | null;
+    /** só para administradores: prazo interno da apuração */
+    apuracaoPrazoEm: string | null;
+    mensagens: MensagemDenuncia[];
+}
+
+/** Aberta (ainda não encerrada)? */
+export function denunciaAberta(d: { status: StatusDenuncia }): boolean {
+    return d.status === 'AGUARDANDO_ANUNCIANTE' || d.status === 'EM_ANALISE' || d.status === 'EM_APURACAO';
+}
+
+/** Procedente com correção solicitada, ainda aberta. */
+export function correcaoPendente(d: Denuncia): boolean {
+    return d.medida === 'CORRIGIR' && denunciaAberta(d);
+}
+
+/** Rótulo e cor da situação, considerando a correção solicitada. */
+export function situacaoDenuncia(d: Denuncia): { label: string; severity: CorTag } {
+    if (correcaoPendente(d)) {
+        return d.status === 'AGUARDANDO_ANUNCIANTE' ? { label: 'Correção solicitada', severity: 'danger' } : { label: 'Correção a validar', severity: 'info' };
+    }
+    return STATUS_DENUNCIA[d.status];
+}
+
+export interface DenunciaResumo {
+    id: number;
+    tipo: string;
+    gravidade: GravidadeResumo;
+    status: StatusDenuncia;
+    prazo: PrazoSla;
+    criadoEm: string;
+}
+
+export interface GrupoPendencias {
+    imovel: ImovelInfo;
+    anuncianteId: number;
+    anuncianteNome: string | null;
+    abertas: number;
+    aguardandoAnunciante: number;
+    emAnalise: number;
+    emApuracao: number;
+    menorMinutosRestantes: number | null;
+    algumVencido: boolean;
+    ultimaDenuncia: string;
+    denuncias: DenunciaResumo[];
+}
+
+export interface PendenciasImovel {
+    imovel: ImovelInfo;
+    anunciante: { id: number; nome: string; email: string; telefone: string | null; creci: string | null } | null;
+    historico: HistoricoAnunciante | null;
+    denuncias: Denuncia[];
+}
+
+export interface ProcedentesPorGravidade {
+    gravidade: GravidadeResumo;
+    total: number;
+    /** procedentes que contam para a regra (dentro da janela) */
+    naJanela: number;
+    banirContaAuto: boolean;
+    banirApos: number | null;
+    janelaMeses: number | null;
+}
+
+export interface HistoricoAnunciante {
+    total: number;
+    abertas: number;
+    resolvidas: number;
+    improcedentes: number;
+    procedentes: number;
+    procedentesMaFe: number;
+    banidas: number;
+    contaBanida: boolean;
+    porGravidade: ProcedentesPorGravidade[];
+}
+
+export interface ContadorPendencias {
+    aguardandoVoce: number;
+    abertas: number;
+}
+
+/** "2 h 30 min" a partir de minutos. */
+export function duracaoMinutos(min: number | null | undefined): string {
+    if (min == null) return '—';
+    const d = Math.floor(min / 1440);
+    const h = Math.floor((min % 1440) / 60);
+    const m = min % 60;
+    if (min >= 1440 && h === 0 && m === 0) return `${d * 24} h`;
+    const horas = Math.floor(min / 60);
+    if (horas === 0) return `${m} min`;
+    return m ? `${horas} h ${m} min` : `${horas} h`;
 }

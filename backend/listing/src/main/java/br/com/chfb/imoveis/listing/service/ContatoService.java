@@ -16,6 +16,7 @@ import br.com.chfb.imoveis.listing.repository.ImovelRepository;
 import br.com.chfb.imoveis.sharedkernel.dto.PageResponse;
 import br.com.chfb.imoveis.sharedkernel.exception.ForbiddenException;
 import br.com.chfb.imoveis.sharedkernel.exception.NotFoundException;
+import br.com.chfb.imoveis.sharedkernel.port.Notificador;
 import br.com.chfb.imoveis.sharedkernel.security.AuthUser;
 
 @Service
@@ -23,10 +24,12 @@ public class ContatoService {
 
     private final ContatoRepository contatos;
     private final ImovelRepository imoveis;
+    private final Notificador notificador;
 
-    public ContatoService(ContatoRepository contatos, ImovelRepository imoveis) {
+    public ContatoService(ContatoRepository contatos, ImovelRepository imoveis, Notificador notificador) {
         this.contatos = contatos;
         this.imoveis = imoveis;
+        this.notificador = notificador;
     }
 
     @Transactional
@@ -40,22 +43,27 @@ public class ContatoService {
         c.setTelefone(form.telefone());
         c.setMensagem(form.mensagem().trim());
         c.setUsuarioId(usuario == null ? null : usuario.id());
-        return ContatoDto.of(contatos.save(c));
+        Contato salvo = contatos.save(c);
+        notificador.notificar(new Notificador.Nova(imovel.getAnuncianteId(), "CONTATO_RECEBIDO",
+                "Novo contato de " + salvo.getNome(), "Sobre o anúncio " + imovel.getCodigo() + ": " + imovel.getTitulo(),
+                "pi-inbox", "/conta/contatos", "CONTATO", salvo.getId()));
+        return ContatoDto.of(salvo);
     }
 
+    /**
+     * Contatos dos anúncios do próprio usuário. Vale também para administradores: o contato é um dado
+     * pessoal de quem escreveu, endereçado ao anunciante, e não deve ser lido por terceiros (LGPD).
+     */
     @Transactional(readOnly = true)
     public PageResponse<ContatoDto> listar(AuthUser usuario, int page, int size) {
         PageRequest pagina = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100));
-        if (usuario.isAdmin()) {
-            return PageResponse.of(contatos.findAllByOrderByCriadoEmDesc(pagina), ContatoDto::of);
-        }
         return PageResponse.of(contatos.findByImovelAnuncianteIdOrderByCriadoEmDesc(usuario.id(), pagina), ContatoDto::of);
     }
 
     @Transactional
     public ContatoDto marcarLido(Long id, boolean lido, AuthUser usuario) {
         Contato c = contatos.findById(id).orElseThrow(() -> new NotFoundException("Contato não encontrado"));
-        if (!usuario.isAdmin() && !Objects.equals(c.getImovel().getAnuncianteId(), usuario.id())) {
+        if (!Objects.equals(c.getImovel().getAnuncianteId(), usuario.id())) {
             throw new ForbiddenException("Contato de outro anunciante");
         }
         c.setLido(lido);

@@ -20,11 +20,12 @@ import { AuthService } from '@/app/core/services/auth.service';
 import { ConfigService } from '@/app/core/services/config.service';
 import { mensagemErro } from '@/app/core/services/api.service';
 import { PageHeader } from '@/app/shared/components/page-header';
+import { TelefoneInput } from '@/app/shared/components/telefone-input';
 
 /** Usuários e permissões: papéis (cliente, corretor, administrador), ativação e senha. */
 @Component({
     selector: 'app-usuarios-page',
-    imports: [DatePipe, ReactiveFormsModule, TableModule, ButtonModule, InputTextModule, SelectModule, DialogModule, CheckboxModule, ToggleSwitchModule, PasswordModule, TagModule, IconFieldModule, InputIconModule, PageHeader],
+    imports: [DatePipe, ReactiveFormsModule, TableModule, ButtonModule, InputTextModule, SelectModule, DialogModule, CheckboxModule, ToggleSwitchModule, PasswordModule, TagModule, IconFieldModule, InputIconModule, PageHeader, TelefoneInput],
     template: `
         <app-page-header titulo="Usuários e permissões" subtitulo="Administradores também entram como corretor e cliente; corretores também entram como cliente.">
             <p-button label="Novo usuário" icon="pi pi-user-plus" (onClick)="abrir(null)" />
@@ -86,7 +87,7 @@ import { PageHeader } from '@/app/shared/components/page-header';
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div class="flex flex-col gap-2">
                         <label for="us-tel">Telefone</label>
-                        <input pInputText id="us-tel" formControlName="telefone" />
+                        <app-telefone-input inputId="us-tel" formControlName="telefone" />
                     </div>
                     <div class="flex flex-col gap-2">
                         <label for="us-creci">CRECI</label>

@@ -5,11 +5,11 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 import { RadioButtonModule } from 'primeng/radiobutton';
-import { InputMaskModule } from 'primeng/inputmask';
 import { MessageModule } from 'primeng/message';
 import { AuthService } from '@/app/core/services/auth.service';
 import { mensagemErro } from '@/app/core/services/api.service';
 import { Perfil, Sessao } from '@/app/core/models/models';
+import { TelefoneInput } from '@/app/shared/components/telefone-input';
 
 /**
  * Cadastro de conta.
@@ -18,7 +18,7 @@ import { Perfil, Sessao } from '@/app/core/models/models';
  */
 @Component({
     selector: 'app-cadastro-form',
-    imports: [ReactiveFormsModule, InputTextModule, PasswordModule, ButtonModule, RadioButtonModule, InputMaskModule, MessageModule],
+    imports: [ReactiveFormsModule, InputTextModule, PasswordModule, ButtonModule, RadioButtonModule, MessageModule, TelefoneInput],
     template: `
         <form [formGroup]="form" (ngSubmit)="cadastrar()" class="flex flex-col gap-4" novalidate>
             @if (modo() === 'escolha') {
@@ -59,7 +59,7 @@ import { Perfil, Sessao } from '@/app/core/models/models';
             </div>
             <div class="flex flex-col gap-2">
                 <label for="cd-tel" class="font-medium">{{ anunciante() ? '* ' : '' }}Celular</label>
-                <p-inputmask inputId="cd-tel" formControlName="telefone" mask="(99) 99999-9999" placeholder="(00) 00000-0000" [autoClear]="false" styleClass="w-full" />
+                <app-telefone-input inputId="cd-tel" formControlName="telefone" />
             </div>
             <div class="flex flex-col gap-2">
                 <label for="cd-senha" class="font-medium">* Senha (mínimo 8 caracteres)</label>

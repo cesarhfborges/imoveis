@@ -132,7 +132,10 @@ export class DemoBackend {
         if (url === '/app/public/imoveis/destaques') return this.destaques(Number(p.get('limite') ?? 8));
         if (url === '/app/public/imoveis/opcoes') return this.opcoes();
         if (url === '/app/public/imoveis/contagem-tipos') return this.contagem(this.filtro(p));
-        if (url === '/app/public/imoveis/mapa') return this.filtrar(this.filtro(p), 'ATIVO').filter((i) => i.latitude != null).map((i) => this.resumo(i));
+        if (url === '/app/public/imoveis/mapa')
+            return this.filtrar(this.filtro(p), 'ATIVO')
+                .filter((i) => i.latitude != null)
+                .map((i) => this.resumo(i));
         if ((r = url.match(/^\/app\/public\/imoveis\/(\d+)\/similares$/))) return this.similares(+r[1]);
         if ((r = url.match(/^\/app\/public\/imoveis\/(\d+)\/contato$/)) && m === 'POST') return this.contato(+r[1], body);
         if ((r = url.match(/^\/app\/public\/imoveis\/(\d+)$/))) {
@@ -158,8 +161,10 @@ export class DemoBackend {
             this.exigir('ADMIN');
             return this.admin(url, m, body, p);
         }
-        if (url === '/app/uploads') {
-            this.exigir('CORRETOR', 'ADMIN');
+        if (url === '/app/uploads' || url === '/app/conta/foto') {
+            // foto de perfil: qualquer usuário logado; demais imagens: corretor e admin
+            if (url === '/app/uploads') this.exigir('CORRETOR', 'ADMIN');
+            else this.exigir();
             const arquivo: File | null = body instanceof FormData ? (body.get('arquivo') as File) : null;
             if (!arquivo) throw new DemoError(400, 'Envie um arquivo');
             if (arquivo.size > 1_500_000) throw new DemoError(413, 'No modo demonstração o limite é 1,5 MB por imagem');
@@ -186,7 +191,13 @@ export class DemoBackend {
         const admin = b.area === 'admin';
         if (admin && b.perfil !== 'ADMIN') throw new DemoError(400, 'Na área administrativa o perfil deve ser ADMIN');
         if (!admin && b.perfil === 'ADMIN') throw new DemoError(403, 'Administradores entram pela página /admin');
-        const u = this.db.usuarios.find((x) => x.email.toLowerCase() === String(b.email ?? '').trim().toLowerCase() && x.senha === b.senha);
+        const u = this.db.usuarios.find(
+            (x) =>
+                x.email.toLowerCase() ===
+                    String(b.email ?? '')
+                        .trim()
+                        .toLowerCase() && x.senha === b.senha
+        );
         if (!u) throw new DemoError(401, 'E-mail ou senha inválidos');
         if (!u.ativo) throw new DemoError(403, 'Conta desativada. Fale com o suporte.');
         if (!permitidos(u.papeis).includes(b.perfil)) throw new DemoError(403, 'Sua conta não tem acesso como ' + String(b.perfil).toLowerCase());
@@ -424,7 +435,7 @@ export class DemoBackend {
         let r: RegExpMatchArray | null;
         if (url === '/app/conta/perfil') {
             if (m === 'PUT') {
-                Object.assign(u, { nome: b.nome, telefone: b.telefone, creci: b.creci, fotoUrl: b.fotoUrl });
+                Object.assign(u, b);
                 this.salvarDb();
             }
             return this.usuarioDto(u);
@@ -642,15 +653,15 @@ export class DemoBackend {
         if (url === '/app/admin/usuarios' && m === 'GET') {
             const q = (p.get('q') ?? '').toLowerCase();
             const papel = p.get('papel') as Perfil | null;
-            const lista = this.db.usuarios
-                .filter((u) => (!q || u.nome.toLowerCase().includes(q) || u.email.includes(q)) && (!papel || u.papeis.includes(papel)))
-                .sort((a, b) => a.nome.localeCompare(b.nome));
+            const lista = this.db.usuarios.filter((u) => (!q || u.nome.toLowerCase().includes(q) || u.email.includes(q)) && (!papel || u.papeis.includes(papel))).sort((a, b) => a.nome.localeCompare(b.nome));
             const page = Number(p.get('page') ?? 0);
             const size = Number(p.get('size') ?? 20);
             return { content: lista.slice(page * size, page * size + size).map((u) => this.usuarioDto(u)), page, size, totalElements: lista.length, totalPages: Math.ceil(lista.length / size) };
         }
         if (url === '/app/admin/usuarios' && m === 'POST') {
-            const email = String(b.email ?? '').trim().toLowerCase();
+            const email = String(b.email ?? '')
+                .trim()
+                .toLowerCase();
             if (!b.nome || !email || !b.senha) throw new DemoError(400, 'Informe nome, e-mail e senha inicial');
             if (this.db.usuarios.some((u) => u.email === email)) throw new DemoError(409, 'Já existe uma conta com este e-mail');
             const u: DemoUsuario = {

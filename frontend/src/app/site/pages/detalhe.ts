@@ -1,3 +1,4 @@
+import { AnuncianteFoto } from '@/app/shared/components/anunciante-foto';
 import { Component, computed, inject, input, signal, effect } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
@@ -14,11 +15,12 @@ import { ContatoForm } from '@/app/shared/components/contato-form';
 import { MapaOsm, PontoMapa } from '@/app/shared/components/mapa-osm';
 import { ImovelCardMini } from '@/app/shared/components/imovel-card-mini';
 import { EmptyState } from '@/app/shared/components/empty-state';
+import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
 
 /** Página do imóvel. */
 @Component({
     selector: 'app-detalhe-page',
-    imports: [RouterLink, ButtonModule, SkeletonModule, PrecoPipe, ValorM2Pipe, TempoAtrasPipe, GaleriaFotos, ContatoForm, MapaOsm, ImovelCardMini, EmptyState],
+    imports: [RouterLink, ButtonModule, SkeletonModule, PrecoPipe, ValorM2Pipe, TempoAtrasPipe, GaleriaFotos, ContatoForm, MapaOsm, ImovelCardMini, EmptyState, DenunciarDialog, AnuncianteFoto],
     template: `
         @if (erro()) {
             <div class="site-container py-10">
@@ -209,7 +211,7 @@ import { EmptyState } from '@/app/shared/components/empty-state';
                     <div class="caixa-contato" id="contato">
                         @if (i.anunciante; as a) {
                             <div class="flex items-center gap-3 mb-3">
-                                <span class="imovel-card__anunciante">{{ iniciais(a.nome) }}</span>
+                                <app-anunciante-foto [nome]="a.nome" [foto]="a.fotoUrl" [grande]="true" />
                                 <div>
                                     <div class="font-semibold">{{ a.nome }}</div>
                                     <div class="text-xs text-muted-color">Creci: {{ a.creci || '—' }}</div>
@@ -222,8 +224,11 @@ import { EmptyState } from '@/app/shared/components/empty-state';
                             <div class="text-center mt-4 text-lg"><i class="pi pi-phone mr-2" aria-hidden="true"></i>{{ i.anunciante!.telefone }}</div>
                         }
                     </div>
+                    <button type="button" class="detalhe__denunciar" (click)="denunciaAberta.set(true)"><i class="pi pi-flag" aria-hidden="true"></i> Denunciar anúncio</button>
                 </aside>
             </div>
+
+            <app-denunciar-dialog [imovelId]="i.id" [codigo]="i.codigo" [(visivel)]="denunciaAberta" />
 
             @if (similares().length) {
                 <section class="site-container secao" aria-labelledby="similares-titulo">
@@ -253,6 +258,7 @@ export class DetalhePage {
     similares = signal<ImovelResumo[]>([]);
     erro = signal(false);
     descricaoAberta = signal(false);
+    denunciaAberta = signal(false);
     finalidadeLabel = finalidadeLabel;
     documentacao = DOCUMENTACAO;
 
@@ -299,16 +305,6 @@ export class DetalhePage {
             });
             this.imoveis.similares(id).subscribe({ next: (s) => this.similares.set(s), error: () => this.similares.set([]) });
         });
-    }
-
-    iniciais(nome: string) {
-        return nome
-            .split(' ')
-            .filter(Boolean)
-            .slice(0, 2)
-            .map((p) => p[0])
-            .join('')
-            .toUpperCase();
     }
 
     /** Endereço da própria página com o fragmento (o <base href="/"> faria "#x" apontar para a home). */

@@ -37,10 +37,10 @@ public class AdminUsuarioController {
     }
 
     @GetMapping("/dashboard")
-    public DashboardDto dashboard() {
+    public DashboardDto dashboard(@AuthenticationPrincipal AuthUser u) {
         return new DashboardDto(usuarios.contar(), usuarios.contarPorPapel(Perfil.CLIENTE),
                 usuarios.contarPorPapel(Perfil.CORRETOR), usuarios.contarPorPapel(Perfil.ADMIN),
-                imoveis.estatisticas(null));
+                imoveis.estatisticas(null, u.id()));
     }
 
     @GetMapping("/usuarios")

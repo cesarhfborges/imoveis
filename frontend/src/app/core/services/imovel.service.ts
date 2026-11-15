@@ -1,19 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import {
-    Contato,
-    ContatoForm,
-    ContagemTipo,
-    EstatisticasAnuncios,
-    ImovelDetalhe,
-    ImovelFiltro,
-    ImovelForm,
-    ImovelResumo,
-    OpcoesBusca,
-    PageResponse,
-    StatusAnuncio
-} from '@/app/core/models/models';
+import { Contato, ContatoForm, ContagemTipo, EstatisticasAnuncios, ImovelDetalhe, ImovelFiltro, ImovelForm, ImovelResumo, OpcoesBusca, PageResponse, StatusAnuncio } from '@/app/core/models/models';
 
 /** Consulta pública de anúncios (sem login). */
 @Injectable({ providedIn: 'root' })

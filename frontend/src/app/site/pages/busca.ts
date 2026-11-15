@@ -112,7 +112,15 @@ const ORDENS = [
             <app-filtros-busca [valor]="filtro()" (buscar)="aplicar($event); filtrosAbertos.set(false)" />
         </p-drawer>
 
-        <p-dialog [visible]="!!contatando()" (visibleChange)="!$event && contatando.set(null)" [modal]="true" [header]="'Contatar sobre: ' + (contatando()?.titulo ?? '')" [style]="{ width: '30rem' }" [breakpoints]="{ '575px': '95vw' }" [dismissableMask]="true">
+        <p-dialog
+            [visible]="!!contatando()"
+            (visibleChange)="!$event && contatando.set(null)"
+            [modal]="true"
+            [header]="'Contatar sobre: ' + (contatando()?.titulo ?? '')"
+            [style]="{ width: '30rem' }"
+            [breakpoints]="{ '575px': '95vw' }"
+            [dismissableMask]="true"
+        >
             @if (contatando(); as c) {
                 <app-contato-form [imovelId]="c.id" />
             }

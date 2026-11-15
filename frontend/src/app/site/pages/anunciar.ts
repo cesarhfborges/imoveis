@@ -54,13 +54,17 @@ import { AuthService } from '@/app/core/services/auth.service';
                         @if (cfg().whatsapp) {
                             <li>
                                 <span class="anunciar__contato-icone anunciar__contato-icone--whats"><i class="pi pi-whatsapp" aria-hidden="true"></i></span>
-                                <div><small>Celular / WhatsApp</small><strong>{{ cfg().whatsapp }}</strong></div>
+                                <div>
+                                    <small>Celular / WhatsApp</small><strong>{{ cfg().whatsapp }}</strong>
+                                </div>
                             </li>
                         }
                         @if (cfg().emailContato) {
                             <li>
                                 <span class="anunciar__contato-icone"><i class="pi pi-envelope" aria-hidden="true"></i></span>
-                                <div><small>E-mail</small><a [href]="'mailto:' + cfg().emailContato">{{ cfg().emailContato }}</a></div>
+                                <div>
+                                    <small>E-mail</small><a [href]="'mailto:' + cfg().emailContato">{{ cfg().emailContato }}</a>
+                                </div>
                             </li>
                         }
                         <li>

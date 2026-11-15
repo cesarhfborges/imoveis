@@ -98,7 +98,9 @@ import { HeroDecor } from '@/app/shared/components/hero-decor';
                 @for (p of faq; track $index) {
                     <p-accordion-panel [value]="'' + $index">
                         <p-accordion-header>{{ p.q }}</p-accordion-header>
-                        <p-accordion-content><p class="m-0">{{ p.r }}</p></p-accordion-content>
+                        <p-accordion-content
+                            ><p class="m-0">{{ p.r }}</p></p-accordion-content
+                        >
                     </p-accordion-panel>
                 }
             </p-accordion>

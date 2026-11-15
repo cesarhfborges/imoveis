@@ -15,6 +15,8 @@ public interface ImovelRepository extends JpaRepository<Imovel, Long>, JpaSpecif
 
     long countByStatus(StatusAnuncio status);
 
+    List<Imovel> findByAnuncianteId(Long anuncianteId);
+
     long countByAnuncianteId(Long anuncianteId);
 
     long countByAnuncianteIdAndStatus(Long anuncianteId, StatusAnuncio status);

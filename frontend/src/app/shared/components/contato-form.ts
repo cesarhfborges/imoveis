@@ -7,11 +7,12 @@ import { MessageModule } from 'primeng/message';
 import { ImovelService } from '@/app/core/services/imovel.service';
 import { AuthService } from '@/app/core/services/auth.service';
 import { mensagemErro } from '@/app/core/services/api.service';
+import { TelefoneInput } from '@/app/shared/components/telefone-input';
 
 /** "Contate o anunciante": envia a mensagem (lead) para o corretor do imóvel. */
 @Component({
     selector: 'app-contato-form',
-    imports: [ReactiveFormsModule, InputTextModule, TextareaModule, ButtonModule, MessageModule],
+    imports: [ReactiveFormsModule, InputTextModule, TextareaModule, ButtonModule, MessageModule, TelefoneInput],
     template: `
         @if (enviado()) {
             <p-message severity="success" text="Mensagem enviada! O anunciante vai responder pelo seu e-mail ou telefone." />
@@ -23,7 +24,7 @@ import { mensagemErro } from '@/app/core/services/api.service';
                 <label class="sr-only" for="ct-email">E-mail</label>
                 <input pInputText id="ct-email" type="email" formControlName="email" placeholder="E-mail" autocomplete="email" />
                 <label class="sr-only" for="ct-tel">Celular</label>
-                <input pInputText id="ct-tel" formControlName="telefone" placeholder="Celular" autocomplete="tel" />
+                <app-telefone-input inputId="ct-tel" formControlName="telefone" placeholder="Celular" />
                 <label class="sr-only" for="ct-msg">Mensagem</label>
                 <textarea pTextarea id="ct-msg" formControlName="mensagem" rows="4"></textarea>
                 @if (erro()) {

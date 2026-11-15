@@ -20,12 +20,14 @@ import org.springframework.security.web.authentication.logout.HttpStatusReturnin
 import org.springframework.security.web.context.DelegatingSecurityContextRepository;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import br.com.chfb.imoveis.coreapi.config.AppProperties;
+import br.com.chfb.imoveis.coreapi.repository.UsuarioRepository;
 import br.com.chfb.imoveis.coreapi.service.ApiTokenService;
 
 /**
@@ -77,13 +79,15 @@ public class SecurityConfig {
 
     @Bean
     @Order(2)
-    SecurityFilterChain apiDoSite(HttpSecurity http, AppProperties props, SecurityContextRepository repo)
-            throws Exception {
+    SecurityFilterChain apiDoSite(HttpSecurity http, AppProperties props, SecurityContextRepository repo,
+            UsuarioRepository usuarios) throws Exception {
         http.securityMatcher("/app/**")
                 .cors(c -> c.configurationSource(corsSite(props)))
                 .csrf(c -> c.spa())
                 .addFilterBefore(new FrontendOnlyFilter(props.security().frontendOrigins()), CsrfFilter.class)
                 .securityContext(sc -> sc.securityContextRepository(repo))
+                // conta desativada/banida perde a sessão na hora
+                .addFilterAfter(new ContaAtivaFilter(usuarios), SecurityContextHolderFilter.class)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                         .sessionFixation(f -> f.changeSessionId()))
                 .requestCache(r -> r.disable())

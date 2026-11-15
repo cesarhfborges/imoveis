@@ -1,3 +1,4 @@
+import { Avatar } from '@/app/shared/components/avatar';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { DrawerModule } from 'primeng/drawer';
@@ -5,6 +6,7 @@ import { MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
 import { AppLogo } from '@/app/shared/components/app-logo';
 import { ThemeModeToggle } from '@/app/shared/components/theme-mode-toggle';
+import { NotificacoesSino } from '@/app/shared/components/notificacoes-sino';
 import { AuthService } from '@/app/core/services/auth.service';
 import { perfilLabel } from '@/app/core/models/models';
 
@@ -16,7 +18,7 @@ import { perfilLabel } from '@/app/core/models/models';
  */
 @Component({
     selector: 'app-site-header',
-    imports: [RouterLink, RouterLinkActive, DrawerModule, MenuModule, AppLogo, ThemeModeToggle],
+    imports: [RouterLink, RouterLinkActive, DrawerModule, MenuModule, AppLogo, ThemeModeToggle, NotificacoesSino, Avatar],
     // display: contents — sem isso o host tem a altura do próprio cabeçalho e o "sticky" não gruda
     host: { style: 'display: contents', '(window:scroll)': 'aoRolar()' },
     template: `
@@ -35,6 +37,9 @@ import { perfilLabel } from '@/app/core/models/models';
 
                 <div class="cabecalho__acoes">
                     <span class="cabecalho__tema"><app-theme-mode-toggle /></span>
+                    @if (auth.logado()) {
+                        <span class="cabecalho__tema"><app-notificacoes-sino /></span>
+                    }
 
                     <a routerLink="/anunciar" class="cabecalho__anunciar">
                         <i class="pi pi-megaphone" aria-hidden="true"></i>
@@ -43,7 +48,7 @@ import { perfilLabel } from '@/app/core/models/models';
 
                     @if (auth.logado()) {
                         <button type="button" class="cabecalho__conta" (click)="menuConta.toggle($event)" aria-haspopup="true" [attr.aria-label]="'Conta de ' + nomeCompleto()">
-                            <span class="cabecalho__avatar" aria-hidden="true">{{ iniciais() }}</span>
+                            <app-avatar class="cabecalho__foto" [nome]="nomeCompleto()" [foto]="auth.usuario()?.fotoUrl ?? null" tamanho="2rem" />
                             <span class="cabecalho__nome">{{ primeiroNome() }}</span>
                             <i class="pi pi-chevron-down cabecalho__seta" aria-hidden="true"></i>
                         </button>
@@ -89,7 +94,7 @@ import { perfilLabel } from '@/app/core/models/models';
                 </a>
                 @if (auth.logado()) {
                     <div class="gaveta-site__usuario">
-                        <span class="cabecalho__avatar" aria-hidden="true">{{ iniciais() }}</span>
+                        <app-avatar class="cabecalho__foto" [nome]="nomeCompleto()" [foto]="auth.usuario()?.fotoUrl ?? null" tamanho="2.5rem" />
                         <span class="flex flex-col min-w-0">
                             <strong class="truncate">{{ nomeCompleto() }}</strong>
                             <small>{{ perfil() }}</small>
@@ -136,11 +141,6 @@ export class SiteHeader {
 
     nomeCompleto = computed(() => this.auth.usuario()?.nome ?? '');
     primeiroNome = computed(() => this.nomeCompleto().trim().split(/\s+/)[0] ?? '');
-    iniciais = computed(() => {
-        const partes = this.nomeCompleto().trim().split(/\s+/).filter(Boolean);
-        const ini = (partes[0]?.[0] ?? '') + (partes.length > 1 ? partes[partes.length - 1][0] : '');
-        return ini.toUpperCase() || '?';
-    });
     perfil = computed(() => perfilLabel(this.auth.sessao().perfil));
 
     /** Atalhos da conta (sem cabeçalho/separadores/sair), reaproveitados no menu e na gaveta. */
@@ -151,10 +151,12 @@ export class SiteHeader {
         }
         const itens: MenuItem[] = [
             { label: 'Minha conta', icon: 'pi-home', routerLink: '/conta' },
-            { label: 'Favoritos', icon: 'pi-heart', routerLink: '/conta/favoritos' }
+            { label: 'Favoritos', icon: 'pi-heart', routerLink: '/conta/favoritos' },
+            { label: 'Minhas denúncias', icon: 'pi-flag', routerLink: '/conta/denuncias' }
         ];
         if (p === 'CORRETOR') {
             itens.push({ label: 'Meus anúncios', icon: 'pi-building', routerLink: '/conta/anuncios' });
+            itens.push({ label: 'Pendências', icon: 'pi-exclamation-circle', routerLink: '/conta/pendencias' });
         }
         return itens;
     });

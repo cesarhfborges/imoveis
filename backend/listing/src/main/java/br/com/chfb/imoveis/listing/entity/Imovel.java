@@ -40,6 +40,11 @@ public class Imovel extends BaseEntity {
     @Column(nullable = false, length = 20)
     private StatusAnuncio status = StatusAnuncio.ATIVO;
 
+    /** Status de antes da suspensão/banimento pela moderação (para voltar a ele ao reativar). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status_anterior", length = 20)
+    private StatusAnuncio statusAnterior;
+
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal preco;
 
@@ -127,6 +132,8 @@ public class Imovel extends BaseEntity {
     public void setFinalidade(Finalidade finalidade) { this.finalidade = finalidade; }
     public TipoImovel getTipo() { return tipo; }
     public void setTipo(TipoImovel tipo) { this.tipo = tipo; }
+    public StatusAnuncio getStatusAnterior() { return statusAnterior; }
+    public void setStatusAnterior(StatusAnuncio statusAnterior) { this.statusAnterior = statusAnterior; }
     public StatusAnuncio getStatus() { return status; }
     public void setStatus(StatusAnuncio status) { this.status = status; }
     public BigDecimal getPreco() { return preco; }

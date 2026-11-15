@@ -20,7 +20,7 @@ spring:
     # Hot reload: reinicia a aplicação ao recompilar e avisa o navegador (LiveReload)
     restart:
       enabled: true
-      additional-paths: ../listing/target/classes,../shared-kernel/target/classes
+      additional-paths: ../listing/target/classes,../shared-kernel/target/classes,../platform/target/classes,../moderation/target/classes
     livereload:
       enabled: true
 
@@ -32,6 +32,18 @@ app:
     dir: ./.data/uploads
   seed:
     demo: true
+  # Soketi local: docker compose -f infra/docker-compose.dev.yml up -d soketi
+  realtime:
+    ativo: true
+    app-id: imoveis
+    key: imoveis-key
+    secret: imoveis-secret-dev
+    url: http://localhost:6001
+    cliente:
+      ws-host: localhost
+      ws-port: 6001
+      wss-port: 6001
+      force-tls: false
   bootstrap:
     admin-email: ""
     admin-senha: ""

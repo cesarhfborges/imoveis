@@ -57,6 +57,21 @@ app:
     max-bytes: 5242880
   seed:
     demo: false
+  # Tempo real (WebSocket): servidor Soketi, protocolo Pusher. Desligado, o front segue por consulta periódica.
+  realtime:
+    ativo: ${APP_REALTIME_ATIVO:false}
+    app-id: ${APP_REALTIME_APP_ID:imoveis}
+    key: ${APP_REALTIME_KEY:}
+    secret: ${APP_REALTIME_SECRET:}
+    # API HTTP do Soketi vista pelo backend (rede interna)
+    url: ${APP_REALTIME_URL:http://localhost:6001}
+    # como o navegador conecta: host vazio = o mesmo domínio do site (ex.: proxy reverso em /ws)
+    cliente:
+      ws-host: ${APP_REALTIME_WS_HOST:}
+      ws-port: ${APP_REALTIME_WS_PORT:80}
+      wss-port: ${APP_REALTIME_WSS_PORT:443}
+      ws-path: ${APP_REALTIME_WS_PATH:}
+      force-tls: ${APP_REALTIME_FORCE_TLS:true}
   bootstrap:
     admin-nome: ${APP_ADMIN_NOME:Administrador}
     admin-email: ${APP_ADMIN_EMAIL:}

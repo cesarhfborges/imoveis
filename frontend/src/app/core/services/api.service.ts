@@ -52,7 +52,13 @@ export function toParams(obj?: object): HttpParams {
 export function mensagemErro(err: any, padrao = 'Não foi possível concluir. Tente novamente.'): string {
     const e = err?.error;
     if (e && typeof e === 'object' && typeof e.message === 'string') {
-        const campos = e.fields && Object.keys(e.fields).length ? ': ' + Object.entries(e.fields).map(([k, v]) => `${k} ${v}`).join('; ') : '';
+        const campos =
+            e.fields && Object.keys(e.fields).length
+                ? ': ' +
+                  Object.entries(e.fields)
+                      .map(([k, v]) => `${k} ${v}`)
+                      .join('; ')
+                : '';
         return e.message + campos;
     }
     return padrao;

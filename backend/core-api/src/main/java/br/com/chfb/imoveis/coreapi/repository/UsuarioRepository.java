@@ -1,5 +1,6 @@
 package br.com.chfb.imoveis.coreapi.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -16,6 +17,11 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByEmailIgnoreCase(String email);
 
     boolean existsByEmailIgnoreCase(String email);
+
+    boolean existsByIdAndAtivoTrue(Long id);
+
+    @Query("select distinct u.id from Usuario u join u.papeis p where p = :papel and u.ativo = true")
+    List<Long> idsAtivosPorPapel(@Param("papel") Perfil papel);
 
     @Query("select count(distinct u) from Usuario u join u.papeis p where p = :papel")
     long contarPorPapel(@Param("papel") Perfil papel);

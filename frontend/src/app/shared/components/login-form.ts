@@ -52,7 +52,9 @@ interface ContaDemo {
         @if (mostrarContas()) {
             <section class="mt-6 p-4 rounded-border border border-dashed border-surface bg-surface-50 dark:bg-surface-800" aria-labelledby="demo-titulo">
                 <h2 id="demo-titulo" class="text-base font-semibold m-0">{{ demo.ativo() ? 'Contas de demonstração' : 'Usuários de teste (desenvolvimento)' }}</h2>
-                <p class="text-sm text-muted-color mt-1 mb-3">{{ demo.ativo() ? 'O site está sem a API, então os dados ficam só neste navegador.' : 'Criados pelo backend no perfil dev (só aparecem fora da produção).' }} Clique numa conta para entrar:</p>
+                <p class="text-sm text-muted-color mt-1 mb-3">
+                    {{ demo.ativo() ? 'O site está sem a API, então os dados ficam só neste navegador.' : 'Criados pelo backend no perfil dev (só aparecem fora da produção).' }} Clique numa conta para entrar:
+                </p>
                 <div class="flex flex-col gap-2">
                     @for (c of contasDemo(); track c.rotulo) {
                         <button type="button" class="flex items-center justify-between gap-3 text-left p-2 rounded-border border border-surface bg-surface-0 dark:bg-surface-900 hover:border-primary cursor-pointer" (click)="entrarComo(c)">

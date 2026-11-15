@@ -34,7 +34,17 @@ public class UploadService {
         this.props = props;
     }
 
+    /** Formatos aceitos para foto de perfil. */
+    public static final java.util.Set<String> FOTO_PERFIL = java.util.Set.of("jpg", "png", "webp");
+
     public String salvar(MultipartFile arquivo) {
+        return salvar(arquivo, null);
+    }
+
+    /**
+     * @param extensoesPermitidas restringe os formatos (nulo = todos os aceitos pelo sistema)
+     */
+    public String salvar(MultipartFile arquivo, java.util.Set<String> extensoesPermitidas) {
         if (arquivo == null || arquivo.isEmpty()) {
             throw new BusinessException("Envie um arquivo");
         }
@@ -43,8 +53,9 @@ public class UploadService {
         }
         String tipo = arquivo.getContentType() == null ? "" : arquivo.getContentType().toLowerCase(Locale.ROOT);
         String ext = TIPOS.get(tipo);
-        if (ext == null) {
-            throw new BusinessException(415, "Formato não suportado. Use JPG, PNG, WEBP, GIF ou ICO.");
+        if (ext == null || (extensoesPermitidas != null && !extensoesPermitidas.contains(ext))) {
+            throw new BusinessException(415, extensoesPermitidas == null ? "Formato não suportado. Use JPG, PNG, WEBP, GIF ou ICO."
+                    : "Formato não suportado. Use JPG, PNG ou WEBP.");
         }
         try (InputStream in = arquivo.getInputStream()) {
             if (!assinaturaValida(in.readNBytes(12), ext)) {

@@ -127,7 +127,9 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
             <section class="card m-0 flex flex-col gap-4">
                 <div class="flex flex-wrap items-end justify-between gap-3">
                     <div>
-                        <h2 class="text-lg font-semibold m-0">Fotos <span class="text-muted-color font-normal text-base">({{ fotos.length }}/{{ maxFotos }})</span></h2>
+                        <h2 class="text-lg font-semibold m-0">
+                            Fotos <span class="text-muted-color font-normal text-base">({{ fotos.length }}/{{ maxFotos }})</span>
+                        </h2>
                         <p class="text-sm text-muted-color m-0 mt-1">A primeira foto é a capa. Em cada foto, informe se ela é <strong>real</strong> ou <strong>criada/alterada com IA</strong>; isso aparece para o cliente no anúncio.</p>
                     </div>
                     @if (fotos.length > 1) {

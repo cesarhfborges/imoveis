@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
@@ -14,11 +14,12 @@ import { PageHeader } from '@/app/shared/components/page-header';
 import { ImageUpload } from '@/app/shared/components/image-upload';
 import { ThemePicker } from '@/app/shared/components/theme-picker';
 import { AppLogo } from '@/app/shared/components/app-logo';
+import { TelefoneInput } from '@/app/shared/components/telefone-input';
 
 /** Configuração global do site: identidade (nome, logos, favicon), SEO, contato, tema e regras. */
 @Component({
     selector: 'app-configuracoes-page',
-    imports: [ReactiveFormsModule, InputTextModule, TextareaModule, ButtonModule, ToggleSwitchModule, TabsModule, PageHeader, ImageUpload, ThemePicker, AppLogo],
+    imports: [ReactiveFormsModule, InputTextModule, TextareaModule, ButtonModule, ToggleSwitchModule, TabsModule, PageHeader, ImageUpload, ThemePicker, AppLogo, TelefoneInput],
     template: `
         <app-page-header titulo="Configurações do site" subtitulo="O que for salvo aqui vale para todos os visitantes.">
             <p-button label="Salvar" icon="pi pi-check" (onClick)="salvar()" [loading]="salvando()" />
@@ -45,8 +46,8 @@ import { AppLogo } from '@/app/shared/components/app-logo';
                                 <input pInputText id="cf-slogan" formControlName="slogan" maxlength="160" />
                             </div>
                             <app-image-upload rotulo="Logo (tema claro)" [url]="form.controls.logoUrl.value" (urlChange)="form.controls.logoUrl.setValue($event)" />
-                            <app-image-upload rotulo="Logo (tema escuro)" [url]="form.controls.logoEscuroUrl.value" (urlChange)="form.controls.logoEscuroUrl.setValue($event)" />
-                            <app-image-upload rotulo="Favicon (ícone da aba)" [url]="form.controls.faviconUrl.value" (urlChange)="form.controls.faviconUrl.setValue($event)" />
+                            <app-image-upload rotulo="Logo (tema escuro)" [fundoEscuro]="true" [url]="form.controls.logoEscuroUrl.value" (urlChange)="form.controls.logoEscuroUrl.setValue($event)" />
+                            <app-image-upload rotulo="Favicon (ícone da aba)" formato="quadrado" dica="PNG ou ICO quadrado · 64×64 px ou maior" [url]="form.controls.faviconUrl.value" (urlChange)="form.controls.faviconUrl.setValue($event)" />
                             <div class="flex flex-col gap-2">
                                 <span>Prévia atual</span>
                                 <div class="p-3 border border-surface rounded-border"><app-logo /></div>
@@ -67,7 +68,7 @@ import { AppLogo } from '@/app/shared/components/app-logo';
                                 <label for="cf-sk">Palavras-chave (separadas por vírgula)</label>
                                 <input pInputText id="cf-sk" formControlName="seoPalavrasChave" maxlength="300" />
                             </div>
-                            <app-image-upload rotulo="Imagem de compartilhamento (redes sociais)" [url]="form.controls.seoImagemUrl.value" (urlChange)="form.controls.seoImagemUrl.setValue($event)" />
+                            <app-image-upload rotulo="Imagem de compartilhamento (redes sociais)" formato="largo" dica="1200×630 px · aparece ao compartilhar links do site" [url]="form.controls.seoImagemUrl.value" (urlChange)="form.controls.seoImagemUrl.setValue($event)" />
                         </div>
                     </p-tabpanel>
                     <p-tabpanel value="contato">
@@ -75,7 +76,11 @@ import { AppLogo } from '@/app/shared/components/app-logo';
                             @for (c of camposContato; track c.campo) {
                                 <div class="flex flex-col gap-2" [class.md:col-span-2]="c.largo">
                                     <label [for]="'cf-' + c.campo">{{ c.label }}</label>
-                                    <input pInputText [id]="'cf-' + c.campo" [formControlName]="c.campo" />
+                                    @if (c.campo === 'telefoneContato' || c.campo === 'whatsapp') {
+                                        <app-telefone-input [inputId]="'cf-' + c.campo" [formControlName]="c.campo" />
+                                    } @else {
+                                        <input pInputText [id]="'cf-' + c.campo" [formControlName]="c.campo" />
+                                    }
                                 </div>
                             }
                             <div class="flex flex-col gap-2 md:col-span-2">
@@ -153,6 +158,8 @@ export class ConfiguracoesPage {
     });
 
     constructor() {
+        // pré-visualização do tema sem salvar: ao sair, volta ao tema do sistema
+        inject(DestroyRef).onDestroy(() => this.theme.restaurar());
         this.config.definirTitulo('Configurações');
         const c = this.config.config();
         this.preencher(c);
@@ -184,7 +191,7 @@ export class ConfiguracoesPage {
 
     mudarTema(t: ThemeChoice) {
         this.tema.set(t);
-        this.theme.apply(t, false);
+        this.theme.apply(t);
     }
 
     salvar() {

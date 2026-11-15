@@ -14,8 +14,7 @@
         <script>
             /* evita "piscar" claro antes do tema carregar */
             try {
-                var t = JSON.parse(localStorage.getItem('imoveis.tema') || 'null');
-                var m = t && t.mode ? t.mode : 'auto';
+                var m = sessionStorage.getItem('imoveis.tema.modo') || 'auto';
                 if (m === 'dark' || (m === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('app-dark');
             } catch (e) {}
         </script>

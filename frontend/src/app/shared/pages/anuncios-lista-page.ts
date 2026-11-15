@@ -11,7 +11,7 @@ import { Menu, MenuModule } from 'primeng/menu';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { debounceTime } from 'rxjs';
-import { ImovelResumo, PageResponse, STATUS, StatusAnuncio } from '@/app/core/models/models';
+import { ImovelResumo, PageResponse, STATUS, STATUS_MODERACAO, StatusAnuncio } from '@/app/core/models/models';
 import { AreaGestao, GestaoAnunciosService } from '@/app/core/services/imovel.service';
 import { ConfigService } from '@/app/core/services/config.service';
 import { mensagemErro } from '@/app/core/services/api.service';
@@ -130,13 +130,20 @@ export class AnunciosListaPage {
         if (this.admin) {
             if (i.status !== 'ATIVO') itens.push({ label: i.status === 'PENDENTE' ? 'Aprovar' : 'Ativar', icon: 'pi pi-check', command: () => this.mudarStatus(i, 'ATIVO') });
             if (i.status !== 'BLOQUEADO') itens.push({ label: 'Bloquear', icon: 'pi pi-ban', command: () => this.mudarStatus(i, 'BLOQUEADO') });
+            if (!STATUS_MODERACAO.includes(i.status)) itens.push({ label: 'Suspender (moderação)', icon: 'pi pi-pause-circle', command: () => this.mudarStatus(i, 'SUSPENSO') });
+            if (i.status !== 'BANIDO') itens.push({ label: 'Banir', icon: 'pi pi-times-circle', command: () => this.mudarStatus(i, 'BANIDO') });
+            itens.push({ label: 'Denúncias deste anúncio', icon: 'pi pi-flag', routerLink: ['/admin/denuncias', i.id] });
             itens.push({ label: i.destaque ? 'Tirar do destaque' : 'Destacar', icon: 'pi pi-star', command: () => this.mudarStatus(i, i.status, !i.destaque) });
+        } else if (STATUS_MODERACAO.includes(i.status)) {
+            itens.push({ label: 'Ver pendências da moderação', icon: 'pi pi-flag', routerLink: ['/conta/pendencias', i.id] });
         } else if (i.status !== 'PENDENTE' && i.status !== 'BLOQUEADO') {
             if (i.status === 'ATIVO') itens.push({ label: 'Pausar', icon: 'pi pi-pause', command: () => this.mudarStatus(i, 'PAUSADO') });
             else itens.push({ label: 'Reativar', icon: 'pi pi-play', command: () => this.mudarStatus(i, 'ATIVO') });
             if (i.status !== 'CONCLUIDO') itens.push({ label: 'Marcar como vendido/alugado', icon: 'pi pi-flag', command: () => this.mudarStatus(i, 'CONCLUIDO') });
         }
-        itens.push({ separator: true }, { label: 'Excluir', icon: 'pi pi-trash', command: () => this.excluir(i) });
+        if (this.admin || i.status !== 'BANIDO') {
+            itens.push({ separator: true }, { label: 'Excluir', icon: 'pi pi-trash', command: () => this.excluir(i) });
+        }
         return itens;
     });
 

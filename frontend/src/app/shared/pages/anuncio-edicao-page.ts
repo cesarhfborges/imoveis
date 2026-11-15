@@ -73,7 +73,6 @@ export class AnuncioEdicaoPage {
                     summary: a ? 'Anúncio salvo' : 'Anúncio publicado',
                     detail: i.status === 'PENDENTE' ? 'Ele aparecerá no site após a aprovação.' : undefined
                 });
-                this.router.navigateByUrl(this.base);
             },
             error: (e) => {
                 this.salvando.set(false);

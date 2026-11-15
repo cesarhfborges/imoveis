@@ -10,5 +10,9 @@ public enum StatusAnuncio {
     /** Vendido ou alugado. */
     CONCLUIDO,
     /** Reprovado/bloqueado por um administrador. */
-    BLOQUEADO
+    BLOQUEADO,
+    /** Suspenso pela moderação (denúncia): fora da busca; só um administrador (ou a aprovação da solução) reativa. */
+    SUSPENSO,
+    /** Banido pela moderação: fora da busca, definitivo; o anunciante vê, mas não edita nem reativa. */
+    BANIDO
 }

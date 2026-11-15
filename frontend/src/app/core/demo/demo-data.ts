@@ -99,10 +99,66 @@ export function criarDemoDb(): DemoDb {
     const agora = Date.now();
     const dia = 86400000;
     const usuarios: DemoUsuario[] = [
-        { id: 1, nome: 'Administrador Demo', email: 'admin@imoveis.local', senha: 'admin12345', telefone: '(61) 90000-0001', creci: null, documento: null, tipoAnunciante: null, fotoUrl: null, ativo: true, papeis: ['ADMIN', 'CORRETOR', 'CLIENTE'], ultimoAcesso: null, criadoEm: new Date(agora - 90 * dia).toISOString() },
-        { id: 2, nome: 'Corretora Exemplo', email: 'corretor@imoveis.local', senha: 'corretor123', telefone: '(61) 90000-0002', creci: '12345-F', documento: null, tipoAnunciante: 'CORRETOR', fotoUrl: null, ativo: true, papeis: ['CORRETOR', 'CLIENTE'], ultimoAcesso: null, criadoEm: new Date(agora - 60 * dia).toISOString() },
-        { id: 3, nome: 'Imobiliária Modelo', email: 'imobiliaria@imoveis.local', senha: 'corretor123', telefone: '(61) 90000-0003', creci: 'J-0420', documento: null, tipoAnunciante: 'IMOBILIARIA', fotoUrl: null, ativo: true, papeis: ['CORRETOR', 'CLIENTE'], ultimoAcesso: null, criadoEm: new Date(agora - 45 * dia).toISOString() },
-        { id: 4, nome: 'Cliente Exemplo', email: 'cliente@imoveis.local', senha: 'cliente123', telefone: '(61) 90000-0004', creci: null, documento: null, tipoAnunciante: null, fotoUrl: null, ativo: true, papeis: ['CLIENTE'], ultimoAcesso: null, criadoEm: new Date(agora - 30 * dia).toISOString() }
+        {
+            id: 1,
+            nome: 'Administrador Demo',
+            email: 'admin@imoveis.local',
+            senha: 'admin12345',
+            telefone: '(61) 90000-0001',
+            creci: null,
+            documento: null,
+            tipoAnunciante: null,
+            fotoUrl: null,
+            ativo: true,
+            papeis: ['ADMIN', 'CORRETOR', 'CLIENTE'],
+            ultimoAcesso: null,
+            criadoEm: new Date(agora - 90 * dia).toISOString()
+        },
+        {
+            id: 2,
+            nome: 'Corretora Exemplo',
+            email: 'corretor@imoveis.local',
+            senha: 'corretor123',
+            telefone: '(61) 90000-0002',
+            creci: '12345-F',
+            documento: null,
+            tipoAnunciante: 'CORRETOR',
+            fotoUrl: null,
+            ativo: true,
+            papeis: ['CORRETOR', 'CLIENTE'],
+            ultimoAcesso: null,
+            criadoEm: new Date(agora - 60 * dia).toISOString()
+        },
+        {
+            id: 3,
+            nome: 'Imobiliária Modelo',
+            email: 'imobiliaria@imoveis.local',
+            senha: 'corretor123',
+            telefone: '(61) 90000-0003',
+            creci: 'J-0420',
+            documento: null,
+            tipoAnunciante: 'IMOBILIARIA',
+            fotoUrl: null,
+            ativo: true,
+            papeis: ['CORRETOR', 'CLIENTE'],
+            ultimoAcesso: null,
+            criadoEm: new Date(agora - 45 * dia).toISOString()
+        },
+        {
+            id: 4,
+            nome: 'Cliente Exemplo',
+            email: 'cliente@imoveis.local',
+            senha: 'cliente123',
+            telefone: '(61) 90000-0004',
+            creci: null,
+            documento: null,
+            tipoAnunciante: null,
+            fotoUrl: null,
+            ativo: true,
+            papeis: ['CLIENTE'],
+            ultimoAcesso: null,
+            criadoEm: new Date(agora - 30 * dia).toISOString()
+        }
     ];
     const imoveis: DemoImovel[] = MODELOS.map((m, n) => {
         const [titulo, tipo, finalidade, preco, area, q, s, v, cidade, bairro, endereco, lat, lng, lanc] = m;

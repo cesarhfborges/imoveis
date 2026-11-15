@@ -85,7 +85,7 @@ public class AnuncioGestaoController {
 
     @GetMapping("/anuncios/estatisticas")
     public EstatisticasAnuncios estatisticas(@AuthenticationPrincipal AuthUser u) {
-        return imoveis.estatisticas(u.isAdmin() ? null : u.id());
+        return imoveis.estatisticas(u.isAdmin() ? null : u.id(), u.id());
     }
 
     @GetMapping("/contatos")

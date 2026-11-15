@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -33,6 +34,7 @@ import br.com.chfb.imoveis.listing.repository.ContatoRepository;
 import br.com.chfb.imoveis.listing.repository.FavoritoRepository;
 import br.com.chfb.imoveis.listing.repository.ImovelRepository;
 import br.com.chfb.imoveis.sharedkernel.dto.PageResponse;
+import br.com.chfb.imoveis.sharedkernel.event.AnuncioExcluindoEvent;
 import br.com.chfb.imoveis.sharedkernel.exception.BusinessException;
 import br.com.chfb.imoveis.sharedkernel.exception.ForbiddenException;
 import br.com.chfb.imoveis.sharedkernel.exception.NotFoundException;
@@ -49,14 +51,19 @@ public class ImovelService {
     private final FavoritoRepository favoritos;
     private final AnuncianteProvider anunciantes;
     private final ModeracaoPolicy moderacao;
+    private final ApplicationEventPublisher eventos;
+
+    /** Status aplicados pela moderação (só administradores tiram o anúncio deles). */
+    private static final Set<StatusAnuncio> EM_MODERACAO = Set.of(StatusAnuncio.SUSPENSO, StatusAnuncio.BANIDO);
 
     public ImovelService(ImovelRepository imoveis, ContatoRepository contatos, FavoritoRepository favoritos,
-            AnuncianteProvider anunciantes, ModeracaoPolicy moderacao) {
+            AnuncianteProvider anunciantes, ModeracaoPolicy moderacao, ApplicationEventPublisher eventos) {
         this.imoveis = imoveis;
         this.contatos = contatos;
         this.favoritos = favoritos;
         this.anunciantes = anunciantes;
         this.moderacao = moderacao;
+        this.eventos = eventos;
     }
 
     // ------------------------------------------------------------------ busca
@@ -167,6 +174,9 @@ public class ImovelService {
     @Transactional
     public ImovelDetalhe atualizar(Long id, ImovelForm form, AuthUser usuario) {
         Imovel imovel = carregarComPermissao(id, usuario);
+        if (!usuario.isAdmin() && imovel.getStatus() == StatusAnuncio.BANIDO) {
+            throw new BusinessException(409, "Este anúncio foi banido pela moderação e não pode ser editado");
+        }
         aplicar(imovel, form);
         return detalhe(imoveis.save(imovel));
     }
@@ -175,6 +185,11 @@ public class ImovelService {
     public ImovelDetalhe alterarStatus(Long id, StatusForm form, AuthUser usuario) {
         Imovel imovel = carregarComPermissao(id, usuario);
         if (usuario.isAdmin()) {
+            if (EM_MODERACAO.contains(form.status()) && !EM_MODERACAO.contains(imovel.getStatus())) {
+                imovel.setStatusAnterior(imovel.getStatus());
+            } else if (!EM_MODERACAO.contains(form.status())) {
+                imovel.setStatusAnterior(null);
+            }
             imovel.setStatus(form.status());
             if (form.destaque() != null) {
                 imovel.setDestaque(form.destaque());
@@ -184,7 +199,8 @@ public class ImovelService {
             if (!permitidos.contains(form.status())) {
                 throw new ForbiddenException("Status não permitido para o anunciante");
             }
-            if (imovel.getStatus() == StatusAnuncio.PENDENTE || imovel.getStatus() == StatusAnuncio.BLOQUEADO) {
+            if (imovel.getStatus() == StatusAnuncio.PENDENTE || imovel.getStatus() == StatusAnuncio.BLOQUEADO
+                    || EM_MODERACAO.contains(imovel.getStatus())) {
                 throw new BusinessException(409, "Este anúncio depende de uma decisão da administração");
             }
             imovel.setStatus(form.status());
@@ -195,23 +211,72 @@ public class ImovelService {
     @Transactional
     public void excluir(Long id, AuthUser usuario) {
         Imovel imovel = carregarComPermissao(id, usuario);
+        if (!usuario.isAdmin() && imovel.getStatus() == StatusAnuncio.BANIDO) {
+            throw new BusinessException(409, "Anúncios banidos pela moderação não podem ser excluídos");
+        }
+        // a moderação apaga as denúncias encerradas ou impede a exclusão se houver pendências
+        eventos.publishEvent(new AnuncioExcluindoEvent(imovel.getId()));
         contatos.deleteByImovelId(imovel.getId());
         favoritos.deleteByImovelId(imovel.getId());
         imoveis.delete(imovel);
     }
 
+    /**
+     * Números do painel. {@code anuncianteId} nulo = todos os anúncios (administração); os contatos não lidos
+     * são sempre só os de {@code donoContatos}, porque cada um lê apenas os contatos dos próprios anúncios.
+     */
     @Transactional(readOnly = true)
-    public EstatisticasAnuncios estatisticas(Long anuncianteId) {
+    public EstatisticasAnuncios estatisticas(Long anuncianteId, Long donoContatos) {
         if (anuncianteId == null) {
             return new EstatisticasAnuncios(imoveis.count(), imoveis.countByStatus(StatusAnuncio.ATIVO),
                     imoveis.countByStatus(StatusAnuncio.PENDENTE), imoveis.countByStatus(StatusAnuncio.PAUSADO),
-                    imoveis.somarVisualizacoes(), contatos.countByLidoFalse());
+                    imoveis.somarVisualizacoes(), contatos.countByImovelAnuncianteIdAndLidoFalse(donoContatos));
         }
         return new EstatisticasAnuncios(imoveis.countByAnuncianteId(anuncianteId),
                 imoveis.countByAnuncianteIdAndStatus(anuncianteId, StatusAnuncio.ATIVO),
                 imoveis.countByAnuncianteIdAndStatus(anuncianteId, StatusAnuncio.PENDENTE),
                 imoveis.countByAnuncianteIdAndStatus(anuncianteId, StatusAnuncio.PAUSADO),
                 imoveis.somarVisualizacoes(anuncianteId), contatos.countByImovelAnuncianteIdAndLidoFalse(anuncianteId));
+    }
+
+    // ---------------------------------------------------------------- moderação
+
+    /**
+     * Suspende ou bane o anúncio (moderação), guardando o status de antes para uma eventual reativação.
+     *
+     * @return true se o status mudou
+     */
+    @Transactional
+    public boolean aplicarModeracao(Long id, StatusAnuncio novo) {
+        if (!EM_MODERACAO.contains(novo)) {
+            throw new IllegalArgumentException("Status de moderação inválido: " + novo);
+        }
+        Imovel imovel = imoveis.findById(id).orElseThrow(() -> new NotFoundException("Imóvel não encontrado"));
+        if (imovel.getStatus() == novo || imovel.getStatus() == StatusAnuncio.BANIDO) {
+            return false;
+        }
+        if (!EM_MODERACAO.contains(imovel.getStatus())) {
+            imovel.setStatusAnterior(imovel.getStatus());
+        }
+        imovel.setStatus(novo);
+        return true;
+    }
+
+    /**
+     * Tira o anúncio da suspensão/banimento e volta ao status de antes (ATIVO se não houver registro).
+     *
+     * @return true se o status mudou
+     */
+    @Transactional
+    public boolean reativarModeracao(Long id) {
+        Imovel imovel = imoveis.findById(id).orElseThrow(() -> new NotFoundException("Imóvel não encontrado"));
+        if (!EM_MODERACAO.contains(imovel.getStatus())) {
+            return false;
+        }
+        StatusAnuncio anterior = imovel.getStatusAnterior();
+        imovel.setStatus(anterior == null || EM_MODERACAO.contains(anterior) ? StatusAnuncio.ATIVO : anterior);
+        imovel.setStatusAnterior(null);
+        return true;
     }
 
     // ---------------------------------------------------------------- apoio

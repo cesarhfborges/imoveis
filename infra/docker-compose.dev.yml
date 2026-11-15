@@ -1,0 +1,21 @@
+# Serviços de apoio para desenvolvimento.
+#   docker compose -f infra/docker-compose.dev.yml up -d soketi
+services:
+  # Servidor WebSocket (protocolo Pusher) para o tempo real: notificações, contadores e salas das denúncias.
+  # As credenciais batem com backend/core-api/src/main/resources/application-dev.yml (app.realtime).
+  soketi:
+    image: quay.io/soketi/soketi:1.6-16-debian
+    container_name: imoveis-soketi
+    restart: unless-stopped
+    ports:
+      - "6001:6001" # WebSocket e API HTTP
+      - "9601:9601" # métricas
+    environment:
+      SOKETI_DEBUG: "0"
+      SOKETI_DEFAULT_APP_ID: imoveis
+      SOKETI_DEFAULT_APP_KEY: imoveis-key
+      SOKETI_DEFAULT_APP_SECRET: imoveis-secret-dev
+      # eventos de cliente (navegador publicando direto na sala) ficam desligados: tudo passa pela API
+      SOKETI_DEFAULT_APP_ENABLE_CLIENT_MESSAGES: "false"
+      SOKETI_DEFAULT_APP_MAX_PRESENCE_MEMBERS_PER_CHANNEL: "100"
+      SOKETI_DEFAULT_APP_MAX_EVENT_PAYLOAD_IN_KB: "200"

@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurationPackage;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 
 /**
@@ -12,8 +13,11 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
  * <p>
  * Os componentes, entidades e repositórios de todos os módulos ficam em
  * {@code br.com.chfb.imoveis.*}, por isso a varredura parte desse pacote.
+ * <p>
+ * O login é próprio (sessão e tokens), sem {@code UserDetailsService}: a autoconfiguração que cria um usuário
+ * em memória (e escreve "Using generated security password" no console) fica desligada.
  */
-@SpringBootApplication(scanBasePackages = "br.com.chfb.imoveis")
+@SpringBootApplication(scanBasePackages = "br.com.chfb.imoveis", exclude = UserDetailsServiceAutoConfiguration.class)
 @AutoConfigurationPackage(basePackages = "br.com.chfb.imoveis")
 @ConfigurationPropertiesScan("br.com.chfb.imoveis")
 public class ImoveisApplication extends SpringBootServletInitializer {

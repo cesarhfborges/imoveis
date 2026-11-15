@@ -33,12 +33,15 @@
                         ],
                         "styles": [
                             "node_modules/leaflet/dist/leaflet.css",
+                            "node_modules/quill/dist/quill.snow.css",
                             "src/assets/styles.scss",
                             "src/assets/tailwind.css"
                         ],
                         "scripts": [],
                         "allowedCommonJsDependencies": [
-                            "leaflet"
+                            "leaflet",
+                            "pusher-js",
+                            "quill-delta"
                         ]
                     },
                     "configurations": {

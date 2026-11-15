@@ -50,6 +50,22 @@ export class TempoAtrasPipe implements PipeTransform {
     }
 }
 
+/** "agora", "há 5 min", "há 3 h", "ontem", "12/11" (para notificações e conversas). */
+@Pipe({ name: 'tempoRelativo' })
+export class TempoRelativoPipe implements PipeTransform {
+    transform(iso: string | null | undefined): string {
+        if (!iso) return '';
+        const data = new Date(iso);
+        const min = Math.floor((Date.now() - data.getTime()) / 60000);
+        if (min < 1) return 'agora';
+        if (min < 60) return `há ${min} min`;
+        const h = Math.floor(min / 60);
+        if (h < 24) return `há ${h} h`;
+        if (h < 48) return 'ontem';
+        return data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    }
+}
+
 /** Texto para URL amigável: "Casa com piscina" -> "casa-com-piscina". */
 export function slug(texto: string | null | undefined): string {
     return (texto ?? '')

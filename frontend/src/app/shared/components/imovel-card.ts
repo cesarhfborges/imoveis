@@ -1,3 +1,4 @@
+import { AnuncianteFoto } from '@/app/shared/components/anunciante-foto';
 import { Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ImovelResumo } from '@/app/core/models/models';
@@ -12,7 +13,7 @@ import { AuthService } from '@/app/core/services/auth.service';
  */
 @Component({
     selector: 'app-imovel-card',
-    imports: [RouterLink, ImovelFoto, PrecoPipe, ValorM2Pipe, TempoAtrasPipe],
+    imports: [RouterLink, ImovelFoto, PrecoPipe, ValorM2Pipe, TempoAtrasPipe, AnuncianteFoto],
     template: `
         <article class="imovel-card group">
             <a [routerLink]="link()" class="imovel-card__foto" [attr.aria-label]="'Ver ' + imovel().titulo">
@@ -73,7 +74,7 @@ import { AuthService } from '@/app/core/services/auth.service';
                 <p class="text-xs text-muted-color mt-1">{{ imovel().tipoDescricao }} · {{ imovel().codigo }} · publicado {{ imovel().criadoEm | tempoAtras }}</p>
 
                 <div class="flex items-center gap-4 mt-auto pt-3">
-                    <span class="imovel-card__anunciante" [title]="imovel().anuncianteNome ?? ''">{{ iniciais() }}</span>
+                    <app-anunciante-foto [nome]="imovel().anuncianteNome" [foto]="imovel().anuncianteFoto" />
                     <div class="text-sm leading-tight">
                         <div class="text-red-600 dark:text-red-400 text-xs">Creci:</div>
                         <div>{{ imovel().anuncianteCreci || '—' }}</div>
@@ -96,13 +97,4 @@ export class ImovelCard {
         const i = this.imovel();
         return [i.endereco, i.bairro, i.cidade].filter(Boolean).join(', ');
     });
-    iniciais = computed(() =>
-        (this.imovel().anuncianteNome ?? '?')
-            .split(' ')
-            .filter(Boolean)
-            .slice(0, 2)
-            .map((p) => p[0])
-            .join('')
-            .toUpperCase()
-    );
 }

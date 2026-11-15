@@ -52,7 +52,10 @@ export class AuthService {
             .subscribe(() => {
                 this.sessao.set({ autenticado: false, usuario: null, perfil: null, perfisDisponiveis: [] });
                 // novo token CSRF para a próxima ação
-                this.api.get('/app/auth/csrf').pipe(catchError(() => of(null))).subscribe();
+                this.api
+                    .get('/app/auth/csrf')
+                    .pipe(catchError(() => of(null)))
+                    .subscribe();
                 this.router.navigateByUrl(destino);
             });
     }

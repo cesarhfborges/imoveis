@@ -12,12 +12,7 @@ public interface ContatoRepository extends JpaRepository<Contato, Long> {
     @EntityGraph(attributePaths = "imovel")
     Page<Contato> findByImovelAnuncianteIdOrderByCriadoEmDesc(Long anuncianteId, Pageable pageable);
 
-    @EntityGraph(attributePaths = "imovel")
-    Page<Contato> findAllByOrderByCriadoEmDesc(Pageable pageable);
-
     long countByImovelAnuncianteIdAndLidoFalse(Long anuncianteId);
-
-    long countByLidoFalse();
 
     void deleteByImovelId(Long imovelId);
 }

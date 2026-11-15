@@ -79,7 +79,9 @@ import { PageHeader } from '@/app/shared/components/page-header';
                     <ng-template #body let-t>
                         <tr>
                             <td>{{ t.nome }}</td>
-                            <td><code>{{ t.prefixo }}…</code></td>
+                            <td>
+                                <code>{{ t.prefixo }}…</code>
+                            </td>
                             <td><p-tag [value]="rotulo(t.perfil)" severity="secondary" /></td>
                             <td>{{ t.criadoEm | date: 'dd/MM/yyyy' }}</td>
                             <td>{{ t.expiraEm ? (t.expiraEm | date: 'dd/MM/yyyy') : 'Nunca' }}</td>
@@ -109,7 +111,12 @@ export class ApiTokensPage {
     criando = signal(false);
     novoToken = signal<string | null>(null);
     /** Clientes não têm token de API: só os perfis de corretor e administrador. */
-    perfis = computed(() => this.auth.sessao().perfisDisponiveis.filter((p) => p !== 'CLIENTE').map((p) => ({ value: p, label: perfilLabel(p) })));
+    perfis = computed(() =>
+        this.auth
+            .sessao()
+            .perfisDisponiveis.filter((p) => p !== 'CLIENTE')
+            .map((p) => ({ value: p, label: perfilLabel(p) }))
+    );
 
     form = this.fb.group({
         nome: ['', [Validators.required, Validators.maxLength(80)]],
