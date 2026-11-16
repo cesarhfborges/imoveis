@@ -29,10 +29,8 @@ export class ContaLoginPage {
     entrou(event: any) {
         this.conta.carregarFavoritos();
         const voltar: string | undefined = this.route.snapshot.queryParams['voltar'];
-        if (event.perfil === 'CLIENTE') {
-            void this.router.navigateByUrl('/');
-        } else {
-            void this.router.navigateByUrl(voltar && voltar.startsWith('/') && !voltar.startsWith('/admin') ? voltar : '/conta');
-        }
+        // volta para onde a pessoa estava (ex.: "Ver telefone" na página do imóvel), nunca para o painel admin
+        const destinoValido = !!voltar && voltar.startsWith('/') && !voltar.startsWith('/admin');
+        void this.router.navigateByUrl(destinoValido ? voltar! : event.perfil === 'CLIENTE' ? '/' : '/conta');
     }
 }

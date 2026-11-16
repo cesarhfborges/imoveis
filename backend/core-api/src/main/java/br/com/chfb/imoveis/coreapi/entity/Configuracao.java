@@ -1,8 +1,12 @@
 package br.com.chfb.imoveis.coreapi.entity;
 
+import br.com.chfb.imoveis.sharedkernel.util.Digitos;
 import br.com.chfb.imoveis.sharedkernel.entity.BaseEntity;
+import br.com.chfb.imoveis.sharedkernel.port.ExibicaoTelefonePolicy;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 
 /** Configuração global do sistema (linha única), editada em /admin/configuracoes. */
@@ -66,6 +70,9 @@ public class Configuracao extends BaseEntity {
     private boolean permitirCadastroCorretor = true;
     @Column(name = "abrir_anuncio_nova_janela")
     private boolean abrirAnuncioNovaJanela;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "telefone_anunciante", nullable = false, length = 30)
+    private ExibicaoTelefonePolicy.Modo telefoneAnunciante = ExibicaoTelefonePolicy.Modo.MOSTRAR;
 
     public String getNomeApp() { return nomeApp; }
     public void setNomeApp(String nomeApp) { this.nomeApp = nomeApp; }
@@ -88,9 +95,9 @@ public class Configuracao extends BaseEntity {
     public String getEmailContato() { return emailContato; }
     public void setEmailContato(String emailContato) { this.emailContato = emailContato; }
     public String getTelefoneContato() { return telefoneContato; }
-    public void setTelefoneContato(String telefoneContato) { this.telefoneContato = telefoneContato; }
+    public void setTelefoneContato(String telefoneContato) { this.telefoneContato = Digitos.somente(telefoneContato); }
     public String getWhatsapp() { return whatsapp; }
-    public void setWhatsapp(String whatsapp) { this.whatsapp = whatsapp; }
+    public void setWhatsapp(String whatsapp) { this.whatsapp = Digitos.somente(whatsapp); }
     public String getEndereco() { return endereco; }
     public void setEndereco(String endereco) { this.endereco = endereco; }
     public String getInstagram() { return instagram; }
@@ -109,6 +116,8 @@ public class Configuracao extends BaseEntity {
     public void setTemaModo(String temaModo) { this.temaModo = temaModo; }
     public boolean isModerarAnuncios() { return moderarAnuncios; }
     public void setModerarAnuncios(boolean moderarAnuncios) { this.moderarAnuncios = moderarAnuncios; }
+    public ExibicaoTelefonePolicy.Modo getTelefoneAnunciante() { return telefoneAnunciante; }
+    public void setTelefoneAnunciante(ExibicaoTelefonePolicy.Modo telefoneAnunciante) { this.telefoneAnunciante = telefoneAnunciante; }
     public boolean isAbrirAnuncioNovaJanela() { return abrirAnuncioNovaJanela; }
     public void setAbrirAnuncioNovaJanela(boolean abrirAnuncioNovaJanela) { this.abrirAnuncioNovaJanela = abrirAnuncioNovaJanela; }
     public boolean isPermitirCadastroCorretor() { return permitirCadastroCorretor; }

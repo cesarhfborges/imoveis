@@ -37,7 +37,7 @@ public final class ContaDtos {
             @Size(max = 100) String instagram, @Size(max = 200) String facebook, @Size(max = 2000) String sobre,
             @Pattern(regexp = "^$|^[A-Z]{2}$", message = "UF do CRECI inválida") String creciUf,
             @Size(max = 500) String regioesAtuacao, @Min(1900) @Max(2100) Short atuandoDesde,
-            @Pattern(regexp = "^$|^\\d{5}-?\\d{3}$", message = "CEP inválido") String cep,
+            @Pattern(regexp = "^$|^\\d{2}\\.?\\d{3}-?\\d{3}$", message = "CEP inválido") String cep,
             @Size(max = 160) String logradouro, @Size(max = 20) String numero, @Size(max = 80) String complemento,
             @Size(max = 80) String bairro, @Size(max = 80) String cidade,
             @Pattern(regexp = "^$|^[A-Z]{2}$", message = "UF inválida") String uf) {

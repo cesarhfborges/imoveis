@@ -2,6 +2,7 @@ import { Component, computed, inject, input, output, signal } from '@angular/cor
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
+import { InputMaskModule } from 'primeng/inputmask';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 import { RadioButtonModule } from 'primeng/radiobutton';
@@ -10,6 +11,7 @@ import { AuthService } from '@/app/core/services/auth.service';
 import { mensagemErro } from '@/app/core/services/api.service';
 import { Perfil, Sessao } from '@/app/core/models/models';
 import { TelefoneInput } from '@/app/shared/components/telefone-input';
+import { digitos } from '@/app/core/pipes/formatos';
 
 /**
  * Cadastro de conta.
@@ -18,7 +20,7 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
  */
 @Component({
     selector: 'app-cadastro-form',
-    imports: [ReactiveFormsModule, InputTextModule, PasswordModule, ButtonModule, RadioButtonModule, MessageModule, TelefoneInput],
+    imports: [ReactiveFormsModule, InputTextModule, InputMaskModule, PasswordModule, ButtonModule, RadioButtonModule, MessageModule, TelefoneInput],
     template: `
         <form [formGroup]="form" (ngSubmit)="cadastrar()" class="flex flex-col gap-4" novalidate>
             @if (modo() === 'escolha') {
@@ -41,7 +43,16 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div class="flex flex-col gap-2">
                         <label for="cd-doc" class="font-medium">* {{ ehImobiliaria() ? 'CNPJ' : 'CPF' }}</label>
-                        <input pInputText id="cd-doc" formControlName="documento" [placeholder]="ehImobiliaria() ? '00.000.000/0000-00' : '000.000.000-00'" />
+                        <!-- trocar Corretor/Imobiliária troca a máscara e limpa o campo (CPF e CNPJ têm tamanhos diferentes) -->
+                        <p-inputmask
+                            inputId="cd-doc"
+                            formControlName="documento"
+                            [mask]="ehImobiliaria() ? '99.999.999/9999-99' : '999.999.999-99'"
+                            [unmask]="true"
+                            [autoClear]="false"
+                            inputmode="numeric"
+                            [placeholder]="ehImobiliaria() ? 'Ex.: 12.345.678/0001-90' : 'Ex.: 123.456.789-09'"
+                        />
                     </div>
                     <div class="flex flex-col gap-2">
                         <label for="cd-creci" class="font-medium">* Creci</label>
@@ -102,10 +113,15 @@ export class CadastroForm {
     enviando = signal(false);
     erro = signal<string | null>(null);
 
+    /** CPF com 11 dígitos ou CNPJ com 14, conforme o tipo escolhido. */
+    private documentoCompleto(doc: string | null): boolean {
+        return digitos(doc).length === (this.ehImobiliaria() ? 14 : 11);
+    }
+
     cadastrar() {
         const v = this.form.getRawValue();
         const anunciante = this.anunciante();
-        if (this.form.invalid || (anunciante && (!v.creci.trim() || !v.documento.trim() || !v.telefone.trim()))) {
+        if (this.form.invalid || (anunciante && (!v.creci.trim() || !this.documentoCompleto(v.documento) || !v.telefone))) {
             this.form.markAllAsTouched();
             this.erro.set(anunciante ? 'Preencha documento, CRECI, nome, e-mail, celular e senha (mínimo 8 caracteres).' : 'Preencha nome, e-mail válido e senha (mínimo 8 caracteres).');
             return;
@@ -120,7 +136,7 @@ export class CadastroForm {
                 telefone: v.telefone || null,
                 tipo: anunciante ? 'CORRETOR' : 'CLIENTE',
                 creci: anunciante ? v.creci.trim() : null,
-                documento: anunciante ? v.documento.trim() : null,
+                documento: anunciante ? digitos(v.documento) : null,
                 tipoAnunciante: anunciante ? v.tipoAnunciante : null
             })
             .subscribe({

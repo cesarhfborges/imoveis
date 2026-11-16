@@ -1,5 +1,6 @@
 package br.com.chfb.imoveis.coreapi.entity;
 
+import br.com.chfb.imoveis.sharedkernel.util.Digitos;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.Set;
@@ -125,7 +126,7 @@ public class Usuario extends BaseEntity {
     public String getRazaoSocial() { return razaoSocial; }
     public void setRazaoSocial(String razaoSocial) { this.razaoSocial = razaoSocial; }
     public String getWhatsapp() { return whatsapp; }
-    public void setWhatsapp(String whatsapp) { this.whatsapp = whatsapp; }
+    public void setWhatsapp(String whatsapp) { this.whatsapp = Digitos.somente(whatsapp); }
     public String getEmailContato() { return emailContato; }
     public void setEmailContato(String emailContato) { this.emailContato = emailContato; }
     public String getSite() { return site; }
@@ -141,7 +142,7 @@ public class Usuario extends BaseEntity {
     public String getRegioesAtuacao() { return regioesAtuacao; }
     public void setRegioesAtuacao(String regioesAtuacao) { this.regioesAtuacao = regioesAtuacao; }
     public String getCep() { return cep; }
-    public void setCep(String cep) { this.cep = cep; }
+    public void setCep(String cep) { this.cep = Digitos.somente(cep); }
     public String getLogradouro() { return logradouro; }
     public void setLogradouro(String logradouro) { this.logradouro = logradouro; }
     public String getNumero() { return numero; }
@@ -163,11 +164,11 @@ public class Usuario extends BaseEntity {
     public String getSenhaHash() { return senhaHash; }
     public void setSenhaHash(String senhaHash) { this.senhaHash = senhaHash; }
     public String getTelefone() { return telefone; }
-    public void setTelefone(String telefone) { this.telefone = telefone; }
+    public void setTelefone(String telefone) { this.telefone = Digitos.somente(telefone); }
     public String getCreci() { return creci; }
     public void setCreci(String creci) { this.creci = creci; }
     public String getDocumento() { return documento; }
-    public void setDocumento(String documento) { this.documento = documento; }
+    public void setDocumento(String documento) { this.documento = Digitos.somente(documento); }
     public String getTipoAnunciante() { return tipoAnunciante; }
     public void setTipoAnunciante(String tipoAnunciante) { this.tipoAnunciante = tipoAnunciante; }
     public String getFotoUrl() { return fotoUrl; }

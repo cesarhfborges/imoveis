@@ -9,6 +9,14 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ButtonModule } from 'primeng/button';
 import { AutoCompleteModule } from 'primeng/autocomplete';
+import { InputGroupModule } from 'primeng/inputgroup';
+import { InputMaskModule } from 'primeng/inputmask';
+import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
+import { HttpErrorResponse } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { BrasilApiCep, BrasilApiService } from '@/app/core/services/brasil-api.service';
+import { digitos } from '@/app/core/pipes/formatos';
+import { GeocodificacaoService, PrecisaoGeo } from '@/app/core/services/geocodificacao.service';
 import { MessageService } from 'primeng/api';
 import { DOCUMENTACAO, FINALIDADES, Finalidade, ImovelDetalhe, ImovelForm as ImovelFormDto, ORIGENS_FOTO, OrigemFoto, TIPOS, TipoImovel, UFS, tituloAnuncio } from '@/app/core/models/models';
 import { ImageUpload } from './image-upload';
@@ -20,12 +28,14 @@ type FotoGrupo = FormGroup<{ url: FormControl<string>; origem: FormControl<Orige
 /** Mesmo limite do servidor (ImovelForm.fotos @Size(max = 30)). */
 const MAX_FOTOS = 30;
 
+const ROTULO_PRECISAO: Record<PrecisaoGeo, string> = { endereco: 'endereço', cep: 'CEP', bairro: 'bairro', cidade: 'centro da cidade' };
+
 const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varanda', 'Churrasqueira', 'Portaria 24h', 'Academia', 'Salão de festas', 'Elevador', 'Playground', 'Ar condicionado', 'Interfone', 'Quintal', 'Mobiliado', 'Aceita pet'];
 
 /** Formulário do anúncio, usado pelo corretor e pelo administrador. */
 @Component({
     selector: 'app-imovel-form',
-    imports: [ReactiveFormsModule, InputTextModule, InputNumberModule, TextareaModule, SelectModule, ToggleSwitchModule, CheckboxModule, ButtonModule, AutoCompleteModule, ImageUpload, MapaOsm, ImovelFoto],
+    imports: [ReactiveFormsModule, InputTextModule, InputNumberModule, TextareaModule, SelectModule, ToggleSwitchModule, CheckboxModule, ButtonModule, AutoCompleteModule, InputGroupModule, InputGroupAddonModule, InputMaskModule, ImageUpload, MapaOsm, ImovelFoto],
     template: `
         <form [formGroup]="form" (ngSubmit)="enviar()" class="flex flex-col gap-6" novalidate>
             <section class="card m-0 flex flex-col gap-4" aria-labelledby="im-info-titulo">
@@ -53,7 +63,12 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
                 <div class="grid gap-4 grid-cols-2 md:grid-cols-12">
                     <div class="flex flex-col gap-2 col-span-2 md:col-span-3">
                         <label for="im-cep">CEP</label>
-                        <input pInputText id="im-cep" formControlName="cep" maxlength="9" inputmode="numeric" autocomplete="postal-code" />
+                        <p-inputgroup>
+                            <p-inputmask inputId="im-cep" formControlName="cep" mask="99.999-999" [unmask]="true" [autoClear]="false" placeholder="00.000-000" autocomplete="postal-code" inputmode="numeric" (keydown.enter)="$event.preventDefault(); buscarCep()" />
+                            <p-inputgroup-addon>
+                                <p-button type="button" icon="pi pi-search" severity="secondary" ariaLabel="Buscar endereço pelo CEP" [loading]="buscandoCep()" (onClick)="buscarCep()" />
+                            </p-inputgroup-addon>
+                        </p-inputgroup>
                     </div>
                     <div class="flex flex-col gap-2 col-span-2 md:col-span-7">
                         <label for="im-end">Logradouro</label>
@@ -81,7 +96,7 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
                     <strong class="text-base">{{ tituloPrevia() || 'Preencha endereço, bairro e cidade' }}</strong>
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
-                    <p-button type="button" label="Localizar endereço no mapa" icon="pi pi-map-marker" [outlined]="true" [loading]="geocodificando()" (onClick)="localizar()" />
+                    <p-button type="button" label="Localizar endereço no mapa" icon="pi pi-map-marker" [outlined]="true" [loading]="geocodificando()" (onClick)="localizar()" [disabled]="buscandoCep()" />
                     <span class="text-sm text-muted-color">ou clique no mapa para marcar a posição exata.</span>
                     @if (form.controls.latitude.value != null) {
                         <span class="text-xs text-muted-color">({{ form.controls.latitude.value }}, {{ form.controls.longitude.value }})</span>
@@ -203,6 +218,8 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
 export class ImovelFormComponent {
     private fb = inject(NonNullableFormBuilder);
     private msg = inject(MessageService);
+    private brasilApi = inject(BrasilApiService);
+    private geo = inject(GeocodificacaoService);
 
     valor = input<ImovelDetalhe | null>(null);
     salvando = input(false);
@@ -226,6 +243,7 @@ export class ImovelFormComponent {
     sugestoes = signal<string[]>([]);
     centro = signal<[number, number] | null>(null);
     geocodificando = signal(false);
+    buscandoCep = signal(false);
 
     form = this.fb.group({
         titulo: ['', [Validators.required, Validators.maxLength(160)]],
@@ -279,7 +297,7 @@ export class ImovelFormComponent {
             if (!v) return;
             this.fotos.clear();
             v.fotos.forEach((f) => this.fotos.push(this.novaFoto(f.url, f.origem)));
-            this.form.patchValue({ ...v, uf: v.uf?.toUpperCase() ?? 'DF', descricao: v.descricao ?? '', endereco: v.endereco ?? '', numero: v.numero ?? '', cep: v.cep ?? '', caracteristicas: [...v.caracteristicas] });
+            this.form.patchValue({ ...v, uf: v.uf?.toUpperCase() ?? 'DF', descricao: v.descricao ?? '', endereco: v.endereco ?? '', numero: v.numero ?? '', cep: digitos(v.cep), caracteristicas: [...v.caracteristicas] });
             this.centro.set(v.latitude != null && v.longitude != null ? [v.latitude, v.longitude] : null);
         });
     }
@@ -309,28 +327,67 @@ export class ImovelFormComponent {
         this.form.patchValue({ latitude: lat, longitude: lng });
     }
 
-    /** Busca as coordenadas do endereço no Nominatim (geocodificação gratuita do OpenStreetMap). */
-    async localizar() {
+    /** Preenche logradouro, bairro, cidade e UF a partir do CEP (BrasilAPI). Só roda pelo botão do campo CEP. */
+    async buscarCep() {
+        const cep = BrasilApiService.limparCep(this.form.controls.cep.value);
+        if (cep.length !== 8) {
+            this.msg.add({ severity: 'warn', summary: 'CEP', detail: 'Informe um CEP com 8 dígitos.' });
+            return;
+        }
+        this.buscandoCep.set(true);
+        try {
+            const r = await firstValueFrom(this.brasilApi.cep(cep));
+            const uf = r.state?.toUpperCase();
+            this.form.patchValue({
+                cep,
+                ...(r.street ? { endereco: r.street } : {}),
+                ...(r.neighborhood ? { bairro: r.neighborhood } : {}),
+                ...(r.city ? { cidade: r.city } : {}),
+                ...(uf && UFS.includes(uf) ? { uf } : {})
+            });
+            this.form.markAsDirty();
+            if (!r.street || !r.neighborhood) {
+                this.msg.add({ severity: 'info', summary: 'CEP encontrado', detail: 'Este CEP não traz logradouro/bairro. Complete manualmente.' });
+            }
+            await this.localizar(r);
+        } catch (e) {
+            const naoEncontrado = e instanceof HttpErrorResponse && e.status === 404;
+            this.msg.add({
+                severity: naoEncontrado ? 'warn' : 'error',
+                summary: 'CEP',
+                detail: naoEncontrado ? 'CEP não encontrado.' : 'Não foi possível consultar o CEP agora.'
+            });
+        } finally {
+            this.buscandoCep.set(false);
+        }
+    }
+
+    /**
+     * Posiciona o mapa pelo endereço do formulário (Nominatim, do mais preciso ao mais genérico).
+     * Vindo da busca por CEP, usa como último recurso a coordenada da BrasilAPI (aproximada, nível cidade).
+     */
+    async localizar(cep?: BrasilApiCep) {
         const v = this.form.getRawValue();
-        const q = [[v.endereco, v.numero].filter(Boolean).join(' '), v.bairro, v.cidade, v.uf, 'Brasil'].filter(Boolean).join(', ');
-        if (!v.cidade) {
-            this.msg.add({ severity: 'warn', summary: 'Localização', detail: 'Preencha ao menos a cidade.' });
+        if (!v.cidade && BrasilApiService.limparCep(v.cep).length !== 8) {
+            this.msg.add({ severity: 'warn', summary: 'Localização', detail: 'Preencha ao menos a cidade ou o CEP.' });
             return;
         }
         this.geocodificando.set(true);
         try {
-            const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=pt-BR&q=' + encodeURIComponent(q));
-            const lista = (await r.json()) as { lat: string; lon: string }[];
-            if (lista.length) {
-                const lat = +Number(lista[0].lat).toFixed(7);
-                const lng = +Number(lista[0].lon).toFixed(7);
-                this.marcar(lat, lng);
-                this.centro.set([lat, lng]);
-            } else {
-                this.msg.add({ severity: 'info', summary: 'Endereço não encontrado', detail: 'Clique no mapa para marcar a posição.' });
+            let r = await this.geo.localizar(v).catch(() => null);
+            const c = cep?.location?.coordinates;
+            if (!r && c?.latitude && c?.longitude) {
+                r = { lat: +Number(c.latitude).toFixed(7), lng: +Number(c.longitude).toFixed(7), precisao: 'cidade' };
             }
-        } catch {
-            this.msg.add({ severity: 'error', summary: 'Localização', detail: 'Não foi possível consultar o mapa agora.' });
+            if (!r) {
+                this.msg.add({ severity: 'info', summary: 'Endereço não encontrado', detail: 'Clique no mapa para marcar a posição.' });
+                return;
+            }
+            this.marcar(r.lat, r.lng);
+            this.centro.set([r.lat, r.lng]);
+            if (r.precisao !== 'endereco') {
+                this.msg.add({ severity: 'info', summary: 'Posição aproximada', detail: `Localizado pelo ${ROTULO_PRECISAO[r.precisao]}. Clique no mapa para ajustar o ponto exato.` });
+            }
         } finally {
             this.geocodificando.set(false);
         }
@@ -343,6 +400,6 @@ export class ImovelFormComponent {
             return;
         }
         const v = this.form.getRawValue();
-        this.salvar.emit({ ...v, preco: v.preco ?? 0, uf: v.uf.toUpperCase(), descricao: v.descricao || null, endereco: v.endereco || null, numero: v.numero.trim() || null, cep: v.cep || null });
+        this.salvar.emit({ ...v, preco: v.preco ?? 0, uf: v.uf.toUpperCase(), descricao: v.descricao || null, endereco: v.endereco || null, numero: v.numero.trim() || null, cep: digitos(v.cep) || null });
     }
 }

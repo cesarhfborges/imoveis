@@ -32,7 +32,7 @@ public final class AuthDtos {
             @Size(max = 30) String telefone,
             @NotNull Perfil tipo,
             @Size(max = 30) String creci,
-            @Size(max = 20) String documento,
+            @Pattern(regexp = "^$|^\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}$|^\\d{2}\\.?\\d{3}\\.?\\d{3}/?\\d{4}-?\\d{2}$", message = "CPF ou CNPJ inválido") String documento,
             @Pattern(regexp = "CORRETOR|IMOBILIARIA") String tipoAnunciante) {
     }
 

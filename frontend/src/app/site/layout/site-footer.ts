@@ -2,11 +2,12 @@ import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AppLogo } from '@/app/shared/components/app-logo';
 import { ConfigService } from '@/app/core/services/config.service';
+import { TelefonePipe } from '@/app/core/pipes/formatos';
 
 /** Rodapé em colunas: marca e redes, institucional, atalhos de busca e contato. */
 @Component({
     selector: 'app-site-footer',
-    imports: [RouterLink, AppLogo],
+    imports: [RouterLink, AppLogo, TelefonePipe],
     template: `
         <footer class="site-footer">
             <div class="site-container grid gap-8 md:grid-cols-2 lg:grid-cols-4 py-10">
@@ -50,10 +51,10 @@ import { ConfigService } from '@/app/core/services/config.service';
                     <h2 class="site-footer__titulo">Atendimento</h2>
                     <ul>
                         @if (cfg().telefoneContato) {
-                            <li><i class="pi pi-phone mr-2" aria-hidden="true"></i>{{ cfg().telefoneContato }}</li>
+                            <li><i class="pi pi-phone mr-2" aria-hidden="true"></i>{{ cfg().telefoneContato | telefone }}</li>
                         }
                         @if (cfg().whatsapp) {
-                            <li><i class="pi pi-whatsapp mr-2" aria-hidden="true"></i>{{ cfg().whatsapp }}</li>
+                            <li><i class="pi pi-whatsapp mr-2" aria-hidden="true"></i>{{ cfg().whatsapp | telefone }}</li>
                         }
                         @if (cfg().emailContato) {
                             <li>

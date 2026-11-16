@@ -6,10 +6,11 @@ import org.springframework.transaction.annotation.Transactional;
 import br.com.chfb.imoveis.coreapi.dto.ConfiguracaoDto;
 import br.com.chfb.imoveis.coreapi.entity.Configuracao;
 import br.com.chfb.imoveis.coreapi.repository.ConfiguracaoRepository;
+import br.com.chfb.imoveis.sharedkernel.port.ExibicaoTelefonePolicy;
 import br.com.chfb.imoveis.sharedkernel.port.ModeracaoPolicy;
 
 @Service
-public class ConfiguracaoService implements ModeracaoPolicy {
+public class ConfiguracaoService implements ModeracaoPolicy, ExibicaoTelefonePolicy {
 
     private final ConfiguracaoRepository repo;
 
@@ -42,5 +43,11 @@ public class ConfiguracaoService implements ModeracaoPolicy {
     @Transactional
     public boolean exigeAprovacao() {
         return atual().isModerarAnuncios();
+    }
+
+    @Override
+    @Transactional
+    public Modo telefoneAnunciante() {
+        return atual().getTelefoneAnunciante();
     }
 }

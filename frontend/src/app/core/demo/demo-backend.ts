@@ -1,5 +1,5 @@
 import { HttpParams, HttpRequest } from '@angular/common/http';
-import { ContagemTipo, FotoImovel, ImovelDetalhe, ImovelFiltro, ImovelResumo, ORIGENS_FOTO, OrigemFoto, PageResponse, Perfil, Sessao, StatusAnuncio, TIPOS, TipoImovel, tipoLabel } from '@/app/core/models/models';
+import { ContagemTipo, ExibicaoTelefone, FotoImovel, ImovelDetalhe, ImovelFiltro, ImovelResumo, ORIGENS_FOTO, OrigemFoto, PageResponse, Perfil, Sessao, StatusAnuncio, TIPOS, TipoImovel, tipoLabel } from '@/app/core/models/models';
 import { DemoDb, DemoImovel, DemoUsuario, criarDemoDb, fotosMock } from './demo-data';
 
 /**
@@ -143,7 +143,18 @@ export class DemoBackend {
             if (!i) throw new DemoError(404, 'Imóvel não encontrado');
             i.visualizacoes++;
             this.salvarDb();
-            return this.detalhe(i);
+            const modo = this.db.config.telefoneAnunciante ?? 'MOSTRAR';
+            // logado já recebe o número completo (como no backend)
+            return this.detalhe(i, modo === 'MOSTRAR_APENAS_LOGADO' && this.sessao() ? 'MOSTRAR' : modo);
+        }
+        if ((r = url.match(/^\/app\/public\/imoveis\/(\d+)\/telefone$/))) {
+            const modo = this.db.config.telefoneAnunciante ?? 'MOSTRAR';
+            if (modo === 'OCULTAR') throw new DemoError(404, 'Telefone não disponível');
+            if (modo === 'MOSTRAR_APENAS_LOGADO' && !this.sessao()) throw new DemoError(401, 'Entre na sua conta para ver o telefone do anunciante');
+            const i = this.db.imoveis.find((x) => x.id === +r![1] && x.status === 'ATIVO');
+            const tel = this.db.usuarios.find((u) => u.id === i?.anuncianteId)?.telefone;
+            if (!tel) throw new DemoError(404, 'Telefone não disponível');
+            return { telefone: tel };
         }
 
         // ---- conta
@@ -398,14 +409,18 @@ export class DemoBackend {
         };
     }
 
-    private detalhe(i: DemoImovel): ImovelDetalhe {
+    /** Gestão (dono/admin) vê o telefone completo; o site público segue a configuração. */
+    private detalhe(i: DemoImovel, modoTelefone: ExibicaoTelefone = 'MOSTRAR'): ImovelDetalhe {
         const a = this.db.usuarios.find((u) => u.id === i.anuncianteId);
+        const tel = a?.telefone || null;
+        const telefone = !tel || modoTelefone === 'OCULTAR' ? null : modoTelefone === 'MOSTRAR_APENAS_LOGADO' ? tel.slice(0, Math.max(0, tel.length - 4)) : tel;
+        const telefoneCompleto = !!tel && modoTelefone === 'MOSTRAR';
         const { anuncianteId, ...resto } = i;
         return {
             ...resto,
             codigo: 'IM-' + String(i.id).padStart(6, '0'),
             tipoDescricao: tipoLabel(i.tipo),
-            anunciante: a ? { id: a.id, nome: a.nome, telefone: a.telefone, creci: a.creci, fotoUrl: a.fotoUrl } : null
+            anunciante: a ? { id: a.id, nome: a.nome, telefone, telefoneCompleto, creci: a.creci, fotoUrl: a.fotoUrl } : null
         };
     }
 

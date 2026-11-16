@@ -9,7 +9,8 @@ import { GestaoAnunciosService, ImovelService } from '@/app/core/services/imovel
 import { ContaService } from '@/app/core/services/conta.service';
 import { AuthService } from '@/app/core/services/auth.service';
 import { ConfigService } from '@/app/core/services/config.service';
-import { PrecoPipe, TempoAtrasPipe, ValorM2Pipe } from '@/app/core/pipes/formatos';
+import { CepPipe, PrecoPipe, TempoAtrasPipe, ValorM2Pipe } from '@/app/core/pipes/formatos';
+import { TelefoneAnunciante } from '@/app/shared/components/telefone-anunciante';
 import { GaleriaFotos } from '@/app/shared/components/galeria-fotos';
 import { ContatoForm } from '@/app/shared/components/contato-form';
 import { MapaOsm, PontoMapa } from '@/app/shared/components/mapa-osm';
@@ -20,7 +21,7 @@ import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
 /** Página do imóvel. */
 @Component({
     selector: 'app-detalhe-page',
-    imports: [RouterLink, ButtonModule, SkeletonModule, PrecoPipe, ValorM2Pipe, TempoAtrasPipe, GaleriaFotos, ContatoForm, MapaOsm, ImovelCardMini, EmptyState, DenunciarDialog, AnuncianteFoto],
+    imports: [RouterLink, ButtonModule, SkeletonModule, PrecoPipe, ValorM2Pipe, TempoAtrasPipe, CepPipe, TelefoneAnunciante, GaleriaFotos, ContatoForm, MapaOsm, ImovelCardMini, EmptyState, DenunciarDialog, AnuncianteFoto],
     template: `
         @if (erro()) {
             <div class="site-container py-10">
@@ -129,9 +130,7 @@ import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
                             </ul>
                         }
                         <div class="detalhe__contato-rapido">
-                            @if (i.anunciante?.telefone) {
-                                <a [href]="'tel:' + i.anunciante!.telefone" class="botao-contorno justify-center"><i class="pi pi-phone" aria-hidden="true"></i> Ligar</a>
-                            }
+                            <app-telefone-anunciante class="contents" [imovelId]="i.id" [anunciante]="i.anunciante" variante="botao" />
                             <a [href]="ancora('contato')" (click)="irPara($event, 'contato')" class="botao-contorno justify-center"><i class="pi pi-envelope" aria-hidden="true"></i> Enviar mensagem</a>
                         </div>
                     </section>
@@ -201,7 +200,7 @@ import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
                                 @if (i.endereco) {
                                     <strong class="block">{{ i.endereco }}{{ i.numero ? ', ' + i.numero : '' }}</strong>
                                 }
-                                {{ i.bairro }}, {{ i.cidade }}/{{ i.uf }}{{ i.cep ? ' · CEP ' + i.cep : '' }}
+                                {{ i.bairro }}, {{ i.cidade }}/{{ i.uf }}{{ i.cep ? ' · CEP ' + (i.cep | cep) : '' }}
                             </span>
                         </p>
                         @if (pontos().length) {
@@ -237,9 +236,7 @@ import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
                         } @else {
                             <app-contato-form [imovelId]="i.id" />
                         }
-                        @if (i.anunciante?.telefone) {
-                            <div class="text-center mt-4 text-lg"><i class="pi pi-phone mr-2" aria-hidden="true"></i>{{ i.anunciante!.telefone }}</div>
-                        }
+                        <app-telefone-anunciante class="block mt-4" [imovelId]="i.id" [anunciante]="i.anunciante" />
                     </div>
                     @if (!previa()) {
                         <button type="button" class="detalhe__denunciar" (click)="denunciaAberta.set(true)"><i class="pi pi-flag" aria-hidden="true"></i> Denunciar anúncio</button>
@@ -254,7 +251,7 @@ import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
                     <h2 id="similares-titulo" class="secao__titulo mb-4">Imóveis similares</h2>
                     <div class="grade-cards">
                         @for (s of similares(); track s.id) {
-                            <app-imovel-card-mini [imovel]="s" />
+                            <app-imovel-card-mini [imovel]="s" [usarNovaJanela]="true" />
                         }
                     </div>
                 </section>

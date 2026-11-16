@@ -41,6 +41,7 @@ import br.com.chfb.imoveis.sharedkernel.exception.ForbiddenException;
 import br.com.chfb.imoveis.sharedkernel.exception.NotFoundException;
 import br.com.chfb.imoveis.sharedkernel.port.AnuncianteProvider;
 import br.com.chfb.imoveis.sharedkernel.port.AnuncianteProvider.AnuncianteInfo;
+import br.com.chfb.imoveis.sharedkernel.port.ExibicaoTelefonePolicy;
 import br.com.chfb.imoveis.sharedkernel.port.ModeracaoPolicy;
 import br.com.chfb.imoveis.sharedkernel.security.AuthUser;
 
@@ -53,18 +54,21 @@ public class ImovelService {
     private final AnuncianteProvider anunciantes;
     private final ModeracaoPolicy moderacao;
     private final ApplicationEventPublisher eventos;
+    private final ExibicaoTelefonePolicy exibicaoTelefone;
 
     /** Status aplicados pela moderação (só administradores tiram o anúncio deles). */
     private static final Set<StatusAnuncio> EM_MODERACAO = Set.of(StatusAnuncio.SUSPENSO, StatusAnuncio.BANIDO);
 
     public ImovelService(ImovelRepository imoveis, ContatoRepository contatos, FavoritoRepository favoritos,
-            AnuncianteProvider anunciantes, ModeracaoPolicy moderacao, ApplicationEventPublisher eventos) {
+            AnuncianteProvider anunciantes, ModeracaoPolicy moderacao, ApplicationEventPublisher eventos,
+            ExibicaoTelefonePolicy exibicaoTelefone) {
         this.imoveis = imoveis;
         this.contatos = contatos;
         this.favoritos = favoritos;
         this.anunciantes = anunciantes;
         this.moderacao = moderacao;
         this.eventos = eventos;
+        this.exibicaoTelefone = exibicaoTelefone;
     }
 
     // ------------------------------------------------------------------ busca
@@ -149,11 +153,40 @@ public class ImovelService {
     // ---------------------------------------------------------------- detalhe
 
     @Transactional
-    public ImovelDetalhe detalhePublico(Long id) {
+    public ImovelDetalhe detalhePublico(Long id, AuthUser usuario) {
         Imovel imovel = imoveis.findById(id).filter(i -> i.getStatus() == StatusAnuncio.ATIVO)
                 .orElseThrow(() -> new NotFoundException("Imóvel não encontrado"));
         imoveis.incrementarVisualizacoes(id);
-        return detalhe(imovel);
+        return detalhe(imovel, modoTelefonePara(exibicaoTelefone.telefoneAnunciante(), usuario));
+    }
+
+    /** Em MOSTRAR_APENAS_LOGADO, quem já está logado recebe o telefone completo, sem precisar clicar em "Ver". */
+    static ExibicaoTelefonePolicy.Modo modoTelefonePara(ExibicaoTelefonePolicy.Modo modo, AuthUser usuario) {
+        return modo == ExibicaoTelefonePolicy.Modo.MOSTRAR_APENAS_LOGADO && usuario != null
+                ? ExibicaoTelefonePolicy.Modo.MOSTRAR
+                : modo;
+    }
+
+    /** Telefone completo do anunciante para o botão "Ver telefone" (modo MOSTRAR_APENAS_LOGADO). */
+    @Transactional(readOnly = true)
+    public String telefoneAnunciante(Long id, AuthUser usuario) {
+        ExibicaoTelefonePolicy.Modo modo = exibicaoTelefone.telefoneAnunciante();
+        if (modo == ExibicaoTelefonePolicy.Modo.OCULTAR) {
+            throw new NotFoundException("Telefone não disponível");
+        }
+        if (modo == ExibicaoTelefonePolicy.Modo.MOSTRAR_APENAS_LOGADO && usuario == null) {
+            throw new BusinessException(401, "Entre na sua conta para ver o telefone do anunciante");
+        }
+        Imovel imovel = imoveis.findById(id).filter(i -> i.getStatus() == StatusAnuncio.ATIVO)
+                .orElseThrow(() -> new NotFoundException("Imóvel não encontrado"));
+        return anunciantes.buscar(imovel.getAnuncianteId()).map(AnuncianteInfo::telefone)
+                .filter(t -> t != null && !t.isBlank())
+                .orElseThrow(() -> new NotFoundException("Telefone não disponível"));
+    }
+
+    /** "61999998888" → "6199999" (DDD + primeira parte); fixo "6133334444" → "613333". */
+    static String inicioTelefone(String telefone) {
+        return telefone.length() > 4 ? telefone.substring(0, telefone.length() - 4) : "";
     }
 
     @Transactional(readOnly = true)
@@ -416,9 +449,23 @@ public class ImovelService {
         return resumo(i, anunciantes.buscar(i.getAnuncianteId()).orElse(null));
     }
 
+    /** Gestão (dono/admin): telefone sempre completo. */
     private ImovelDetalhe detalhe(Imovel i) {
+        return detalhe(i, ExibicaoTelefonePolicy.Modo.MOSTRAR);
+    }
+
+    private ImovelDetalhe detalhe(Imovel i, ExibicaoTelefonePolicy.Modo modoTelefone) {
         ImovelDetalhe.Anunciante anunciante = anunciantes.buscar(i.getAnuncianteId())
-                .map(a -> new ImovelDetalhe.Anunciante(a.id(), a.nome(), a.telefone(), a.creci(), a.fotoUrl()))
+                .map(a -> {
+                    String tel = a.telefone();
+                    if (tel == null || tel.isBlank() || modoTelefone == ExibicaoTelefonePolicy.Modo.OCULTAR) {
+                        return new ImovelDetalhe.Anunciante(a.id(), a.nome(), null, false, a.creci(), a.fotoUrl());
+                    }
+                    if (modoTelefone == ExibicaoTelefonePolicy.Modo.MOSTRAR_APENAS_LOGADO) {
+                        return new ImovelDetalhe.Anunciante(a.id(), a.nome(), inicioTelefone(tel), false, a.creci(), a.fotoUrl());
+                    }
+                    return new ImovelDetalhe.Anunciante(a.id(), a.nome(), tel, true, a.creci(), a.fotoUrl());
+                })
                 .orElse(null);
         return new ImovelDetalhe(i.getId(), i.getCodigo(), i.getTitulo(), i.getDescricao(), i.getFinalidade(),
                 i.getTipo(), i.getTipo().getDescricao(), i.getStatus(), i.getPreco(), i.getCondominio(), i.getIptu(),

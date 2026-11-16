@@ -37,7 +37,7 @@ import { filter } from 'rxjs/operators';
                 [replaceUrl]="item().replaceUrl"
                 [state]="item().state"
                 [queryParams]="item().queryParams"
-                [attr.target]="item().target"
+                [target]="item().target"
                 tabindex="0"
                 pRipple
             >

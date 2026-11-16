@@ -1,5 +1,6 @@
 package br.com.chfb.imoveis.listing.entity;
 
+import br.com.chfb.imoveis.sharedkernel.util.Digitos;
 import br.com.chfb.imoveis.sharedkernel.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -41,7 +42,7 @@ public class Contato extends BaseEntity {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
     public String getTelefone() { return telefone; }
-    public void setTelefone(String telefone) { this.telefone = telefone; }
+    public void setTelefone(String telefone) { this.telefone = Digitos.somente(telefone); }
     public String getMensagem() { return mensagem; }
     public void setMensagem(String mensagem) { this.mensagem = mensagem; }
     public Long getUsuarioId() { return usuarioId; }

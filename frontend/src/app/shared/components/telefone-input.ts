@@ -1,33 +1,45 @@
 import { Component, computed, forwardRef, input, signal } from '@angular/core';
-import { AbstractControl, ControlValueAccessor, FormsModule, NG_VALIDATORS, NG_VALUE_ACCESSOR, ValidationErrors, Validator } from '@angular/forms';
+import { AbstractControl, ControlValueAccessor, NG_VALIDATORS, NG_VALUE_ACCESSOR, ValidationErrors, Validator } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputMaskModule } from 'primeng/inputmask';
+import { digitos } from '@/app/core/pipes/formatos';
 
-/** Fixo (10 dígitos): (99) 9999-9999; o "?9" deixa digitar o 11º dígito, quando a máscara passa a ser de celular. */
-const MASCARA_FIXO = '(99) 9999-9999?9';
-const MASCARA_CELULAR = '(99) 99999-9999';
+/** Telefones no Brasil: 10 dígitos (fixo) ou 11 (celular). */
+const MAX_DIGITOS = 11;
 
-export function digitos(v: string | null | undefined): string {
-    return (v ?? '').replace(/\D/g, '');
+/**
+ * Formata enquanto digita, sem posições vazias ("_"):
+ * "61" → "(61", "6133" → "(61) 33", "6133334444" → "(61) 3333-4444", "61999998888" → "(61) 99999-8888".
+ */
+export function mascararTelefone(d: string): string {
+    if (!d) return '';
+    if (d.length <= 2) return `(${d}`;
+    const ddd = `(${d.slice(0, 2)}) `;
+    const resto = d.slice(2);
+    if (d.length <= 6) return ddd + resto;
+    const meio = d.length === MAX_DIGITOS ? 5 : 4;
+    return `${ddd}${resto.slice(0, meio)}-${resto.slice(meio)}`;
 }
 
-/** Formata 10 ou 11 dígitos: (61) 3333-4444 ou (61) 99999-8888. */
-export function formatarTelefone(v: string | null | undefined): string | null {
-    const d = digitos(v);
-    if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-    if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
-    return v?.trim() || null;
+/** Posição no texto formatado logo depois do n-ésimo dígito. */
+function posicaoAposDigitos(texto: string, n: number): number {
+    if (n <= 0) return texto.indexOf('(') === 0 ? Math.min(1, texto.length) : 0;
+    let vistos = 0;
+    for (let i = 0; i < texto.length; i++) {
+        if (/\d/.test(texto[i]) && ++vistos === n) return i + 1;
+    }
+    return texto.length;
 }
 
 /**
- * Campo de telefone com a máscara do PrimeNG (pInputMask) que se ajusta ao número:
- * (99) 99999-9999 para celular (11 dígitos) ou (99) 9999-9999 para fixo (10 dígitos).
- * Usa-se como qualquer campo de formulário (formControlName/ngModel); o valor é o número formatado
- * (ou nulo se vazio) e o campo fica inválido ({ telefone: true }) com número incompleto.
+ * Campo de telefone que aceita fixo e celular: (99) 9999-9999 ou (99) 99999-9999.
+ * A máscara se ajusta sozinha ao número de dígitos enquanto a pessoa digita, apaga ou cola.
+ * Usa-se como qualquer campo de formulário (formControlName/ngModel): na tela o número aparece formatado,
+ * mas o valor do formulário é só dígitos ("61999998888", ou nulo se vazio) — exiba com o pipe "telefone".
+ * O campo fica inválido ({ telefone: true }) com número incompleto (menos de 10 dígitos).
  */
 @Component({
     selector: 'app-telefone-input',
-    imports: [FormsModule, InputTextModule, InputMaskModule],
+    imports: [InputTextModule],
     providers: [
         { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => TelefoneInput), multi: true },
         { provide: NG_VALIDATORS, useExisting: forwardRef(() => TelefoneInput), multi: true }
@@ -39,15 +51,12 @@ export function formatarTelefone(v: string | null | undefined): string | null {
             autocomplete="tel"
             inputmode="tel"
             class="w-full"
-            [pInputMask]="mascara()"
-            [autoClear]="false"
             [id]="inputId()"
             [placeholder]="placeholder()"
             [disabled]="desabilitado()"
-            [ngModel]="valor()"
-            (ngModelChange)="mudou($event)"
+            [value]="texto()"
             (input)="digitando($event)"
-            (blur)="aoTocar()"
+            (blur)="onTouched()"
             [attr.aria-label]="ariaLabel()"
             [attr.aria-invalid]="invalido() ? 'true' : null"
         />
@@ -56,22 +65,19 @@ export function formatarTelefone(v: string | null | undefined): string | null {
 })
 export class TelefoneInput implements ControlValueAccessor, Validator {
     inputId = input<string | null>(null);
-    placeholder = input('(00) 00000-0000');
+    placeholder = input('Ex.: (61) 99999-9999');
     ariaLabel = input<string | null>(null);
 
-    valor = signal<string | null>(null);
+    private numero = signal('');
     desabilitado = signal(false);
-    private qtd = signal(0);
-    mascara = computed(() => (this.qtd() > 10 ? MASCARA_CELULAR : MASCARA_FIXO));
-    invalido = computed(() => this.qtd() > 0 && this.qtd() < 10);
+    texto = computed(() => mascararTelefone(this.numero()));
+    invalido = computed(() => this.numero().length > 0 && this.numero().length < 10);
 
     private onChange: (v: string | null) => void = () => undefined;
-    private onTouched: () => void = () => undefined;
+    onTouched: () => void = () => undefined;
 
     writeValue(v: string | null): void {
-        const f = formatarTelefone(v);
-        this.qtd.set(digitos(f).length);
-        this.valor.set(f);
+        this.numero.set(digitos(v).slice(0, MAX_DIGITOS));
     }
 
     registerOnChange(fn: (v: string | null) => void): void {
@@ -91,19 +97,39 @@ export class TelefoneInput implements ControlValueAccessor, Validator {
         return n > 0 && n < 10 ? { telefone: true } : null;
     }
 
-    /** A cada tecla: com mais de 10 dígitos troca para a máscara de celular (e volta ao apagar). */
+    /**
+     * Relê os dígitos do campo, refaz a máscara e devolve o cursor para depois do mesmo dígito.
+     * Apagar um "(", ")", " " ou "-" apaga o dígito vizinho (senão a máscara o recolocaria e nada mudaria).
+     */
     digitando(e: Event) {
-        this.qtd.set(digitos((e.target as HTMLInputElement).value).length);
-    }
+        const el = e.target as HTMLInputElement;
+        const tipo = (e as InputEvent).inputType ?? '';
+        const cursor = el.selectionStart ?? el.value.length;
+        let d = digitos(el.value);
+        let antes = digitos(el.value.slice(0, cursor)).length;
 
-    mudou(v: string | null) {
-        this.valor.set(v);
-        const d = digitos(v);
-        this.qtd.set(d.length);
-        this.onChange(d.length ? formatarTelefone(v) : null);
-    }
+        if (d === this.numero() && tipo === 'deleteContentBackward' && antes > 0) {
+            d = d.slice(0, antes - 1) + d.slice(antes);
+            antes--;
+        } else if (d === this.numero() && tipo === 'deleteContentForward') {
+            d = d.slice(0, antes) + d.slice(antes + 1);
+        }
+        // colado com DDI: "+55 61 99999-8888"
+        if (d.length > MAX_DIGITOS && d.startsWith('55')) {
+            d = d.slice(2);
+            antes = Math.max(0, antes - 2);
+        }
+        d = d.slice(0, MAX_DIGITOS);
+        antes = Math.min(antes, d.length);
 
-    aoTocar() {
-        this.onTouched();
+        const texto = mascararTelefone(d);
+        el.value = texto;
+        const pos = posicaoAposDigitos(texto, antes);
+        el.setSelectionRange(pos, pos);
+
+        if (d !== this.numero()) {
+            this.numero.set(d);
+            this.onChange(d || null);
+        }
     }
 }

@@ -1,6 +1,7 @@
 package br.com.chfb.imoveis.coreapi.dto;
 
 import br.com.chfb.imoveis.coreapi.entity.Configuracao;
+import br.com.chfb.imoveis.sharedkernel.port.ExibicaoTelefonePolicy;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -29,7 +30,9 @@ public record ConfiguracaoDto(
         @NotBlank @Pattern(regexp = "light|dark|auto") String temaModo,
         boolean moderarAnuncios,
         boolean permitirCadastroCorretor,
-        boolean abrirAnuncioNovaJanela) {
+        boolean abrirAnuncioNovaJanela,
+        /** Exibição do telefone do anunciante no site (nulo mantém o valor atual). */
+        ExibicaoTelefonePolicy.Modo telefoneAnunciante) {
 
     public static ConfiguracaoDto of(Configuracao c) {
         return new ConfiguracaoDto(c.getNomeApp(), c.getSlogan(), c.getLogoUrl(), c.getLogoEscuroUrl(),
@@ -37,7 +40,7 @@ public record ConfiguracaoDto(
                 c.getEmailContato(), c.getTelefoneContato(), c.getWhatsapp(), c.getEndereco(), c.getInstagram(),
                 c.getFacebook(), c.getTextoRodape(), c.getTemaPreset(), c.getTemaPrimaria(), c.getTemaSurface(),
                 c.getTemaModo(), c.isModerarAnuncios(), c.isPermitirCadastroCorretor(),
-                c.isAbrirAnuncioNovaJanela());
+                c.isAbrirAnuncioNovaJanela(), c.getTelefoneAnunciante());
     }
 
     public void aplicar(Configuracao c) {
@@ -64,5 +67,8 @@ public record ConfiguracaoDto(
         c.setModerarAnuncios(moderarAnuncios);
         c.setPermitirCadastroCorretor(permitirCadastroCorretor);
         c.setAbrirAnuncioNovaJanela(abrirAnuncioNovaJanela);
+        if (telefoneAnunciante != null) {
+            c.setTelefoneAnunciante(telefoneAnunciante);
+        }
     }
 }

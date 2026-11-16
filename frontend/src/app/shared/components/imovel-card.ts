@@ -17,7 +17,7 @@ import { ConfigService } from '@/app/core/services/config.service';
     imports: [RouterLink, ImovelFoto, PrecoPipe, ValorM2Pipe, TempoAtrasPipe, AnuncianteFoto],
     template: `
         <article class="imovel-card group">
-            <a [routerLink]="link()" [attr.target]="alvo()" [attr.rel]="alvo() ? 'noopener' : null" class="imovel-card__foto" [attr.aria-label]="'Ver ' + endereco() + (alvo() ? ' (abre em nova janela)' : '')">
+            <a [routerLink]="link()" [target]="alvo()" [attr.rel]="alvo() ? 'noopener' : null" class="imovel-card__foto" [attr.aria-label]="'Ver ' + endereco() + (alvo() ? ' (abre em nova janela)' : '')">
                 <app-imovel-foto class="w-full h-full" [src]="imovel().fotoCapa" [tipo]="imovel().tipo" [semente]="imovel().id" [alt]="imovel().titulo" />
                 @if (imovel().lancamento) {
                     <span class="imovel-card__selo imovel-card__selo--topo">Imóvel novo</span>
@@ -38,8 +38,8 @@ import { ConfigService } from '@/app/core/services/config.service';
             <div class="imovel-card__corpo">
                 <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0">
-                        <a [routerLink]="link()" [attr.target]="alvo()" [attr.rel]="alvo() ? 'noopener' : null" class="imovel-card__endereco">{{ endereco() }}@if (alvo()) {<span class="sr-only"> (abre em nova janela)</span>}</a>
-                        <a [routerLink]="link()" [attr.target]="alvo()" [attr.rel]="alvo() ? 'noopener' : null" class="imovel-card__titulo">{{ imovel().titulo }}@if (alvo()) {<span class="sr-only"> (abre em nova janela)</span>}</a>
+                        <a [routerLink]="link()" [target]="alvo()" [attr.rel]="alvo() ? 'noopener' : null" class="imovel-card__endereco">{{ endereco() }}@if (alvo()) {<span class="sr-only"> (abre em nova janela)</span>}</a>
+                        <a [routerLink]="link()" [target]="alvo()" [attr.rel]="alvo() ? 'noopener' : null" class="imovel-card__titulo">{{ imovel().titulo }}@if (alvo()) {<span class="sr-only"> (abre em nova janela)</span>}</a>
                     </div>
                     <button type="button" class="imovel-card__fav" [class.ativo]="favorito()" (click)="favoritar.emit(imovel())" [attr.aria-label]="favorito() ? 'Remover dos favoritos' : 'Salvar nos favoritos'" [attr.aria-pressed]="favorito()">
                         <i class="pi" [class.pi-heart-fill]="favorito()" [class.pi-heart]="!favorito()"></i>
@@ -93,7 +93,13 @@ export class ImovelCard {
     favoritar = output<ImovelResumo>();
     contatar = output<ImovelResumo>();
 
-    alvo = inject(ConfigService).alvoAnuncio;
+    /**
+     * Liga a configuração "Abrir os anúncios em uma nova janela" neste card.
+     * Só a busca (/venda, /aluguel...) e os imóveis similares ligam; nos demais lugares abre na mesma janela.
+     */
+    usarNovaJanela = input(false);
+    private alvoConfig = inject(ConfigService).alvoAnuncio;
+    alvo = computed(() => (this.usarNovaJanela() ? this.alvoConfig() : undefined));
     link = computed(() => ['/imovel', this.imovel().id, slug(this.imovel().titulo)]);
     endereco = computed(() => {
         const i = this.imovel();

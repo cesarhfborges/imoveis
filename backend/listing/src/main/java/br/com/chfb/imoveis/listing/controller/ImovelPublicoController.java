@@ -76,8 +76,17 @@ public class ImovelPublicoController {
     }
 
     @GetMapping("/{id}")
-    public ImovelDetalhe detalhe(@PathVariable Long id) {
-        return imoveis.detalhePublico(id);
+    public ImovelDetalhe detalhe(@PathVariable Long id, @AuthenticationPrincipal AuthUser usuario) {
+        return imoveis.detalhePublico(id, usuario);
+    }
+
+    /** Telefone completo do anunciante (exige login quando o site está em MOSTRAR_APENAS_LOGADO). */
+    @GetMapping("/{id}/telefone")
+    public TelefoneAnunciante telefone(@PathVariable Long id, @AuthenticationPrincipal AuthUser usuario) {
+        return new TelefoneAnunciante(imoveis.telefoneAnunciante(id, usuario));
+    }
+
+    public record TelefoneAnunciante(String telefone) {
     }
 
     @PostMapping("/{id}/contato")

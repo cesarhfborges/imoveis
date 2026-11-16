@@ -23,6 +23,7 @@ import { PageHeader } from '@/app/shared/components/page-header';
 import { ImageUpload } from '@/app/shared/components/image-upload';
 import { RECORTES } from '@/app/shared/components/image-editor';
 import { TelefoneInput } from '@/app/shared/components/telefone-input';
+import { DocumentoPipe } from '@/app/core/pipes/formatos';
 import { iniciaisDe } from '@/app/shared/components/avatar';
 
 const ANO_ATUAL = new Date().getFullYear();
@@ -31,7 +32,7 @@ const MAX_SOBRE = 2000;
 /** Meus dados (qualquer perfil): identificação, contato, atuação profissional (anunciantes), endereço e senha. */
 @Component({
     selector: 'app-perfil-page',
-    imports: [DatePipe, ReactiveFormsModule, InputTextModule, InputMaskModule, InputNumberModule, InputGroupModule, InputGroupAddonModule, SelectModule, TextareaModule, PasswordModule, ButtonModule, TagModule, PageHeader, ImageUpload, TelefoneInput],
+    imports: [DatePipe, ReactiveFormsModule, InputTextModule, InputMaskModule, InputNumberModule, InputGroupModule, InputGroupAddonModule, SelectModule, TextareaModule, PasswordModule, ButtonModule, TagModule, PageHeader, ImageUpload, TelefoneInput, DocumentoPipe],
     template: `
         <app-page-header titulo="Meus dados" subtitulo="Como você aparece no portal e como os clientes falam com você" />
 
@@ -115,7 +116,7 @@ const MAX_SOBRE = 2000;
                             @if (usuario()?.documento) {
                                 <div class="flex flex-col gap-2">
                                     <label for="pf-doc">{{ imobiliaria() ? 'CNPJ' : 'CPF' }}</label>
-                                    <input pInputText id="pf-doc" [value]="usuario()!.documento" readonly />
+                                    <input pInputText id="pf-doc" [value]="usuario()!.documento | documento" readonly />
                                 </div>
                             }
                         </div>
@@ -232,7 +233,7 @@ const MAX_SOBRE = 2000;
                         <div class="grid gap-4 sm:grid-cols-6">
                             <div class="flex flex-col gap-2 sm:col-span-2">
                                 <label for="pf-cep">CEP</label>
-                                <p-inputmask inputId="pf-cep" formControlName="cep" mask="99999-999" [autoClear]="false" placeholder="00000-000" autocomplete="postal-code" />
+                                <p-inputmask inputId="pf-cep" formControlName="cep" mask="99.999-999" [unmask]="true" [autoClear]="false" placeholder="00.000-000" autocomplete="postal-code" inputmode="numeric" />
                             </div>
                             <div class="flex flex-col gap-2 sm:col-span-4">
                                 <label for="pf-logr">Logradouro</label>
@@ -510,7 +511,7 @@ export class PerfilPage {
             site: t(v.site),
             instagram: t(v.instagram),
             facebook: t(v.facebook),
-            cep: t(v.cep.replace(/_/g, '')),
+            cep: t(v.cep.replace(/\D/g, '')),
             logradouro: t(v.logradouro),
             numero: t(v.numero),
             complemento: t(v.complemento),
@@ -571,7 +572,7 @@ export class PerfilPage {
             site: u.site ?? '',
             instagram: u.instagram ?? '',
             facebook: u.facebook ?? '',
-            cep: u.cep ?? '',
+            cep: (u.cep ?? '').replace(/\D/g, ''),
             logradouro: u.logradouro ?? '',
             numero: u.numero ?? '',
             complemento: u.complemento ?? '',

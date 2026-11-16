@@ -12,7 +12,7 @@ import { AreaGestao, GestaoAnunciosService } from '@/app/core/services/imovel.se
 import { ConfigService } from '@/app/core/services/config.service';
 import { mensagemErro } from '@/app/core/services/api.service';
 import { AuthService } from '@/app/core/services/auth.service';
-import { slug } from '@/app/core/pipes/formatos';
+import { TelefonePipe, digitos, formatarTelefone, slug } from '@/app/core/pipes/formatos';
 import { PageHeader } from '@/app/shared/components/page-header';
 import { DadosResposta, respostaEmail, respostaWhatsapp } from './contato-resposta';
 
@@ -24,7 +24,7 @@ import { DadosResposta, respostaEmail, respostaWhatsapp } from './contato-respos
  */
 @Component({
     selector: 'app-contatos-page',
-    imports: [RouterLink, DatePipe, TableModule, ButtonModule, TagModule, DialogModule, TooltipModule, PageHeader],
+    imports: [RouterLink, DatePipe, TableModule, ButtonModule, TagModule, DialogModule, TooltipModule, PageHeader, TelefonePipe],
     template: `
         <app-page-header titulo="Contatos recebidos" subtitulo="Pessoas interessadas que escreveram pelo site." />
         <div class="card">
@@ -121,7 +121,7 @@ import { DadosResposta, respostaEmail, respostaWhatsapp } from './contato-respos
                                 <i class="pi pi-phone text-primary" aria-hidden="true"></i>
                                 <span>
                                     <span class="block text-xs text-muted-color">Telefone</span>
-                                    <span class="block">{{ c.telefone }}</span>
+                                    <span class="block">{{ c.telefone | telefone }}</span>
                                 </span>
                             </a>
                         } @else {
@@ -255,9 +255,7 @@ export class ContatosPage {
         return ((partes[0]?.[0] ?? '') + (partes.length > 1 ? partes[partes.length - 1][0] : '')).toUpperCase() || '?';
     }
 
-    digitos(tel: string) {
-        return tel.replace(/\D/g, '');
-    }
+    readonly digitos = digitos;
 
     private buscarImovel(id: number) {
         if (this.imoveis()[id]) return;
@@ -307,7 +305,7 @@ export class ContatosPage {
     }
 
     copiar(c: Contato) {
-        const texto = [`Nome: ${c.nome}`, `E-mail: ${c.email}`, c.telefone ? `Telefone: ${c.telefone}` : null, `Imóvel: ${c.imovelTitulo} (${c.imovelCodigo})`, '', c.mensagem].filter((l) => l !== null).join('\n');
+        const texto = [`Nome: ${c.nome}`, `E-mail: ${c.email}`, c.telefone ? `Telefone: ${formatarTelefone(c.telefone)}` : null, `Imóvel: ${c.imovelTitulo} (${c.imovelCodigo})`, '', c.mensagem].filter((l) => l !== null).join('\n');
         navigator.clipboard.writeText(texto).then(
             () => this.msg.add({ severity: 'success', summary: 'Copiado', detail: 'Dados do contato copiados.' }),
             () => this.msg.add({ severity: 'error', summary: 'Erro', detail: 'Não foi possível copiar.' })

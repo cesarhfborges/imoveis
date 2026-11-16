@@ -37,6 +37,11 @@ export class ImovelService {
         return this.api.get(`${this.base}/${id}/similares`);
     }
 
+    /** Telefone completo do anunciante (exige login no modo MOSTRAR_APENAS_LOGADO). */
+    telefoneAnunciante(id: number): Observable<{ telefone: string }> {
+        return this.api.get(`${this.base}/${id}/telefone`);
+    }
+
     contatar(id: number, form: ContatoForm): Observable<Contato> {
         return this.api.post(`${this.base}/${id}/contato`, form);
     }

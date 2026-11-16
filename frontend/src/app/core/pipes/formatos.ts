@@ -76,3 +76,55 @@ export function slug(texto: string | null | undefined): string {
         .replace(/^-+|-+$/g, '')
         .slice(0, 80);
 }
+
+/** Só os dígitos: "(61) 99999-8888" -> "61999998888". */
+export function digitos(v: string | null | undefined): string {
+    return (v ?? '').replace(/\D/g, '');
+}
+
+/** Telefone com 10 ou 11 dígitos: (61) 3333-4444 ou (61) 99999-8888 (outros tamanhos ficam como vieram). */
+export function formatarTelefone(v: string | null | undefined): string | null {
+    const d = digitos(v);
+    if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+    if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    return v?.trim() || null;
+}
+
+/** CEP com 8 dígitos: 70040010 -> 70.040-010 (outros tamanhos ficam como vieram). */
+export function formatarCep(v: string | null | undefined): string | null {
+    const d = digitos(v);
+    if (d.length === 8) return `${d.slice(0, 2)}.${d.slice(2, 5)}-${d.slice(5)}`;
+    return v?.trim() || null;
+}
+
+/** Exibe o CEP salvo só com dígitos como 99.999-999. */
+@Pipe({ name: 'cep' })
+export class CepPipe implements PipeTransform {
+    transform(v: string | null | undefined): string {
+        return formatarCep(v) ?? '';
+    }
+}
+
+/** Exibe o telefone salvo só com dígitos como (99) 9999-9999 ou (99) 99999-9999. */
+@Pipe({ name: 'telefone' })
+export class TelefonePipe implements PipeTransform {
+    transform(v: string | null | undefined): string {
+        return formatarTelefone(v) ?? '';
+    }
+}
+
+/** CPF (11 dígitos) 000.000.000-00 ou CNPJ (14 dígitos) 00.000.000/0000-00 (outros tamanhos ficam como vieram). */
+export function formatarDocumento(v: string | null | undefined): string | null {
+    const d = digitos(v);
+    if (d.length === 11) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+    if (d.length === 14) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+    return v?.trim() || null;
+}
+
+/** Exibe CPF ou CNPJ salvo só com dígitos no formato oficial. */
+@Pipe({ name: 'documento' })
+export class DocumentoPipe implements PipeTransform {
+    transform(v: string | null | undefined): string {
+        return formatarDocumento(v) ?? '';
+    }
+}

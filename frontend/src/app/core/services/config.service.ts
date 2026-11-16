@@ -17,8 +17,8 @@ export const CONFIG_PADRAO: Configuracao = {
     seoPalavrasChave: 'imóveis, apartamentos, casas, aluguel, venda',
     seoImagemUrl: null,
     emailContato: 'contato@exemplo.com',
-    telefoneContato: '(61) 0000-0000',
-    whatsapp: '(61) 90000-0000',
+    telefoneContato: '6100000000',
+    whatsapp: '61900000000',
     endereco: null,
     instagram: null,
     facebook: null,
@@ -29,7 +29,8 @@ export const CONFIG_PADRAO: Configuracao = {
     temaModo: 'auto',
     moderarAnuncios: false,
     permitirCadastroCorretor: true,
-    abrirAnuncioNovaJanela: false
+    abrirAnuncioNovaJanela: false,
+    telefoneAnunciante: 'MOSTRAR'
 };
 
 /** Configuração global (nome, logos, SEO e tema) definida em /admin/configuracoes. */
@@ -42,8 +43,12 @@ export class ConfigService {
     private doc = inject(DOCUMENT);
 
     readonly config = signal<Configuracao>(CONFIG_PADRAO);
-    /** Alvo dos links de anúncio no site, conforme a configuração ("_blank" = nova janela). */
-    readonly alvoAnuncio = computed(() => (this.config().abrirAnuncioNovaJanela ? '_blank' : null));
+    /**
+     * Alvo dos links de anúncio no site, conforme a configuração ("_blank" = nova janela).
+     * Use como [target] (input do RouterLink), nunca [attr.target]: o RouterLink sobrescreve o atributo
+     * com o próprio input e, sem ele, intercepta o clique e abre na mesma janela.
+     */
+    readonly alvoAnuncio = computed(() => (this.config().abrirAnuncioNovaJanela ? '_blank' : undefined));
 
     async carregar(): Promise<void> {
         const c = await firstValueFrom(this.api.get<Configuracao>('/app/public/configuracao').pipe(catchError(() => of(CONFIG_PADRAO))));

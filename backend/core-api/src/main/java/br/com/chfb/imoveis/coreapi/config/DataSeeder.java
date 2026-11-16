@@ -332,7 +332,7 @@ public class DataSeeder implements ApplicationRunner {
         u.setSenhaHash(encoder.encode(senha));
         u.setPapeis(papeis);
         u.setCreci(creci);
-        u.setTelefone("(61) 90000-0000");
+        u.setTelefone("61900000000");
         return usuarios.save(u);
     }
 }

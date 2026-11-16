@@ -36,7 +36,7 @@ public record ImovelForm(
         @NotBlank @Size(max = 80) String bairro,
         @Size(max = 200) String endereco,
         @Size(max = 20) String numero,
-        @Size(max = 9) String cep,
+        @Pattern(regexp = "^$|^\\d{2}\\.?\\d{3}-?\\d{3}$", message = "CEP inválido") String cep,
         @DecimalMin("-90.0") @DecimalMax("90.0") BigDecimal latitude,
         @DecimalMin("-180.0") @DecimalMax("180.0") BigDecimal longitude,
         boolean lancamento,

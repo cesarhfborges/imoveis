@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { TelefonePipe } from '@/app/core/pipes/formatos';
 import { Router, RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { CadastroForm } from '@/app/shared/components/cadastro-form';
@@ -13,7 +14,7 @@ import { AuthService } from '@/app/core/services/auth.service';
  */
 @Component({
     selector: 'app-anunciar-page',
-    imports: [RouterLink, CadastroForm, HeroDecor],
+    imports: [RouterLink, CadastroForm, HeroDecor, TelefonePipe],
     template: `
         <section class="hero anunciar-topo" aria-labelledby="anunciar-titulo">
             <app-hero-decor />
@@ -55,7 +56,7 @@ import { AuthService } from '@/app/core/services/auth.service';
                             <li>
                                 <span class="anunciar__contato-icone anunciar__contato-icone--whats"><i class="pi pi-whatsapp" aria-hidden="true"></i></span>
                                 <div>
-                                    <small>Celular / WhatsApp</small><strong>{{ cfg().whatsapp }}</strong>
+                                    <small>Celular / WhatsApp</small><strong>{{ cfg().whatsapp | telefone }}</strong>
                                 </div>
                             </li>
                         }

@@ -1,5 +1,6 @@
 package br.com.chfb.imoveis.listing.entity;
 
+import br.com.chfb.imoveis.sharedkernel.util.Digitos;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -168,7 +169,7 @@ public class Imovel extends BaseEntity {
     public String getNumero() { return numero; }
     public void setNumero(String numero) { this.numero = numero; }
     public String getCep() { return cep; }
-    public void setCep(String cep) { this.cep = cep; }
+    public void setCep(String cep) { this.cep = Digitos.somente(cep); }
     public BigDecimal getLatitude() { return latitude; }
     public void setLatitude(BigDecimal latitude) { this.latitude = latitude; }
     public BigDecimal getLongitude() { return longitude; }

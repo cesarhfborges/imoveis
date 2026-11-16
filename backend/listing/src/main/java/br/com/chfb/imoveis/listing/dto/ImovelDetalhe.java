@@ -50,6 +50,10 @@ public record ImovelDetalhe(
         Instant criadoEm,
         Instant atualizadoEm) {
 
-    public record Anunciante(Long id, String nome, String telefone, String creci, String fotoUrl) {
+    /**
+     * telefone: só dígitos. Com telefoneCompleto = false vem só o início (DDD e primeira parte, ex.: "6199999"):
+     * o número inteiro sai em GET /{id}/telefone, para quem está logado.
+     */
+    public record Anunciante(Long id, String nome, String telefone, boolean telefoneCompleto, String creci, String fotoUrl) {
     }
 }

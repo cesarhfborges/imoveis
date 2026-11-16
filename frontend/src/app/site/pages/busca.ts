@@ -69,7 +69,7 @@ const ORDENS = [
                 } @else {
                     <div class="flex flex-col gap-3">
                         @for (i of pagina().content; track i.id) {
-                            <app-imovel-card [imovel]="i" [favorito]="conta.favoritos().has(i.id)" (favoritar)="favoritar($event)" (contatar)="contatando.set($event)" />
+                            <app-imovel-card [imovel]="i" [usarNovaJanela]="true" [favorito]="conta.favoritos().has(i.id)" (favoritar)="favoritar($event)" (contatar)="contatando.set($event)" />
                         }
                     </div>
                     @if (pagina().totalPages > 1) {

@@ -1,12 +1,14 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { ButtonModule } from 'primeng/button';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TabsModule } from 'primeng/tabs';
+import { SelectModule } from 'primeng/select';
 import { MessageService } from 'primeng/api';
-import { Configuracao } from '@/app/core/models/models';
+import { Configuracao, EXIBICOES_TELEFONE, ExibicaoTelefone } from '@/app/core/models/models';
 import { ConfigService } from '@/app/core/services/config.service';
 import { ThemeChoice, ThemeService, PresetName } from '@/app/core/services/theme.service';
 import { mensagemErro } from '@/app/core/services/api.service';
@@ -20,7 +22,7 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
 /** Configuração global do site: identidade (nome, logos, favicon), SEO, contato, tema e regras. */
 @Component({
     selector: 'app-configuracoes-page',
-    imports: [ReactiveFormsModule, InputTextModule, TextareaModule, ButtonModule, ToggleSwitchModule, TabsModule, PageHeader, ImageUpload, ThemePicker, AppLogo, TelefoneInput],
+    imports: [ReactiveFormsModule, InputTextModule, TextareaModule, ButtonModule, ToggleSwitchModule, TabsModule, SelectModule, PageHeader, ImageUpload, ThemePicker, AppLogo, TelefoneInput],
     template: `
         <app-page-header titulo="Configurações do site" subtitulo="O que for salvo aqui vale para todos os visitantes.">
             <p-button label="Salvar" icon="pi pi-check" (onClick)="salvar()" [loading]="salvando()" />
@@ -140,6 +142,11 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                             <label class="flex items-center gap-3"><p-toggleswitch formControlName="moderarAnuncios" inputId="cf-mod" /> Anúncios novos de corretores precisam de aprovação de um administrador</label>
                             <label class="flex items-center gap-3"><p-toggleswitch formControlName="permitirCadastroCorretor" inputId="cf-cad" /> Permitir que corretores e imobiliárias se cadastrem pelo site</label>
                             <label class="flex items-center gap-3"><p-toggleswitch formControlName="abrirAnuncioNovaJanela" inputId="cf-janela" /> Abrir os anúncios do site em uma nova janela (desligado: abre na mesma janela)</label>
+                            <div class="flex flex-col gap-2 max-w-xl">
+                                <label for="cf-tel-anunciante" class="font-medium">Telefone do anunciante na página do imóvel</label>
+                                <p-select inputId="cf-tel-anunciante" formControlName="telefoneAnunciante" [options]="exibicoesTelefone" optionLabel="label" optionValue="value" styleClass="w-full" ariaLabelledBy="cf-tel-anunciante" aria-describedby="cf-tel-anunciante-dica" />
+                                <small id="cf-tel-anunciante-dica" class="text-muted-color">{{ dicaTelefone() }}</small>
+                            </div>
                         </div>
                     </p-tabpanel>
                 </p-tabpanels>
@@ -185,8 +192,13 @@ export class ConfiguracoesPage {
         textoRodape: [''],
         moderarAnuncios: [false],
         permitirCadastroCorretor: [true],
-        abrirAnuncioNovaJanela: [false]
+        abrirAnuncioNovaJanela: [false],
+        telefoneAnunciante: this.fb.control<ExibicaoTelefone>('MOSTRAR')
     });
+
+    readonly exibicoesTelefone = EXIBICOES_TELEFONE;
+    private telefoneAnuncianteValor = toSignal(this.form.controls.telefoneAnunciante.valueChanges, { initialValue: this.form.controls.telefoneAnunciante.value });
+    dicaTelefone = computed(() => EXIBICOES_TELEFONE.find((o) => o.value === this.telefoneAnuncianteValor())?.dica ?? '');
 
     constructor() {
         // pré-visualização do tema sem salvar: ao sair, volta ao tema do sistema
@@ -216,7 +228,8 @@ export class ConfiguracoesPage {
             textoRodape: c.textoRodape ?? '',
             moderarAnuncios: c.moderarAnuncios,
             permitirCadastroCorretor: c.permitirCadastroCorretor,
-            abrirAnuncioNovaJanela: c.abrirAnuncioNovaJanela
+            abrirAnuncioNovaJanela: c.abrirAnuncioNovaJanela,
+            telefoneAnunciante: c.telefoneAnunciante ?? 'MOSTRAR'
         });
         this.tema.set({ preset: c.temaPreset as PresetName, primary: c.temaPrimaria, surface: c.temaSurface, mode: c.temaModo });
     }

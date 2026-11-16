@@ -39,7 +39,7 @@ import { aplicarDenuncia } from '@/app/shared/pages/pendencias-sync';
 import { AcaoImovel, ModeracaoService } from '@/app/core/services/moderacao.service';
 import { ConfigService } from '@/app/core/services/config.service';
 import { mensagemErro } from '@/app/core/services/api.service';
-import { slug } from '@/app/core/pipes/formatos';
+import { TelefonePipe, slug } from '@/app/core/pipes/formatos';
 import { PageHeader } from '@/app/shared/components/page-header';
 import { ImovelFoto } from '@/app/shared/components/imovel-foto';
 import { StatusTag } from '@/app/shared/components/status-tag';
@@ -78,6 +78,7 @@ const ACOES: Record<AcaoImovel, { titulo: string; botao: string; severity: 'warn
         StatusTag,
         PrazoSlaComponent,
         ConversaDenuncia,
+        TelefonePipe,
         PresencaSala,
         EditorTexto,
         AnexosInput,
@@ -127,7 +128,7 @@ const ACOES: Record<AcaoImovel, { titulo: string; botao: string; severity: 'warn
                             <a [href]="'mailto:' + a.email" class="text-primary">{{ a.email }}</a>
                         </div>
                         @if (a.telefone) {
-                            <div class="text-sm">{{ a.telefone }}</div>
+                            <div class="text-sm">{{ a.telefone | telefone }}</div>
                         }
                         <div class="text-sm text-muted-color">CRECI {{ a.creci || '—' }}</div>
                     }

@@ -98,7 +98,9 @@ export interface ImovelResumo {
 export interface Anunciante {
     id: number;
     nome: string;
+    /** Só dígitos. Com telefoneCompleto = false é só o início (ex.: "6199999"); o resto vem de /imoveis/{id}/telefone. */
     telefone: string | null;
+    telefoneCompleto: boolean;
     creci: string | null;
     fotoUrl: string | null;
 }
@@ -397,6 +399,7 @@ export interface Configuracao {
     moderarAnuncios: boolean;
     /** Ao clicar num anúncio no site: abre em nova janela (true) ou na mesma (false). */
     abrirAnuncioNovaJanela: boolean;
+    telefoneAnunciante: ExibicaoTelefone;
     permitirCadastroCorretor: boolean;
 }
 
@@ -856,4 +859,13 @@ export const SEVERIDADES_AVISO: { value: SeveridadeAviso; label: string }[] = [
     { value: 'warn', label: 'Atenção (amarelo)' },
     { value: 'error', label: 'Erro (vermelho)' },
     { value: 'contrast', label: 'Contraste (escuro)' }
+];
+
+/** Como o telefone do anunciante aparece no site (Configurações > Regras). */
+export type ExibicaoTelefone = 'MOSTRAR' | 'OCULTAR' | 'MOSTRAR_APENAS_LOGADO';
+
+export const EXIBICOES_TELEFONE: { value: ExibicaoTelefone; label: string; dica: string }[] = [
+    { value: 'MOSTRAR', label: 'Mostrar', dica: 'O telefone aparece completo para todos os visitantes.' },
+    { value: 'MOSTRAR_APENAS_LOGADO', label: 'Mostrar apenas para quem está logado', dica: 'Aparece só o início, ex.: (61) 99999…; o número completo aparece ao clicar em "Ver telefone", para quem entrou na conta.' },
+    { value: 'OCULTAR', label: 'Ocultar', dica: 'O telefone do anunciante não aparece no site; o contato fica só pelo formulário.' }
 ];

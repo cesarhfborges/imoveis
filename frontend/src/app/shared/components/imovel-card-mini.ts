@@ -10,7 +10,7 @@ import { ConfigService } from '@/app/core/services/config.service';
     selector: 'app-imovel-card-mini',
     imports: [RouterLink, ImovelFoto, PrecoPipe],
     template: `
-        <a [routerLink]="link()" [attr.target]="alvo()" [attr.rel]="alvo() ? 'noopener' : null" class="card-mini">
+        <a [routerLink]="link()" [target]="alvo()" [attr.rel]="alvo() ? 'noopener' : null" class="card-mini">
             <div class="relative aspect-[4/3]">
                 <app-imovel-foto class="w-full h-full" [src]="imovel().fotoCapa" [tipo]="imovel().tipo" [semente]="imovel().id" [alt]="imovel().titulo" [mostrarTexto]="false" />
                 <span class="card-mini__preco">{{ imovel().preco | preco: imovel().finalidade }}</span>
@@ -44,6 +44,12 @@ import { ConfigService } from '@/app/core/services/config.service';
 })
 export class ImovelCardMini {
     imovel = input.required<ImovelResumo>();
-    alvo = inject(ConfigService).alvoAnuncio;
+    /**
+     * Liga a configuração "Abrir os anúncios em uma nova janela" neste card.
+     * Só a busca (/venda, /aluguel...) e os imóveis similares ligam; nos demais lugares abre na mesma janela.
+     */
+    usarNovaJanela = input(false);
+    private alvoConfig = inject(ConfigService).alvoAnuncio;
+    alvo = computed(() => (this.usarNovaJanela() ? this.alvoConfig() : undefined));
     link = computed(() => ['/imovel', this.imovel().id, slug(this.imovel().titulo)]);
 }
