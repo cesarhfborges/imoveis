@@ -47,7 +47,7 @@ const EXTENSAO: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jp
     selector: 'app-image-editor',
     imports: [FormsModule, DialogModule, ButtonModule, SliderModule, TooltipModule],
     template: `
-        <p-dialog
+        <p-dialog [blockScroll]="true"
             [visible]="!!arquivo()"
             (visibleChange)="!$event && cancelar()"
             [modal]="true"
@@ -98,13 +98,13 @@ const EXTENSAO: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jp
                 <div class="editor__controles">
                     <div class="editor__linha">
                         <p-button icon="pi pi-search-minus" [text]="true" [rounded]="true" severity="secondary" ariaLabel="Diminuir" pTooltip="Diminuir" tooltipPosition="top" [disabled]="!pronta()" (onClick)="zoomPor(1 / 1.15)" />
-                        <p-slider class="flex-1" [ngModel]="zoomLog()" (ngModelChange)="zoomPara(expZoom($event))" [min]="logMin()" [max]="logMax" [step]="0.001" [disabled]="!pronta()" ariaLabel="Zoom" />
+                        <p-slider class="flex-1" [ngModel]="posicaoZoom()" (ngModelChange)="zoomDaPosicao($event)" [min]="0" [max]="POSICOES_ZOOM" [step]="1" [disabled]="!pronta()" ariaLabel="Zoom" />
                         <p-button icon="pi pi-search-plus" [text]="true" [rounded]="true" severity="secondary" ariaLabel="Aumentar" pTooltip="Aumentar" tooltipPosition="top" [disabled]="!pronta()" (onClick)="zoomPor(1.15)" />
                         <span class="editor__valor" aria-hidden="true">{{ (zoom() * 100).toFixed(0) }}%</span>
                     </div>
                     <div class="editor__linha">
                         <p-button icon="pi pi-replay" [text]="true" [rounded]="true" severity="secondary" ariaLabel="Girar 90° para a esquerda" pTooltip="Girar à esquerda" tooltipPosition="top" [disabled]="!pronta()" (onClick)="girar(-1)" />
-                        <p-slider class="flex-1" [ngModel]="ajusteFino()" (ngModelChange)="ajusteFino.set($event)" [min]="-45" [max]="45" [step]="0.5" [disabled]="!pronta()" ariaLabel="Endireitar (ajuste fino da rotação)" />
+                        <p-slider class="flex-1" [ngModel]="ajusteFino()" (ngModelChange)="mudarAjusteFino($event)" [min]="-45" [max]="45" [step]="0.5" [disabled]="!pronta()" ariaLabel="Endireitar (ajuste fino da rotação)" />
                         <p-button icon="pi pi-refresh" [text]="true" [rounded]="true" severity="secondary" ariaLabel="Girar 90° para a direita" pTooltip="Girar à direita" tooltipPosition="top" [disabled]="!pronta()" (onClick)="girar(1)" />
                         <span class="editor__valor" aria-hidden="true">{{ rotacao() }}°</span>
                     </div>
@@ -146,8 +146,9 @@ const EXTENSAO: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jp
                 10px -10px,
                 -10px 0;
         }
+        /* o diálogo fica no <body> (overlayAppendTo), fora do host: o tema escuro é lido do <html> */
         .editor__palco--escuro,
-        :host-context(.app-dark) .editor__palco {
+        ::ng-deep .app-dark .editor__palco {
             background-color: #0f172a;
             background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%), linear-gradient(-45deg, #1e293b 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1e293b 75%), linear-gradient(-45deg, transparent 75%, #1e293b 75%);
         }
@@ -292,11 +293,47 @@ export class ImageEditor {
     });
     alturaPalco = computed(() => Math.max(this.moldura().h + MARGEM * 2, 220));
 
-    /** Zoom mínimo: metade do que deixa a imagem inteira dentro da moldura (sobra margem para logos). */
-    private zoomMin = computed(() => Math.min(1, this.razaoConter()) * 0.5);
+    /**
+     * Fotos (ajuste "cobrir"): a imagem sempre cobre a moldura inteira, sem sobrar área vazia (que sairia
+     * branca). Logos e favicon ("conter", PNG transparente) podem ficar menores que a moldura.
+     */
+    private preencher = computed(() => this.config().ajuste !== 'conter');
+
+    /** Ângulo total da imagem, em radianos (quartos de volta + ajuste fino). */
+    private angulo = computed(() => ((this.quartos() * 90 + this.ajusteFino()) * Math.PI) / 180);
+
+    /**
+     * Caixa da moldura vista nos eixos da imagem girada: o retângulo w×h girado de -θ ocupa W'×H'.
+     * A imagem (já em escala) precisa ser pelo menos desse tamanho para cobrir a moldura.
+     */
+    private molduraGirada = computed(() => {
+        const { w, h } = this.moldura();
+        const c = Math.abs(Math.cos(this.angulo()));
+        const sn = Math.abs(Math.sin(this.angulo()));
+        return { w: w * c + h * sn, h: w * sn + h * c };
+    });
+
+    /** Menor zoom (em múltiplos do "cobrir") que ainda cobre a moldura no ângulo atual: 1 sem rotação fina. */
+    private zoomCobrir = computed(() => {
+        const { w: iw, h: ih } = this.natural();
+        const m = this.moldura();
+        if (!iw || !ih) return 1;
+        const g = this.molduraGirada();
+        return Math.max(g.w / iw, g.h / ih) / this.cobrir(m.w, m.h);
+    });
+
+    /** Zoom mínimo: fotos param quando a imagem encosta na moldura; logos podem ir à metade do "caber inteira". */
+    private zoomMin = computed(() => (this.preencher() ? this.zoomCobrir() : Math.min(1, this.razaoConter()) * 0.5));
     readonly logMax = Math.log(ZOOM_MAX);
     logMin = computed(() => Math.log(this.zoomMin()));
     zoomLog = computed(() => Math.log(this.zoom()));
+    /**
+     * Posição da alça do zoom (0…POSICOES_ZOOM), em escala logarítmica entre o zoom mínimo e o máximo.
+     * A faixa do slider é fixa: o mínimo depende da imagem e da moldura, e o p-slider não reposiciona
+     * a alça quando o [min] muda depois de desenhado (a alça ficava no lugar errado e o zoom saltava).
+     */
+    readonly POSICOES_ZOOM = 1000;
+    posicaoZoom = computed(() => Math.round(((this.zoomLog() - this.logMin()) / (this.logMax - this.logMin())) * this.POSICOES_ZOOM));
 
     /** Escala (px de tela por px da imagem) que faz a imagem cobrir uma moldura w×h. */
     private cobrir(w: number, h: number) {
@@ -339,7 +376,10 @@ export class ImageEditor {
         effect((onCleanup) => {
             const el = this.palco()?.nativeElement;
             if (!el) return;
-            const ro = new ResizeObserver(([e]) => this.larguraPalco.set(e.contentRect.width));
+            const ro = new ResizeObserver(([e]) => {
+                this.larguraPalco.set(e.contentRect.width);
+                this.reenquadrar();
+            });
             ro.observe(el);
             onCleanup(() => ro.disconnect());
         });
@@ -363,12 +403,53 @@ export class ImageEditor {
         this.ajusteFino.set(0);
         this.x.set(0);
         this.y.set(0);
+        // fotos: zoom em que a moldura fica inteira dentro da imagem (encosta na altura ou na largura)
         this.zoom.set(this.config().ajuste === 'conter' ? this.razaoConter() : 1);
     }
 
+    /**
+     * Define a posição (centro da imagem em relação ao centro da moldura, em frações da largura da moldura),
+     * limitada para que, nas fotos, a moldura nunca saia da imagem — inclusive com a imagem girada.
+     */
+    private posicionar(x: number, y: number) {
+        if (this.preencher() && this.pronta()) {
+            const { w: iw, h: ih } = this.natural();
+            const m = this.moldura();
+            const s = this.zoom() * this.cobrir(m.w, m.h);
+            const g = this.molduraGirada();
+            const a = this.angulo();
+            const [cos, sen] = [Math.cos(a), Math.sin(a)];
+            // deslocamento em px, levado para os eixos da imagem
+            const ox = x * m.w;
+            const oy = y * m.w;
+            let u = ox * cos + oy * sen;
+            let v = -ox * sen + oy * cos;
+            // quanto a imagem sobra além da moldura, de cada lado
+            const folgaX = Math.max(0, (s * iw - g.w) / 2);
+            const folgaY = Math.max(0, (s * ih - g.h) / 2);
+            u = Math.min(folgaX, Math.max(-folgaX, u));
+            v = Math.min(folgaY, Math.max(-folgaY, v));
+            x = (u * cos - v * sen) / m.w;
+            y = (u * sen + v * cos) / m.w;
+        }
+        this.x.set(x);
+        this.y.set(y);
+    }
+
+    /** Garante o zoom mínimo do ângulo atual e reenquadra a posição. */
+    private reenquadrar() {
+        if (this.zoom() < this.zoomMin()) this.zoom.set(this.zoomMin());
+        this.posicionar(this.x(), this.y());
+    }
+
+    mudarAjusteFino(graus: number) {
+        this.ajusteFino.set(graus);
+        this.reenquadrar();
+    }
+
     // ------------------------------------------------------------ zoom / rotação
-    expZoom(v: number) {
-        return Math.exp(v);
+    zoomDaPosicao(posicao: number) {
+        this.zoomPara(Math.exp(this.logMin() + (posicao / this.POSICOES_ZOOM) * (this.logMax - this.logMin())));
     }
 
     zoomPor(fator: number, cx = 0, cy = 0) {
@@ -382,20 +463,18 @@ export class ImageEditor {
         if (z === anterior) return;
         const w = this.moldura().w;
         const k = z / anterior;
-        this.x.set((cx + (this.x() * w - cx) * k) / w);
-        this.y.set((cy + (this.y() * w - cy) * k) / w);
         this.zoom.set(z);
+        this.posicionar((cx + (this.x() * w - cx) * k) / w, (cy + (this.y() * w - cy) * k) / w);
     }
 
     girar(sentido: 1 | -1) {
         const conterAntes = this.config().ajuste === 'conter' && Math.abs(this.zoom() - this.razaoConter()) < 0.001;
         // gira também a posição para a imagem continuar no mesmo lugar em relação à moldura
         const [x, y] = [this.x(), this.y()];
-        this.x.set(sentido === 1 ? -y : y);
-        this.y.set(sentido === 1 ? x : -x);
         this.quartos.update((q) => (q + sentido + 4) % 4);
         if (conterAntes) this.zoom.set(this.razaoConter());
         else this.zoom.update((z) => Math.min(ZOOM_MAX, Math.max(this.zoomMin(), z)));
+        this.posicionar(sentido === 1 ? -y : y, sentido === 1 ? x : -x);
     }
 
     // ------------------------------------------------------------ arrastar / pinça / roda / teclado
@@ -411,15 +490,13 @@ export class ImageEditor {
         if (!antes) return;
         const w = this.moldura().w;
         if (this.ponteiros.size === 1) {
-            this.x.update((v) => v + (e.clientX - antes.x) / w);
-            this.y.update((v) => v + (e.clientY - antes.y) / w);
+            this.posicionar(this.x() + (e.clientX - antes.x) / w, this.y() + (e.clientY - antes.y) / w);
         } else if (this.ponteiros.size === 2) {
             const outro = [...this.ponteiros].find(([id]) => id !== e.pointerId)![1];
             const distAntes = Math.hypot(antes.x - outro.x, antes.y - outro.y);
             const distAgora = Math.hypot(e.clientX - outro.x, e.clientY - outro.y);
             // move pela metade do deslocamento (o ponto médio anda metade)
-            this.x.update((v) => v + (e.clientX - antes.x) / 2 / w);
-            this.y.update((v) => v + (e.clientY - antes.y) / 2 / w);
+            this.posicionar(this.x() + (e.clientX - antes.x) / 2 / w, this.y() + (e.clientY - antes.y) / 2 / w);
             if (distAntes > 0) {
                 const c = this.centroMoldura();
                 this.zoomPor(distAgora / distAntes, (e.clientX + outro.x) / 2 - c.x, (e.clientY + outro.y) / 2 - c.y);
@@ -445,16 +522,16 @@ export class ImageEditor {
         const passo = (e.shiftKey ? 1 : 10) / this.moldura().w;
         switch (e.key) {
             case 'ArrowLeft':
-                this.x.update((v) => v - passo);
+                this.posicionar(this.x() - passo, this.y());
                 break;
             case 'ArrowRight':
-                this.x.update((v) => v + passo);
+                this.posicionar(this.x() + passo, this.y());
                 break;
             case 'ArrowUp':
-                this.y.update((v) => v - passo);
+                this.posicionar(this.x(), this.y() - passo);
                 break;
             case 'ArrowDown':
-                this.y.update((v) => v + passo);
+                this.posicionar(this.x(), this.y() + passo);
                 break;
             case '+':
             case '=':
@@ -580,5 +657,7 @@ export const RECORTES = {
     /** Open Graph (WhatsApp, Facebook, LinkedIn…). */
     compartilhamento: { largura: 1200, altura: 630, tipo: 'image/jpeg', qualidade: 0.85 },
     /** Foto de perfil: quadrada, mostrada em círculo. */
-    fotoPerfil: { largura: 512, altura: 512, tipo: 'image/jpeg', qualidade: 0.88, circulo: true }
+    fotoPerfil: { largura: 512, altura: 512, tipo: 'image/jpeg', qualidade: 0.88, circulo: true },
+    /** Capa do perfil público do anunciante: faixa fina 8:1, exibida nessa mesma proporção na página do perfil. */
+    capaPerfil: { largura: 1600, altura: 200, tipo: 'image/jpeg', qualidade: 0.85 }
 } satisfies Record<string, RecorteImagem>;

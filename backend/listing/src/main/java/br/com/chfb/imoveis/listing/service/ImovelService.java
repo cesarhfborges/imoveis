@@ -157,14 +157,7 @@ public class ImovelService {
         Imovel imovel = imoveis.findById(id).filter(i -> i.getStatus() == StatusAnuncio.ATIVO)
                 .orElseThrow(() -> new NotFoundException("Imóvel não encontrado"));
         imoveis.incrementarVisualizacoes(id);
-        return detalhe(imovel, modoTelefonePara(exibicaoTelefone.telefoneAnunciante(), usuario));
-    }
-
-    /** Em MOSTRAR_APENAS_LOGADO, quem já está logado recebe o telefone completo, sem precisar clicar em "Ver". */
-    static ExibicaoTelefonePolicy.Modo modoTelefonePara(ExibicaoTelefonePolicy.Modo modo, AuthUser usuario) {
-        return modo == ExibicaoTelefonePolicy.Modo.MOSTRAR_APENAS_LOGADO && usuario != null
-                ? ExibicaoTelefonePolicy.Modo.MOSTRAR
-                : modo;
+        return detalhe(imovel, ExibicaoTelefonePolicy.efetivo(exibicaoTelefone.telefoneAnunciante(), usuario != null));
     }
 
     /** Telefone completo do anunciante para o botão "Ver telefone" (modo MOSTRAR_APENAS_LOGADO). */
@@ -184,10 +177,6 @@ public class ImovelService {
                 .orElseThrow(() -> new NotFoundException("Telefone não disponível"));
     }
 
-    /** "61999998888" → "6199999" (DDD + primeira parte); fixo "6133334444" → "613333". */
-    static String inicioTelefone(String telefone) {
-        return telefone.length() > 4 ? telefone.substring(0, telefone.length() - 4) : "";
-    }
 
     @Transactional(readOnly = true)
     public ImovelDetalhe detalheParaEdicao(Long id, AuthUser usuario) {
@@ -413,7 +402,7 @@ public class ImovelService {
     public List<ImovelResumo> paraMapa(ImovelFiltro filtro) {
         ImovelFiltro f = new ImovelFiltro(filtro.q(), filtro.finalidade(), filtro.tipo(), filtro.uf(), filtro.cidade(),
                 filtro.bairro(), filtro.quartos(), filtro.vagas(), filtro.suites(), filtro.precoMin(), filtro.precoMax(),
-                filtro.areaMin(), filtro.areaMax(), filtro.lancamento(), null, null, null, filtro.ordem(), 0, 500);
+                filtro.areaMin(), filtro.areaMax(), filtro.lancamento(), null, null, filtro.anunciante(), filtro.ordem(), 0, 500);
         PageRequest pagina = PageRequest.of(0, 500, ordenacao(f.ordem()));
         org.springframework.data.jpa.domain.Specification<Imovel> comCoordenadas = (root, q, cb) -> cb.and(
                 cb.isNotNull(root.get("latitude")), cb.isNotNull(root.get("longitude")));
@@ -459,12 +448,12 @@ public class ImovelService {
                 .map(a -> {
                     String tel = a.telefone();
                     if (tel == null || tel.isBlank() || modoTelefone == ExibicaoTelefonePolicy.Modo.OCULTAR) {
-                        return new ImovelDetalhe.Anunciante(a.id(), a.nome(), null, false, a.creci(), a.fotoUrl());
+                        return new ImovelDetalhe.Anunciante(a.id(), a.nome(), null, false, a.creci(), a.fotoUrl(), a.perfilPublico());
                     }
                     if (modoTelefone == ExibicaoTelefonePolicy.Modo.MOSTRAR_APENAS_LOGADO) {
-                        return new ImovelDetalhe.Anunciante(a.id(), a.nome(), inicioTelefone(tel), false, a.creci(), a.fotoUrl());
+                        return new ImovelDetalhe.Anunciante(a.id(), a.nome(), ExibicaoTelefonePolicy.inicio(tel), false, a.creci(), a.fotoUrl(), a.perfilPublico());
                     }
-                    return new ImovelDetalhe.Anunciante(a.id(), a.nome(), tel, true, a.creci(), a.fotoUrl());
+                    return new ImovelDetalhe.Anunciante(a.id(), a.nome(), tel, true, a.creci(), a.fotoUrl(), a.perfilPublico());
                 })
                 .orElse(null);
         return new ImovelDetalhe(i.getId(), i.getCodigo(), i.getTitulo(), i.getDescricao(), i.getFinalidade(),

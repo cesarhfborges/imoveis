@@ -14,6 +14,8 @@ public interface AnuncianteProvider {
 
     Map<Long, AnuncianteInfo> buscarTodos(Collection<Long> usuarioIds);
 
-    record AnuncianteInfo(Long id, String nome, String email, String telefone, String creci, String fotoUrl) {
+    /** @param perfilPublico anunciante ativo com o perfil público ligado (/anunciante/{id}) */
+    record AnuncianteInfo(Long id, String nome, String email, String telefone, String creci, String fotoUrl,
+            boolean perfilPublico) {
     }
 }

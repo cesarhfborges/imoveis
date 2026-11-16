@@ -93,7 +93,7 @@ import { DadosResposta, respostaEmail, respostaWhatsapp } from './contato-respos
             </p-table>
         </div>
 
-        <p-dialog [visible]="!!selecionado()" (visibleChange)="!$event && fechar()" [modal]="true" [dismissableMask]="true" [draggable]="false" [style]="{ width: '40rem' }" [breakpoints]="{ '640px': '96vw' }">
+        <p-dialog [blockScroll]="true" [visible]="!!selecionado()" (visibleChange)="!$event && fechar()" [modal]="true" [dismissableMask]="true" [draggable]="false" [style]="{ width: '40rem' }" [breakpoints]="{ '640px': '96vw' }">
             <ng-template #header>
                 @if (selecionado(); as c) {
                     <div class="flex items-center gap-3 min-w-0">

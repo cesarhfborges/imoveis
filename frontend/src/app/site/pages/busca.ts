@@ -108,11 +108,11 @@ const ORDENS = [
             </aside>
         </div>
 
-        <p-drawer [visible]="filtrosAbertos()" (visibleChange)="filtrosAbertos.set($event)" header="Filtros" position="left" styleClass="w-[22rem] max-w-full">
+        <p-drawer [blockScroll]="true" [visible]="filtrosAbertos()" (visibleChange)="filtrosAbertos.set($event)" header="Filtros" position="left" styleClass="w-[22rem] max-w-full">
             <app-filtros-busca [valor]="filtro()" (buscar)="aplicar($event); filtrosAbertos.set(false)" />
         </p-drawer>
 
-        <p-dialog
+        <p-dialog [blockScroll]="true"
             [visible]="!!contatando()"
             (visibleChange)="!$event && contatando.set(null)"
             [modal]="true"

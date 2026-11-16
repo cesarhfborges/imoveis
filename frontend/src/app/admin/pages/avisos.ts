@@ -174,7 +174,7 @@ function novo(): AvisoForm {
         </div>
 
         <!-- editor -->
-        <p-dialog [visible]="editando()" (visibleChange)="!$event && editando.set(false)" [modal]="true" [header]="id() ? 'Editar aviso' : 'Novo aviso'" [style]="{ width: '68rem' }" [breakpoints]="{ '1100px': '96vw' }" [draggable]="false">
+        <p-dialog [blockScroll]="true" [visible]="editando()" (visibleChange)="!$event && editando.set(false)" [modal]="true" [header]="id() ? 'Editar aviso' : 'Novo aviso'" [style]="{ width: '68rem' }" [breakpoints]="{ '1100px': '96vw' }" [draggable]="false">
             <div class="editor">
                 <div class="flex flex-col gap-5 min-w-0">
                     <!-- conteúdo -->
@@ -440,7 +440,8 @@ function novo(): AvisoForm {
             background: var(--p-surface-50);
             overflow: hidden;
         }
-        :host-context(.app-dark) .esquema {
+        /* dentro do diálogo (no <body>): o tema escuro é lido do <html> */
+        ::ng-deep .app-dark .esquema {
             background: var(--p-surface-800);
         }
         .esquema--modal::after {
@@ -455,7 +456,7 @@ function novo(): AvisoForm {
             height: 12%;
             background: var(--p-surface-200);
         }
-        :host-context(.app-dark) .esquema__topo {
+        ::ng-deep .app-dark .esquema__topo {
             background: var(--p-surface-700);
         }
         .esquema__aviso {

@@ -300,6 +300,19 @@ const MAX_SOBRE = 2000;
                             <p class="text-sm text-muted-color mt-0 mb-4">
                                 Com o perfil público, {{ imobiliaria() ? 'sua imobiliária aparece' : 'você aparece' }} no mapa de <a routerLink="/imobiliarias" class="text-primary hover:underline">Imobiliárias e corretores</a>, com uma página que mostra seus dados de contato e todos os seus anúncios.
                             </p>
+                            <div class="mb-5">
+                                <app-image-upload
+                                    rotulo="Capa do perfil"
+                                    formato="capa"
+                                    [permitirUrl]="false"
+                                    endpoint="/app/conta/capa"
+                                    aceitar="image/png,image/jpeg,image/webp"
+                                    dica="Faixa fina (1600 × 200). Você enquadra antes de enviar e ela aparece assim no perfil. Sem capa, o perfil usa o fundo padrão do site."
+                                    [recorte]="recorteCapa"
+                                    [url]="dados.controls.capaUrl.value"
+                                    (urlChange)="mudarCapa($event)"
+                                />
+                            </div>
                             <label class="flex items-start gap-3" [class.opacity-60]="!podeAtivar() && !dados.controls.perfilPublico.value">
                                 <p-checkbox formControlName="perfilPublico" [binary]="true" inputId="pf-publico" [ariaLabelledBy]="'pf-publico-rotulo'" aria-describedby="pf-publico-dica" />
                                 <span id="pf-publico-rotulo" class="font-medium">Ativar meu perfil público</span>
@@ -469,6 +482,7 @@ const MAX_SOBRE = 2000;
 })
 export class PerfilPage {
     readonly recorteFoto = RECORTES.fotoPerfil;
+    readonly recorteCapa = RECORTES.capaPerfil;
     private conta = inject(ContaService);
     private auth = inject(AuthService);
     private msg = inject(MessageService);
@@ -517,7 +531,8 @@ export class PerfilPage {
         uf: this.fb.control<string | null>(null),
         latitude: this.fb.control<number | null>(null),
         longitude: this.fb.control<number | null>(null),
-        perfilPublico: [false]
+        perfilPublico: [false],
+        capaUrl: this.fb.control<string | null>(null)
     });
 
     senha = this.fb.group({
@@ -596,6 +611,12 @@ export class PerfilPage {
     /** A foto é salva junto com o resto; marca o formulário como alterado. */
     mudarFoto(url: string | null) {
         this.dados.controls.fotoUrl.setValue(url);
+        this.dados.markAsDirty();
+    }
+
+    /** A capa é salva junto com o resto; null = volta ao fundo padrão. */
+    mudarCapa(url: string | null) {
+        this.dados.controls.capaUrl.setValue(url);
         this.dados.markAsDirty();
     }
 
@@ -692,7 +713,8 @@ export class PerfilPage {
             uf: v.uf || null,
             latitude: v.latitude,
             longitude: v.longitude,
-            perfilPublico: this.anunciante() && v.perfilPublico
+            perfilPublico: this.anunciante() && v.perfilPublico,
+            capaUrl: this.anunciante() ? v.capaUrl : null
         };
         this.salvando.set(true);
         this.conta.salvarPerfil(form).subscribe({
@@ -756,7 +778,8 @@ export class PerfilPage {
             uf: u.uf ?? null,
             latitude: u.latitude ?? null,
             longitude: u.longitude ?? null,
-            perfilPublico: !!u.perfilPublico
+            perfilPublico: !!u.perfilPublico,
+            capaUrl: u.capaUrl ?? null
         });
         this.centroMapa.set(u.latitude != null && u.longitude != null ? [u.latitude, u.longitude] : null);
     }

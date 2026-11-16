@@ -136,7 +136,7 @@ type FeriadoEdicao = Omit<Feriado, 'id'> & { id: number | null };
             }
         </section>
 
-        <p-dialog [visible]="!!edicao()" (visibleChange)="!$event && edicao.set(null)" [modal]="true" [header]="edicao()?.id ? 'Editar feriado' : 'Novo feriado'" [style]="{ width: '30rem' }" [breakpoints]="{ '640px': '96vw' }">
+        <p-dialog [blockScroll]="true" [visible]="!!edicao()" (visibleChange)="!$event && edicao.set(null)" [modal]="true" [header]="edicao()?.id ? 'Editar feriado' : 'Novo feriado'" [style]="{ width: '30rem' }" [breakpoints]="{ '640px': '96vw' }">
             @if (edicao(); as f) {
                 <form class="flex flex-col gap-4" (ngSubmit)="salvarFeriado(f)">
                     <div class="flex flex-col gap-1">

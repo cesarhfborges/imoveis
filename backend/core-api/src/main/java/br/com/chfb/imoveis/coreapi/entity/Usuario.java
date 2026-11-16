@@ -1,6 +1,7 @@
 package br.com.chfb.imoveis.coreapi.entity;
 
 import br.com.chfb.imoveis.sharedkernel.util.Digitos;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.Set;
@@ -97,6 +98,21 @@ public class Usuario extends BaseEntity {
     @Column(length = 2)
     private String uf;
 
+    /** Posição do endereço no mapa (perfil público e diretório de anunciantes). */
+    @Column(precision = 10, scale = 7)
+    private BigDecimal latitude;
+
+    @Column(precision = 10, scale = 7)
+    private BigDecimal longitude;
+
+    /** Anunciante escolheu aparecer no diretório /imobiliarias e ter a página /anunciante/{id}. */
+    @Column(name = "perfil_publico", nullable = false)
+    private boolean perfilPublico;
+
+    /** Capa do perfil público (1600×200, recortada no envio); nula = degradê padrão. */
+    @Column(name = "capa_url", length = 500)
+    private String capaUrl;
+
     /** Ano em que começou a atuar no mercado (anunciantes). */
     @Column(name = "atuando_desde")
     private Short atuandoDesde;
@@ -155,6 +171,14 @@ public class Usuario extends BaseEntity {
     public void setCidade(String cidade) { this.cidade = cidade; }
     public String getUf() { return uf; }
     public void setUf(String uf) { this.uf = uf; }
+    public BigDecimal getLatitude() { return latitude; }
+    public void setLatitude(BigDecimal latitude) { this.latitude = latitude; }
+    public BigDecimal getLongitude() { return longitude; }
+    public void setLongitude(BigDecimal longitude) { this.longitude = longitude; }
+    public boolean isPerfilPublico() { return perfilPublico; }
+    public void setPerfilPublico(boolean perfilPublico) { this.perfilPublico = perfilPublico; }
+    public String getCapaUrl() { return capaUrl; }
+    public void setCapaUrl(String capaUrl) { this.capaUrl = capaUrl; }
     public Short getAtuandoDesde() { return atuandoDesde; }
     public void setAtuandoDesde(Short atuandoDesde) { this.atuandoDesde = atuandoDesde; }
     public String getNome() { return nome; }

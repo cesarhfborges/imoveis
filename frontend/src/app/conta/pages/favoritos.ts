@@ -27,7 +27,7 @@ import { ContatoForm } from '@/app/shared/components/contato-form';
                 }
             </div>
         }
-        <p-dialog [visible]="!!contatando()" (visibleChange)="!$event && contatando.set(null)" [modal]="true" header="Contatar anunciante" [style]="{ width: '30rem' }" [breakpoints]="{ '575px': '95vw' }">
+        <p-dialog [blockScroll]="true" [visible]="!!contatando()" (visibleChange)="!$event && contatando.set(null)" [modal]="true" header="Contatar anunciante" [style]="{ width: '30rem' }" [breakpoints]="{ '575px': '95vw' }">
             @if (contatando(); as c) {
                 <app-contato-form [imovelId]="c.id" />
             }

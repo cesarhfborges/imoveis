@@ -23,6 +23,10 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query("select distinct u.id from Usuario u join u.papeis p where p = :papel and u.ativo = true")
     List<Long> idsAtivosPorPapel(@Param("papel") Perfil papel);
 
+    /** Anunciantes ativos com o perfil público ligado (diretório /imobiliarias). */
+    @Query("select distinct u from Usuario u join u.papeis p where p = :papel and u.ativo = true and u.perfilPublico = true")
+    List<Usuario> perfisPublicos(@Param("papel") Perfil papel);
+
     @Query("select count(distinct u) from Usuario u join u.papeis p where p = :papel")
     long contarPorPapel(@Param("papel") Perfil papel);
 

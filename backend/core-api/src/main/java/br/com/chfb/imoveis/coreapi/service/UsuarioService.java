@@ -1,5 +1,6 @@
 package br.com.chfb.imoveis.coreapi.service;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
@@ -102,7 +103,8 @@ public class UsuarioService implements AnuncianteProvider, UsuarioDiretorio, Con
     }
 
     private AnuncianteInfo info(Usuario u) {
-        return new AnuncianteInfo(u.getId(), u.getNome(), u.getEmail(), u.getTelefone(), u.getCreci(), u.getFotoUrl());
+        return new AnuncianteInfo(u.getId(), u.getNome(), u.getEmail(), u.getTelefone(), u.getCreci(), u.getFotoUrl(),
+                temPerfilPublico(u));
     }
 
     // ------------------------------------------------------------------ conta
@@ -147,6 +149,8 @@ public class UsuarioService implements AnuncianteProvider, UsuarioDiretorio, Con
         u.setBairro(vazioNulo(form.bairro()));
         u.setCidade(vazioNulo(form.cidade()));
         u.setUf(vazioNulo(form.uf()));
+        u.setLatitude(form.latitude());
+        u.setLongitude(form.longitude());
         // dados profissionais: só para anunciantes (corretor/imobiliária)
         if (u.getPapeis().contains(Perfil.CORRETOR)) {
             u.setCreci(vazioNulo(form.creci()));
@@ -158,8 +162,48 @@ public class UsuarioService implements AnuncianteProvider, UsuarioDiretorio, Con
             u.setSobre(vazioNulo(form.sobre()));
             u.setRegioesAtuacao(vazioNulo(form.regioesAtuacao()));
             u.setAtuandoDesde(form.atuandoDesde());
+            u.setCapaUrl(vazioNulo(form.capaUrl()));
+            // perfil público: só liga (ou continua ligado) com o cadastro completo
+            boolean querPublico = form.perfilPublico() == null ? u.isPerfilPublico() : form.perfilPublico();
+            if (querPublico) {
+                List<String> faltando = pendenciasPerfilPublico(u);
+                if (!faltando.isEmpty()) {
+                    throw new BusinessException(422, "Para deixar o perfil público, complete: " + String.join(", ", faltando) + ".");
+                }
+            }
+            u.setPerfilPublico(querPublico);
+        } else {
+            u.setPerfilPublico(false);
         }
         return UsuarioDto.of(u);
+    }
+
+    /** O perfil aparece no site só para anunciante ativo que ligou o perfil público. */
+    public static boolean temPerfilPublico(Usuario u) {
+        return u.isAtivo() && u.isPerfilPublico() && u.getPapeis().contains(Perfil.CORRETOR);
+    }
+
+    /**
+     * O que falta para o anunciante poder ter perfil público: identificação, contato, apresentação,
+     * endereço completo e a posição no mapa (o perfil aparece no mapa do diretório).
+     */
+    public static List<String> pendenciasPerfilPublico(Usuario u) {
+        List<String> f = new ArrayList<>();
+        if (vazio(u.getFotoUrl())) f.add("foto ou logo");
+        if (vazio(u.getNome())) f.add("nome");
+        if ("IMOBILIARIA".equals(u.getTipoAnunciante()) && vazio(u.getRazaoSocial())) f.add("razão social");
+        if (vazio(u.getCreci()) || vazio(u.getCreciUf())) f.add("CRECI e UF do CRECI");
+        if (vazio(u.getTelefone()) && vazio(u.getWhatsapp())) f.add("telefone ou WhatsApp");
+        if (vazio(u.getSobre())) f.add("apresentação (Sobre)");
+        if (u.getCep() == null || u.getCep().length() != 8) f.add("CEP");
+        if (vazio(u.getLogradouro()) || vazio(u.getNumero())) f.add("logradouro e número");
+        if (vazio(u.getBairro()) || vazio(u.getCidade()) || vazio(u.getUf())) f.add("bairro, cidade e UF");
+        if (u.getLatitude() == null || u.getLongitude() == null) f.add("posição no mapa");
+        return f;
+    }
+
+    private static boolean vazio(String v) {
+        return v == null || v.isBlank();
     }
 
     private static String vazioNulo(String v) {

@@ -1,5 +1,6 @@
 package br.com.chfb.imoveis.listing.repository;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,6 +21,9 @@ public interface ImovelRepository extends JpaRepository<Imovel, Long>, JpaSpecif
     long countByAnuncianteId(Long anuncianteId);
 
     long countByAnuncianteIdAndStatus(Long anuncianteId, StatusAnuncio status);
+
+    @Query("select i.anuncianteId, count(i) from Imovel i where i.status = :status and i.anuncianteId in :ids group by i.anuncianteId")
+    List<Object[]> contarPorAnunciante(@Param("ids") Collection<Long> ids, @Param("status") StatusAnuncio status);
 
     @Query("select coalesce(sum(i.visualizacoes), 0) from Imovel i where i.anuncianteId = :anuncianteId")
     long somarVisualizacoes(@Param("anuncianteId") Long anuncianteId);

@@ -170,7 +170,7 @@ type GravidadeEdicao = Omit<Gravidade, 'id'> & { id: number | null };
             </p-table>
         </section>
 
-        <p-dialog [visible]="!!edicao()" (visibleChange)="!$event && edicao.set(null)" [modal]="true" [header]="edicao()?.id ? 'Editar tipo' : 'Novo tipo'" [style]="{ width: '34rem' }" [breakpoints]="{ '640px': '96vw' }">
+        <p-dialog [blockScroll]="true" [visible]="!!edicao()" (visibleChange)="!$event && edicao.set(null)" [modal]="true" [header]="edicao()?.id ? 'Editar tipo' : 'Novo tipo'" [style]="{ width: '34rem' }" [breakpoints]="{ '640px': '96vw' }">
             @if (edicao(); as t) {
                 <form class="flex flex-col gap-4" (ngSubmit)="salvarTipo(t)">
                     <div class="flex flex-col gap-1">
@@ -212,7 +212,7 @@ type GravidadeEdicao = Omit<Gravidade, 'id'> & { id: number | null };
             }
         </p-dialog>
 
-        <p-dialog [visible]="!!gravEdicao()" (visibleChange)="!$event && gravEdicao.set(null)" [modal]="true" [header]="gravEdicao()?.id ? 'Editar gravidade' : 'Nova gravidade'" [style]="{ width: '34rem' }" [breakpoints]="{ '640px': '96vw' }">
+        <p-dialog [blockScroll]="true" [visible]="!!gravEdicao()" (visibleChange)="!$event && gravEdicao.set(null)" [modal]="true" [header]="gravEdicao()?.id ? 'Editar gravidade' : 'Nova gravidade'" [style]="{ width: '34rem' }" [breakpoints]="{ '640px': '96vw' }">
             @if (gravEdicao(); as g) {
                 <form class="flex flex-col gap-4" (ngSubmit)="salvarGravidade(g)">
                     <div class="flex flex-col gap-1">

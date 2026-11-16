@@ -39,6 +39,9 @@ export const appConfig: ApplicationConfig = {
         ConfirmationService,
         providePrimeNG({
             theme: { preset: Aura, options: { darkModeSelector: '.app-dark' } },
+            // diálogos, drawers, listas, menus e tooltips no <body>: assim ficam à frente de tudo. Em 'self' (padrão)
+            // eles ficavam presos no contexto de empilhamento da página (barra fixa, mapa, campos) e algo passava por cima
+            overlayAppendTo: 'body',
             translation: {
                 accept: 'Sim',
                 reject: 'Não',

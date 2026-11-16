@@ -53,7 +53,7 @@ type PosDrawer = 'left' | 'right' | 'top' | 'bottom' | 'full';
                 </p-message>
             }
             @case ('DIALOG') {
-                <p-dialog
+                <p-dialog [blockScroll]="true"
                     [visible]="visivel()"
                     (visibleChange)="!$event && dispensado.emit()"
                     [header]="aviso().titulo || ''"
@@ -77,7 +77,7 @@ type PosDrawer = 'left' | 'right' | 'top' | 'bottom' | 'full';
                 </p-dialog>
             }
             @case ('DRAWER') {
-                <p-drawer
+                <p-drawer [blockScroll]="true"
                     [visible]="visivel()"
                     (visibleChange)="!$event && dispensado.emit()"
                     [header]="aviso().titulo || ''"

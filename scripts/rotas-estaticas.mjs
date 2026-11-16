@@ -21,6 +21,7 @@ const rotas = [
     'temporada',
     'imoveis',
     'mapa',
+    'imobiliarias',
     'anunciar',
     'acesso-negado',
     'nao-encontrado',

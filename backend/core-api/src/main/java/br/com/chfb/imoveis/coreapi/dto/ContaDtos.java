@@ -1,11 +1,14 @@
 package br.com.chfb.imoveis.coreapi.dto;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Set;
 
 import br.com.chfb.imoveis.coreapi.entity.ApiToken;
 import br.com.chfb.imoveis.coreapi.entity.Usuario;
 import br.com.chfb.imoveis.sharedkernel.security.Perfil;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -40,7 +43,13 @@ public final class ContaDtos {
             @Pattern(regexp = "^$|^\\d{2}\\.?\\d{3}-?\\d{3}$", message = "CEP inválido") String cep,
             @Size(max = 160) String logradouro, @Size(max = 20) String numero, @Size(max = 80) String complemento,
             @Size(max = 80) String bairro, @Size(max = 80) String cidade,
-            @Pattern(regexp = "^$|^[A-Z]{2}$", message = "UF inválida") String uf) {
+            @Pattern(regexp = "^$|^[A-Z]{2}$", message = "UF inválida") String uf,
+            @DecimalMin("-90.0") @DecimalMax("90.0") BigDecimal latitude,
+            @DecimalMin("-180.0") @DecimalMax("180.0") BigDecimal longitude,
+            /** anunciantes: liga o perfil público (exige o cadastro completo, ver UsuarioService.pendenciasPerfilPublico) */
+            Boolean perfilPublico,
+            /** anunciantes: capa do perfil público (nula = degradê padrão) */
+            @Size(max = 500) String capaUrl) {
     }
 
     public record SenhaForm(@NotBlank String senhaAtual, @NotBlank @Size(min = 8, max = 72) String novaSenha) {
@@ -51,7 +60,7 @@ public final class ContaDtos {
             Instant banidoEm, String banidoMotivo, String razaoSocial, String whatsapp, String emailContato,
             String site, String instagram, String facebook, String sobre, String creciUf, String regioesAtuacao,
             Short atuandoDesde, String cep, String logradouro, String numero, String complemento, String bairro,
-            String cidade, String uf) {
+            String cidade, String uf, BigDecimal latitude, BigDecimal longitude, boolean perfilPublico, String capaUrl) {
 
         public static UsuarioDto of(Usuario u) {
             return new UsuarioDto(u.getId(), u.getNome(), u.getEmail(), u.getTelefone(), u.getCreci(), u.getDocumento(),
@@ -60,7 +69,7 @@ public final class ContaDtos {
                     u.getBanidoEm(), u.getBanidoMotivo(), u.getRazaoSocial(), u.getWhatsapp(), u.getEmailContato(),
                     u.getSite(), u.getInstagram(), u.getFacebook(), u.getSobre(), u.getCreciUf(), u.getRegioesAtuacao(),
                     u.getAtuandoDesde(), u.getCep(), u.getLogradouro(), u.getNumero(), u.getComplemento(), u.getBairro(),
-                    u.getCidade(), u.getUf());
+                    u.getCidade(), u.getUf(), u.getLatitude(), u.getLongitude(), u.isPerfilPublico(), u.getCapaUrl());
         }
     }
 

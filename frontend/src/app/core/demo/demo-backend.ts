@@ -174,7 +174,8 @@ export class DemoBackend {
         }
 
         // ---- conta
-        if (url.startsWith('/app/conta')) return this.conta(url, m, body);
+        // envio da foto/capa é tratado mais abaixo (junto com /app/uploads), não em conta()
+        if (url.startsWith('/app/conta') && url !== '/app/conta/foto' && url !== '/app/conta/capa') return this.conta(url, m, body);
 
         // ---- gestão (corretor/admin)
         if ((r = url.match(/^\/app\/(corretor|admin)\/(imoveis|anuncios|contatos)(.*)$/))) {
@@ -188,7 +189,7 @@ export class DemoBackend {
             this.exigir('ADMIN');
             return this.admin(url, m, body, p);
         }
-        if (url === '/app/uploads' || url === '/app/conta/foto') {
+        if (url === '/app/uploads' || url === '/app/conta/foto' || url === '/app/conta/capa') {
             // foto de perfil: qualquer usuário logado; demais imagens: corretor e admin
             if (url === '/app/uploads') this.exigir('CORRETOR', 'ADMIN');
             else this.exigir();
@@ -512,6 +513,7 @@ export class DemoBackend {
             tipo: u.tipoAnunciante === 'IMOBILIARIA' ? 'IMOBILIARIA' : 'CORRETOR',
             razaoSocial: u.razaoSocial ?? null,
             fotoUrl: u.fotoUrl,
+            capaUrl: u.capaUrl ?? null,
             creci: u.creci,
             creciUf: u.creciUf ?? null,
             sobre: u.sobre ?? null,

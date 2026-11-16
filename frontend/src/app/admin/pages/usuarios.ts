@@ -74,7 +74,7 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
             </p-table>
         </div>
 
-        <p-dialog [visible]="dialogo()" (visibleChange)="dialogo.set($event)" [modal]="true" [header]="editando() ? 'Editar usuário' : 'Novo usuário'" [style]="{ width: '34rem' }" [breakpoints]="{ '575px': '95vw' }">
+        <p-dialog [blockScroll]="true" [visible]="dialogo()" (visibleChange)="dialogo.set($event)" [modal]="true" [header]="editando() ? 'Editar usuário' : 'Novo usuário'" [style]="{ width: '34rem' }" [breakpoints]="{ '575px': '95vw' }">
             <form [formGroup]="form" (ngSubmit)="salvar()" class="flex flex-col gap-4" id="form-usuario">
                 <div class="flex flex-col gap-2">
                     <label for="us-nome">Nome</label>

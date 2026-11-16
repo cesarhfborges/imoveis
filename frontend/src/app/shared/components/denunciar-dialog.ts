@@ -15,7 +15,7 @@ import { mensagemErro } from '@/app/core/services/api.service';
     selector: 'app-denunciar-dialog',
     imports: [DialogModule, ButtonModule, TextareaModule, ReactiveFormsModule],
     template: `
-        <p-dialog
+        <p-dialog [blockScroll]="true"
             [visible]="visivel()"
             (visibleChange)="visivel.set($event)"
             (onShow)="aoAbrir()"

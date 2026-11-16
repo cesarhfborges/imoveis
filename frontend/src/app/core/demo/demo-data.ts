@@ -37,6 +37,7 @@ export interface DemoUsuario {
     latitude?: number | null;
     longitude?: number | null;
     perfilPublico?: boolean;
+    capaUrl?: string | null;
 }
 
 /** Logo/foto de exemplo (SVG com as iniciais), para os perfis públicos da demonstração. */

@@ -44,7 +44,8 @@ const EXTENSOES: Record<string, string> = {
  * Campo de imagem.
  *  - modo simples (padrão): foto, logo ou ícone com prévia grande. Clicar na prévia (ou arrastar um arquivo
  *    sobre ela) envia; dá para remover ou, se permitido, usar o endereço de uma imagem. Emite (urlChange).
- *    [formato]: circulo (foto de perfil), quadrado (ícone), retangulo (logo) ou largo (imagem de compartilhamento);
+ *    [formato]: circulo (foto de perfil), quadrado (ícone), retangulo (logo), largo (imagem de compartilhamento)
+ *      ou capa (capa do perfil, 8:1; vazia, mostra o degradê padrão da capa);
  *  - modo múltiplo ([multiplo]="true"): arrastar e soltar ou escolher VÁRIOS arquivos de uma vez.
  *    Sobem em paralelo (3 por vez) e cada URL é emitida em (urlAdicionada) na ordem em que os
  *    arquivos foram escolhidos. Falhas ficam na lista com "tentar de novo".
@@ -273,6 +274,24 @@ const EXTENSOES: Record<string, string> = {
             object-fit: cover;
             padding: 0;
         }
+        .foto-campo--capa .foto-campo__previa {
+            width: min(100%, 26rem);
+            height: auto;
+            aspect-ratio: 8 / 1;
+        }
+        .foto-campo--capa .foto-campo__previa img {
+            object-fit: cover;
+            padding: 0;
+        }
+        /* sem capa: mostra o fundo padrão do perfil (o mesmo degradê da página) */
+        .foto-campo--capa .foto-campo__previa:has(.foto-campo__vazio) {
+            background:
+                radial-gradient(circle at 1px 1px, rgb(255 255 255 / 0.16) 1px, transparent 0) 0 0 / 14px 14px,
+                linear-gradient(120deg, var(--p-primary-color), color-mix(in srgb, var(--p-primary-color), #000 35%));
+        }
+        .foto-campo--capa .foto-campo__vazio {
+            color: #fff;
+        }
         .foto-campo__vazio {
             display: flex;
             flex-direction: column;
@@ -389,7 +408,7 @@ export class ImageUpload {
     quantidadeAtual = input(0);
 
     /** Modo simples: forma da prévia. */
-    formato = input<'circulo' | 'quadrado' | 'retangulo' | 'largo'>('retangulo');
+    formato = input<'circulo' | 'quadrado' | 'retangulo' | 'largo' | 'capa'>('retangulo');
     /** Modo simples: prévia em cima e botões embaixo, centralizados (ex.: coluna lateral do perfil). */
     vertical = input(false);
     /** Modo simples: prévia em fundo escuro (ex.: logo para o tema escuro). */

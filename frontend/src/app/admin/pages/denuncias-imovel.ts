@@ -323,7 +323,7 @@ const ACOES: Record<AcaoImovel, { titulo: string; botao: string; severity: 'warn
             </div>
         }
 
-        <p-dialog [visible]="!!acao()" (visibleChange)="!$event && acao.set(null)" [modal]="true" [header]="acao() ? acoes[acao()!].titulo : ''" [style]="{ width: '32rem' }" [breakpoints]="{ '640px': '96vw' }">
+        <p-dialog [blockScroll]="true" [visible]="!!acao()" (visibleChange)="!$event && acao.set(null)" [modal]="true" [header]="acao() ? acoes[acao()!].titulo : ''" [style]="{ width: '32rem' }" [breakpoints]="{ '640px': '96vw' }">
             @if (acao(); as a) {
                 <p class="mt-0">{{ acoes[a].texto }}</p>
                 <span class="font-semibold block mb-1">Motivo (enviado ao anunciante)</span>
@@ -335,7 +335,7 @@ const ACOES: Record<AcaoImovel, { titulo: string; botao: string; severity: 'warn
             }
         </p-dialog>
 
-        <p-dialog [visible]="!!apurando()" (visibleChange)="!$event && apurando.set(null)" [modal]="true" header="Abrir apuração" [style]="{ width: '34rem' }" [breakpoints]="{ '640px': '96vw' }">
+        <p-dialog [blockScroll]="true" [visible]="!!apurando()" (visibleChange)="!$event && apurando.set(null)" [modal]="true" header="Abrir apuração" [style]="{ width: '34rem' }" [breakpoints]="{ '640px': '96vw' }">
             @if (apurando(); as d) {
                 <p class="mt-0 text-sm text-muted-color">{{ d.tipo.nome }} · o prazo do anunciante fica parado enquanto a empresa verifica.</p>
                 <label for="apu-texto" class="font-semibold block mb-1">O que vai ser feito</label>
@@ -356,7 +356,7 @@ const ACOES: Record<AcaoImovel, { titulo: string; botao: string; severity: 'warn
             }
         </p-dialog>
 
-        <p-dialog
+        <p-dialog [blockScroll]="true"
             [visible]="!!procedendo()"
             (visibleChange)="!$event && procedendo.set(null)"
             [modal]="true"
@@ -433,7 +433,7 @@ const ACOES: Record<AcaoImovel, { titulo: string; botao: string; severity: 'warn
             }
         </p-dialog>
 
-        <p-dialog [visible]="!!decidindo()" (visibleChange)="!$event && decidindo.set(null)" [modal]="true" [header]="tituloDecisao()" [style]="{ width: '34rem' }" [breakpoints]="{ '640px': '96vw' }">
+        <p-dialog [blockScroll]="true" [visible]="!!decidindo()" (visibleChange)="!$event && decidindo.set(null)" [modal]="true" [header]="tituloDecisao()" [style]="{ width: '34rem' }" [breakpoints]="{ '640px': '96vw' }">
             @if (decidindo(); as x) {
                 <p class="mt-0 text-sm text-muted-color">{{ x.d.tipo.nome }} · {{ x.tipo === 'improcedente' ? dicaImprocedente() : correcao(x.d) ? dicaCorrecao : dicaAprovar() }}</p>
                 <span class="font-semibold block mb-1">Conclusão para o anunciante (opcional)</span>
@@ -451,7 +451,7 @@ const ACOES: Record<AcaoImovel, { titulo: string; botao: string; severity: 'warn
             }
         </p-dialog>
 
-        <p-dialog [visible]="!!reabrindo()" (visibleChange)="!$event && reabrindo.set(null)" [modal]="true" header="Rever julgamento" [style]="{ width: '34rem' }" [breakpoints]="{ '640px': '96vw' }">
+        <p-dialog [blockScroll]="true" [visible]="!!reabrindo()" (visibleChange)="!$event && reabrindo.set(null)" [modal]="true" header="Rever julgamento" [style]="{ width: '34rem' }" [breakpoints]="{ '640px': '96vw' }">
             @if (reabrindo(); as d) {
                 <p class="mt-0 text-sm text-muted-color">{{ d.tipo.nome }} · a denúncia volta para análise, sem julgamento, e você julga de novo. Um strike dado nela sai da contagem.</p>
                 <span class="font-semibold block mb-1">Motivo da revisão (nota interna)</span>

@@ -326,6 +326,7 @@ export interface Usuario {
     latitude?: number | null;
     longitude?: number | null;
     perfilPublico?: boolean;
+    capaUrl?: string | null;
 }
 
 /** O que o próprio usuário edita em "Meus dados". */
@@ -355,6 +356,8 @@ export interface PerfilForm {
     longitude: number | null;
     /** Anunciantes: liga o perfil público (exige o cadastro completo, ver pendenciasPerfilPublico). */
     perfilPublico: boolean;
+    /** Anunciantes: capa do perfil público (nula = degradê padrão). */
+    capaUrl: string | null;
 }
 
 export const UFS = ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'];
@@ -906,6 +909,8 @@ export interface AnunciantePerfil {
     tipo: TipoAnunciante;
     razaoSocial: string | null;
     fotoUrl: string | null;
+    /** Nula: a página usa o degradê padrão. */
+    capaUrl: string | null;
     creci: string | null;
     creciUf: string | null;
     sobre: string | null;

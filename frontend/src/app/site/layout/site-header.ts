@@ -67,7 +67,7 @@ import { perfilLabel } from '@/app/core/models/models';
             </div>
         </header>
 
-        <p-drawer [(visible)]="aberto" position="right" styleClass="gaveta-site" [showCloseIcon]="true">
+        <p-drawer [blockScroll]="true" [(visible)]="aberto" position="right" styleClass="gaveta-site" [showCloseIcon]="true">
             <ng-template #header><app-logo [compacto]="true" /></ng-template>
 
             <nav class="gaveta-site__nav" aria-label="Menu do celular">
