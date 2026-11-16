@@ -23,6 +23,9 @@ export const appRoutes: Routes = [
             { path: 'imovel/:id', loadComponent: () => import('./app/site/pages/detalhe').then((m) => m.DetalhePage) },
             { path: 'imovel/:id/:slug', loadComponent: () => import('./app/site/pages/detalhe').then((m) => m.DetalhePage) },
             { path: 'mapa', loadComponent: () => import('./app/site/pages/mapa').then((m) => m.MapaPage) },
+            { path: 'imobiliarias', loadComponent: () => import('./app/site/pages/anunciantes').then((m) => m.AnunciantesPage) },
+            { path: 'anunciante/:id', loadComponent: () => import('./app/site/pages/anunciante-perfil').then((m) => m.AnunciantePerfilPage) },
+            { path: 'anunciante/:id/:slug', loadComponent: () => import('./app/site/pages/anunciante-perfil').then((m) => m.AnunciantePerfilPage) },
             { path: 'anunciar', loadComponent: () => import('./app/site/pages/anunciar').then((m) => m.AnunciarPage) },
             { path: 'acesso-negado', loadComponent: () => import('./app/site/pages/acesso-negado').then((m) => m.AcessoNegadoPage) },
             { path: 'nao-encontrado', loadComponent: () => import('./app/site/pages/nao-encontrado').then((m) => m.NaoEncontradoPage) }

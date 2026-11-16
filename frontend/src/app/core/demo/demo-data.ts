@@ -16,6 +16,83 @@ export interface DemoUsuario {
     papeis: Perfil[];
     ultimoAcesso: string | null;
     criadoEm: string;
+    // "Meus dados" (opcionais: bancos de demonstração antigos não tinham)
+    razaoSocial?: string | null;
+    whatsapp?: string | null;
+    emailContato?: string | null;
+    site?: string | null;
+    instagram?: string | null;
+    facebook?: string | null;
+    sobre?: string | null;
+    creciUf?: string | null;
+    regioesAtuacao?: string | null;
+    atuandoDesde?: number | null;
+    cep?: string | null;
+    logradouro?: string | null;
+    numero?: string | null;
+    complemento?: string | null;
+    bairro?: string | null;
+    cidade?: string | null;
+    uf?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    perfilPublico?: boolean;
+}
+
+/** Logo/foto de exemplo (SVG com as iniciais), para os perfis públicos da demonstração. */
+function logoDemo(iniciais: string, cor: string): string {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="60" fill="${cor}"/><text x="60" y="74" font-family="Arial,sans-serif" font-size="44" font-weight="700" fill="#fff" text-anchor="middle">${iniciais}</text></svg>`;
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+
+/** Perfis públicos completos dos anunciantes de exemplo (aparecem em /imobiliarias). */
+export function perfilDemo(id: number): Partial<DemoUsuario> {
+    if (id === 2) {
+        return {
+            fotoUrl: logoDemo('CE', '#1e3a5f'),
+            creciUf: 'DF',
+            whatsapp: '61900000002',
+            emailContato: 'corretor@imoveis.local',
+            sobre: 'Corretora há 12 anos no Plano Piloto. Atendimento próximo, do primeiro contato à entrega das chaves, com foco em apartamentos e coberturas.',
+            regioesAtuacao: 'Asa Norte, Noroeste, Sudoeste',
+            atuandoDesde: 2014,
+            instagram: 'corretoraexemplo',
+            cep: '70750000',
+            logradouro: 'SQN 303',
+            numero: 'Bloco A',
+            complemento: 'Sala 12',
+            bairro: 'Asa Norte',
+            cidade: 'Brasília',
+            uf: 'DF',
+            latitude: -15.7795,
+            longitude: -47.8828,
+            perfilPublico: true
+        };
+    }
+    if (id === 3) {
+        return {
+            fotoUrl: logoDemo('IM', '#0f766e'),
+            razaoSocial: 'Imobiliária Modelo Ltda.',
+            creciUf: 'DF',
+            whatsapp: '61900000003',
+            emailContato: 'contato@imobiliariamodelo.com.br',
+            site: 'https://www.exemplo.com.br',
+            sobre: 'Imobiliária com equipe de 15 corretores, especializada em venda e locação no Distrito Federal. Avaliação gratuita do seu imóvel.',
+            regioesAtuacao: 'Asa Sul, Lago Norte, Águas Claras',
+            atuandoDesde: 2008,
+            cep: '70300000',
+            logradouro: 'SCS Quadra 2',
+            numero: '10',
+            complemento: 'Loja 3',
+            bairro: 'Asa Sul',
+            cidade: 'Brasília',
+            uf: 'DF',
+            latitude: -15.7975,
+            longitude: -47.8885,
+            perfilPublico: true
+        };
+    }
+    return {};
 }
 
 export interface DemoImovel extends Omit<ImovelDetalhe, 'anunciante' | 'tipoDescricao' | 'codigo'> {
@@ -160,6 +237,7 @@ export function criarDemoDb(): DemoDb {
             criadoEm: new Date(agora - 30 * dia).toISOString()
         }
     ];
+    usuarios.forEach((u) => Object.assign(u, perfilDemo(u.id)));
     const imoveis: DemoImovel[] = MODELOS.map((m, n) => {
         const [titulo, tipo, finalidade, preco, area, q, s, v, cidade, bairro, endereco, lat, lng, lanc] = m;
         const ehApto = tipo === 'APARTAMENTO' || tipo === 'COBERTURA';

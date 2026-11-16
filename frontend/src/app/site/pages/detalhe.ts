@@ -9,7 +9,7 @@ import { GestaoAnunciosService, ImovelService } from '@/app/core/services/imovel
 import { ContaService } from '@/app/core/services/conta.service';
 import { AuthService } from '@/app/core/services/auth.service';
 import { ConfigService } from '@/app/core/services/config.service';
-import { CepPipe, PrecoPipe, TempoAtrasPipe, ValorM2Pipe } from '@/app/core/pipes/formatos';
+import { CepPipe, PrecoPipe, TempoAtrasPipe, ValorM2Pipe, slug } from '@/app/core/pipes/formatos';
 import { TelefoneAnunciante } from '@/app/shared/components/telefone-anunciante';
 import { GaleriaFotos } from '@/app/shared/components/galeria-fotos';
 import { ContatoForm } from '@/app/shared/components/contato-form';
@@ -224,9 +224,16 @@ import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
                         @if (i.anunciante; as a) {
                             <div class="flex items-center gap-3 mb-3">
                                 <app-anunciante-foto [nome]="a.nome" [foto]="a.fotoUrl" [grande]="true" />
-                                <div>
-                                    <div class="font-semibold">{{ a.nome }}</div>
+                                <div class="min-w-0">
+                                    @if (a.perfilPublico) {
+                                        <a [routerLink]="['/anunciante', a.id, slugTexto(a.nome)]" class="font-semibold text-primary hover:underline">{{ a.nome }}</a>
+                                    } @else {
+                                        <div class="font-semibold">{{ a.nome }}</div>
+                                    }
                                     <div class="text-xs text-muted-color">Creci: {{ a.creci || '—' }}</div>
+                                    @if (a.perfilPublico) {
+                                        <a [routerLink]="['/anunciante', a.id, slugTexto(a.nome)]" class="text-xs text-primary hover:underline">Ver perfil e outros imóveis</a>
+                                    }
                                 </div>
                             </div>
                         }
@@ -260,6 +267,7 @@ import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
     `
 })
 export class DetalhePage {
+    protected readonly slugTexto = slug;
     private imoveis = inject(ImovelService);
     private gestao = inject(GestaoAnunciosService);
     private conta = inject(ContaService);

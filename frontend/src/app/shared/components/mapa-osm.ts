@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, effect, input, output, signal, viewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, effect, input, output, signal, untracked, viewChild } from '@angular/core';
 import type * as Leaflet from 'leaflet';
 
 export interface PontoMapa {
@@ -9,6 +9,8 @@ export interface PontoMapa {
     subtitulo?: string;
     preco?: string;
     link?: string;
+    /** Texto do link no balão (padrão "Ver imóvel"). */
+    rotuloLink?: string;
 }
 
 /**
@@ -47,6 +49,15 @@ export class MapaOsm implements AfterViewInit, OnDestroy {
     zoomRoda = input<'livre' | 'ctrl'>('ctrl');
     /** Links "Ver imóvel" dos balões abrem em nova janela. */
     linksNovaJanela = input(false);
+    /**
+     * true (padrão): o mapa se enquadra nos pontos sempre que eles mudam.
+     * false: a vista só muda pelo [centro]/[zoom] ou ao selecionar um ponto (diretório de imobiliárias).
+     */
+    ajustarAosPontos = input(true);
+    /** Ponto selecionado: o mapa vai até ele, destaca o pino e abre o balão. */
+    selecionado = input<number | null>(null);
+    /** Clique num pino (o id do ponto). */
+    pontoClicado = output<number>();
     posicaoSelecionada = output<{ lat: number; lng: number }>();
 
     alvo = viewChild.required<ElementRef<HTMLDivElement>>('alvo');
@@ -60,6 +71,7 @@ export class MapaOsm implements AfterViewInit, OnDestroy {
     private mapa: Leaflet.Map | null = null;
     private camada: Leaflet.LayerGroup | null = null;
     private marcadorSelecao: Leaflet.Marker | null = null;
+    private marcadores = new Map<number, Leaflet.Marker>();
 
     constructor() {
         effect(() => {
@@ -69,6 +81,17 @@ export class MapaOsm implements AfterViewInit, OnDestroy {
             if (this.mapa) {
                 this.desenhar(pts, c);
             }
+        });
+        // vista controlada pela página (sem enquadrar nos pontos): segue o centro/zoom informados
+        effect(() => {
+            const c = this.centro();
+            const z = this.zoom();
+            if (this.ajustarAosPontos() || !c) return;
+            untracked(() => this.mapa?.setView(c, z));
+        });
+        effect(() => {
+            const id = this.selecionado();
+            untracked(() => this.irParaSelecionado(id));
         });
     }
 
@@ -120,20 +143,49 @@ export class MapaOsm implements AfterViewInit, OnDestroy {
         this.timerDica = setTimeout(() => this.dicaVisivel.set(false), 1500);
     }
 
-    private icone(): Leaflet.DivIcon {
-        return this.L!.divIcon({ className: 'pino-mapa', html: '<span></span>', iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -26] });
+    private icone(ativo = false): Leaflet.DivIcon {
+        return this.L!.divIcon({ className: ativo ? 'pino-mapa pino-mapa--ativo' : 'pino-mapa', html: '<span></span>', iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -26] });
+    }
+
+    /** Destaca o pino selecionado; com voar = true, leva o mapa até ele (sem zoom exagerado) e abre o balão. */
+    private irParaSelecionado(id: number | null, voar = true) {
+        if (!this.mapa) return;
+        this.marcadores.forEach((m, k) => {
+            m.setIcon(this.icone(k === id));
+            m.setZIndexOffset(k === id ? 1000 : 0);
+        });
+        const m = id != null ? this.marcadores.get(id) : undefined;
+        if (!m) {
+            if (voar) this.mapa.closePopup();
+            return;
+        }
+        if (voar) {
+            const zoom = Math.max(this.mapa.getZoom(), 15);
+            const reduzir = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduzir) this.mapa.setView(m.getLatLng(), zoom);
+            else this.mapa.flyTo(m.getLatLng(), zoom, { duration: 0.6 });
+            m.openPopup();
+        }
     }
 
     private desenhar(pts: PontoMapa[], centro: [number, number] | null) {
         if (!this.L || !this.mapa || !this.camada) return;
         this.camada.clearLayers();
+        this.marcadores.clear();
         for (const p of pts) {
             const m = this.L.marker([p.lat, p.lng], { icon: this.icone(), title: p.titulo, keyboard: true });
             const html = `<div class="text-sm"><strong>${esc(p.titulo)}</strong>${p.subtitulo ? `<br><span>${esc(p.subtitulo)}</span>` : ''}${p.preco ? `<br><b class="text-primary">${esc(p.preco)}</b>` : ''}${
-                p.link ? `<br><a href="${esc(p.link)}"${this.linksNovaJanela() ? ' target="_blank" rel="noopener">Ver imóvel<span class="sr-only"> (abre em nova janela)</span>' : '>Ver imóvel'}</a>` : ''
+                p.link ? `<br><a href="${esc(p.link)}"${this.linksNovaJanela() ? ` target="_blank" rel="noopener">${esc(p.rotuloLink ?? 'Ver imóvel')}<span class="sr-only"> (abre em nova janela)</span>` : `>${esc(p.rotuloLink ?? 'Ver imóvel')}`}</a>` : ''
             }</div>`;
             m.bindPopup(html);
+            m.on('click', () => this.pontoClicado.emit(p.id));
             m.addTo(this.camada);
+            this.marcadores.set(p.id, m);
+        }
+        // redesenhou (ex.: filtro): mantém o destaque, sem mexer na vista
+        this.irParaSelecionado(this.selecionado(), false);
+        if (!this.ajustarAosPontos()) {
+            return;
         }
         if (this.selecionavel() && centro) {
             this.marcarSelecao(centro[0], centro[1]);

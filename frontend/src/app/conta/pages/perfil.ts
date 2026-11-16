@@ -18,12 +18,19 @@ import { ContaService } from '@/app/core/services/conta.service';
 import { AuthService } from '@/app/core/services/auth.service';
 import { ConfigService } from '@/app/core/services/config.service';
 import { mensagemErro } from '@/app/core/services/api.service';
-import { PerfilForm, UFS, Usuario } from '@/app/core/models/models';
+import { PerfilForm, UFS, Usuario, pendenciasPerfilPublico } from '@/app/core/models/models';
 import { PageHeader } from '@/app/shared/components/page-header';
 import { ImageUpload } from '@/app/shared/components/image-upload';
 import { RECORTES } from '@/app/shared/components/image-editor';
 import { TelefoneInput } from '@/app/shared/components/telefone-input';
-import { DocumentoPipe } from '@/app/core/pipes/formatos';
+import { DocumentoPipe, digitos, slug } from '@/app/core/pipes/formatos';
+import { CheckboxModule } from 'primeng/checkbox';
+import { HttpErrorResponse } from '@angular/common/http';
+import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { BrasilApiService } from '@/app/core/services/brasil-api.service';
+import { GeocodificacaoService } from '@/app/core/services/geocodificacao.service';
+import { MapaOsm } from '@/app/shared/components/mapa-osm';
 import { iniciaisDe } from '@/app/shared/components/avatar';
 
 const ANO_ATUAL = new Date().getFullYear();
@@ -32,7 +39,7 @@ const MAX_SOBRE = 2000;
 /** Meus dados (qualquer perfil): identificação, contato, atuação profissional (anunciantes), endereço e senha. */
 @Component({
     selector: 'app-perfil-page',
-    imports: [DatePipe, ReactiveFormsModule, InputTextModule, InputMaskModule, InputNumberModule, InputGroupModule, InputGroupAddonModule, SelectModule, TextareaModule, PasswordModule, ButtonModule, TagModule, PageHeader, ImageUpload, TelefoneInput, DocumentoPipe],
+    imports: [DatePipe, ReactiveFormsModule, InputTextModule, InputMaskModule, InputNumberModule, InputGroupModule, InputGroupAddonModule, SelectModule, TextareaModule, PasswordModule, ButtonModule, TagModule, PageHeader, ImageUpload, TelefoneInput, DocumentoPipe, CheckboxModule, RouterLink, MapaOsm],
     template: `
         <app-page-header titulo="Meus dados" subtitulo="Como você aparece no portal e como os clientes falam com você" />
 
@@ -65,6 +72,13 @@ const MAX_SOBRE = 2000;
                     </div>
                     @if (usuario(); as u) {
                         <div class="text-xs text-muted-color">Cadastro em {{ u.criadoEm | date: 'dd/MM/yyyy' }}</div>
+                        @if (anunciante()) {
+                            @if (u.perfilPublico) {
+                                <a [routerLink]="['/anunciante', u.id, slug(u.nome)]" class="text-sm text-primary font-medium hover:underline"><i class="pi pi-external-link mr-1" aria-hidden="true"></i>Ver meu perfil público</a>
+                            } @else {
+                                <span class="text-xs text-muted-color"><i class="pi pi-eye-slash mr-1" aria-hidden="true"></i>Perfil público desligado</span>
+                            }
+                        }
                     }
                 </div>
 
@@ -233,7 +247,12 @@ const MAX_SOBRE = 2000;
                         <div class="grid gap-4 sm:grid-cols-6">
                             <div class="flex flex-col gap-2 sm:col-span-2">
                                 <label for="pf-cep">CEP</label>
-                                <p-inputmask inputId="pf-cep" formControlName="cep" mask="99.999-999" [unmask]="true" [autoClear]="false" placeholder="00.000-000" autocomplete="postal-code" inputmode="numeric" />
+                                <p-inputgroup>
+                                    <p-inputmask inputId="pf-cep" formControlName="cep" mask="99.999-999" [unmask]="true" [autoClear]="false" placeholder="00.000-000" autocomplete="postal-code" inputmode="numeric" (keydown.enter)="$event.preventDefault(); buscarCep()" />
+                                    <p-inputgroup-addon>
+                                        <p-button type="button" icon="pi pi-search" severity="secondary" ariaLabel="Buscar endereço pelo CEP" [loading]="buscandoCep()" (onClick)="buscarCep()" />
+                                    </p-inputgroup-addon>
+                                </p-inputgroup>
                             </div>
                             <div class="flex flex-col gap-2 sm:col-span-4">
                                 <label for="pf-logr">Logradouro</label>
@@ -260,7 +279,47 @@ const MAX_SOBRE = 2000;
                                 <p-select inputId="pf-uf" formControlName="uf" [options]="ufs" placeholder="UF" [showClear]="true" appendTo="body" />
                             </div>
                         </div>
+                        <!-- posição no mapa: o perfil público e o diretório de imobiliárias usam este ponto -->
+                        <div class="flex flex-col gap-3 mt-5">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <p-button type="button" label="Localizar endereço no mapa" icon="pi pi-map-marker" [outlined]="true" size="small" [loading]="localizando()" (onClick)="localizar()" />
+                                @if (posicao(); as p) {
+                                    <span class="text-xs text-muted-color">Posição marcada ({{ p[0] }}, {{ p[1] }}) · clique no mapa para ajustar</span>
+                                } @else {
+                                    <span class="text-xs text-muted-color">{{ anunciante() ? 'Obrigatório para o perfil público. ' : '' }}Busque pelo endereço ou clique no mapa para marcar.</span>
+                                }
+                            </div>
+                            <app-mapa-osm [selecionavel]="true" [centro]="centroMapa()" [zoom]="12" altura="280px" (posicaoSelecionada)="marcar($event.lat, $event.lng)" />
+                        </div>
                     </section>
+
+                    @if (anunciante()) {
+                        <!-- perfil público: só liga com o cadastro completo (o backend confere a mesma regra) -->
+                        <section class="card !mb-0" aria-labelledby="sec-publico">
+                            <h2 id="sec-publico" class="perfil__titulo"><i class="pi pi-globe" aria-hidden="true"></i>Perfil público</h2>
+                            <p class="text-sm text-muted-color mt-0 mb-4">
+                                Com o perfil público, {{ imobiliaria() ? 'sua imobiliária aparece' : 'você aparece' }} no mapa de <a routerLink="/imobiliarias" class="text-primary hover:underline">Imobiliárias e corretores</a>, com uma página que mostra seus dados de contato e todos os seus anúncios.
+                            </p>
+                            <label class="flex items-start gap-3" [class.opacity-60]="!podeAtivar() && !dados.controls.perfilPublico.value">
+                                <p-checkbox formControlName="perfilPublico" [binary]="true" inputId="pf-publico" [ariaLabelledBy]="'pf-publico-rotulo'" aria-describedby="pf-publico-dica" />
+                                <span id="pf-publico-rotulo" class="font-medium">Ativar meu perfil público</span>
+                            </label>
+                            <div id="pf-publico-dica" class="mt-4">
+                                @if (pendencias().length) {
+                                    <p class="text-sm mt-0 mb-2" [class.text-red-600]="dados.controls.perfilPublico.value" [class.text-muted-color]="!dados.controls.perfilPublico.value">
+                                        {{ dados.controls.perfilPublico.value ? 'Para salvar com o perfil ativo, complete:' : 'Para ativar, complete o cadastro:' }}
+                                    </p>
+                                }
+                                <ul class="perfil__requisitos">
+                                    @for (r of requisitos(); track r.nome) {
+                                        <li [class.ok]="r.ok">
+                                            <i [class]="r.ok ? 'pi pi-check-circle' : 'pi pi-circle'" aria-hidden="true"></i>{{ r.nome }}<span class="sr-only">{{ r.ok ? ' (ok)' : ' (pendente)' }}</span>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </section>
+                    }
 
                     <div class="perfil__acoes">
                         <span class="text-sm text-muted-color">{{ dados.dirty ? 'Há alterações não salvas.' : 'Tudo salvo.' }}</span>
@@ -365,6 +424,27 @@ const MAX_SOBRE = 2000;
         .perfil__link:hover {
             text-decoration: underline;
         }
+        .perfil__requisitos {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+            gap: 0.4rem 1rem;
+            font-size: 0.875rem;
+            color: var(--p-text-muted-color);
+        }
+        .perfil__requisitos li {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .perfil__requisitos li.ok {
+            color: var(--p-text-color);
+        }
+        .perfil__requisitos li.ok i {
+            color: var(--p-green-600);
+        }
         .perfil__acoes {
             position: sticky;
             bottom: 0;
@@ -393,6 +473,9 @@ export class PerfilPage {
     private auth = inject(AuthService);
     private msg = inject(MessageService);
     private fb = inject(NonNullableFormBuilder);
+    private brasilApi = inject(BrasilApiService);
+    private geo = inject(GeocodificacaoService);
+    readonly slug = slug;
 
     readonly ufs = UFS;
     readonly anoAtual = ANO_ATUAL;
@@ -401,6 +484,10 @@ export class PerfilPage {
     usuario = signal<Usuario | null>(null);
     salvando = signal(false);
     trocando = signal(false);
+    buscandoCep = signal(false);
+    localizando = signal(false);
+    /** Centro do mapa (muda ao localizar/carregar; o clique no mapa só move o marcador). */
+    centroMapa = signal<[number, number] | null>(null);
 
     anunciante = computed(() => !!this.usuario()?.papeis.includes('CORRETOR'));
     imobiliaria = computed(() => this.anunciante() && this.usuario()?.tipoAnunciante === 'IMOBILIARIA');
@@ -427,7 +514,10 @@ export class PerfilPage {
         complemento: [''],
         bairro: [''],
         cidade: [''],
-        uf: this.fb.control<string | null>(null)
+        uf: this.fb.control<string | null>(null),
+        latitude: this.fb.control<number | null>(null),
+        longitude: this.fb.control<number | null>(null),
+        perfilPublico: [false]
     });
 
     senha = this.fb.group({
@@ -464,8 +554,34 @@ export class PerfilPage {
         return { pct: Math.round(((itens.length - faltando.length) / itens.length) * 100), faltando };
     });
 
+    posicao = computed<[number, number] | null>(() => {
+        this.valores();
+        const { latitude, longitude } = this.dados.getRawValue();
+        return latitude != null && longitude != null ? [latitude, longitude] : null;
+    });
+
+    /** Requisitos do perfil público, na ordem em que aparecem na tela (com ✓ quando ok). */
+    requisitos = computed(() => {
+        this.valores();
+        const v = this.dados.getRawValue();
+        const faltando = new Set(pendenciasPerfilPublico({ ...v, imobiliaria: this.imobiliaria() }));
+        const todos = ['Foto ou logo', 'Nome', ...(this.imobiliaria() ? ['Razão social'] : []), 'CRECI e UF do CRECI', 'Telefone ou WhatsApp', 'Apresentação ("Sobre")', 'CEP', 'Logradouro e número', 'Bairro, cidade e UF', 'Posição no mapa'];
+        return todos.map((nome) => ({ nome, ok: !faltando.has(nome) }));
+    });
+    pendencias = computed(() => this.requisitos().filter((r) => !r.ok));
+    podeAtivar = computed(() => this.pendencias().length === 0);
+
     constructor() {
         inject(ConfigService).definirTitulo('Meus dados');
+        // não deixa marcar o perfil público com o cadastro incompleto (desmarcar é sempre permitido)
+        this.dados.controls.perfilPublico.valueChanges.subscribe((ligado) => {
+            // calcula na hora: durante o reset() os computed ainda podem ter os valores antigos
+            if (ligado && pendenciasPerfilPublico({ ...this.dados.getRawValue(), imobiliaria: this.imobiliaria() }).length) {
+                // depois do clique: o p-checkbox termina de tratar o próprio clique e sobrescreveria a tela
+                setTimeout(() => this.dados.controls.perfilPublico.setValue(false, { emitEvent: false }));
+                this.msg.add({ severity: 'warn', summary: 'Perfil público', detail: 'Complete os itens da lista para ativar o perfil público.' });
+            }
+        });
         this.conta.perfil().subscribe({
             next: (u) => this.preencher(u),
             error: (e) => this.msg.add({ severity: 'error', summary: 'Meus dados', detail: mensagemErro(e) })
@@ -481,6 +597,62 @@ export class PerfilPage {
     mudarFoto(url: string | null) {
         this.dados.controls.fotoUrl.setValue(url);
         this.dados.markAsDirty();
+    }
+
+    marcar(lat: number, lng: number) {
+        this.dados.patchValue({ latitude: lat, longitude: lng });
+        this.dados.markAsDirty();
+    }
+
+    /** Preenche o endereço pelo CEP (BrasilAPI) e já posiciona o mapa. */
+    async buscarCep() {
+        const cep = digitos(this.dados.controls.cep.value);
+        if (cep.length !== 8) {
+            this.msg.add({ severity: 'warn', summary: 'CEP', detail: 'Informe um CEP com 8 dígitos.' });
+            return;
+        }
+        this.buscandoCep.set(true);
+        try {
+            const r = await firstValueFrom(this.brasilApi.cep(cep));
+            const uf = r.state?.toUpperCase();
+            this.dados.patchValue({
+                ...(r.street ? { logradouro: r.street } : {}),
+                ...(r.neighborhood ? { bairro: r.neighborhood } : {}),
+                ...(r.city ? { cidade: r.city } : {}),
+                ...(uf && UFS.includes(uf) ? { uf } : {})
+            });
+            this.dados.markAsDirty();
+            await this.localizar();
+        } catch (e) {
+            const naoEncontrado = e instanceof HttpErrorResponse && e.status === 404;
+            this.msg.add({ severity: naoEncontrado ? 'warn' : 'error', summary: 'CEP', detail: naoEncontrado ? 'CEP não encontrado.' : 'Não foi possível consultar o CEP agora.' });
+        } finally {
+            this.buscandoCep.set(false);
+        }
+    }
+
+    /** Posiciona o mapa pelo endereço (Nominatim, do mais preciso ao mais genérico). */
+    async localizar() {
+        const v = this.dados.getRawValue();
+        if (!v.cidade.trim() && digitos(v.cep).length !== 8) {
+            this.msg.add({ severity: 'warn', summary: 'Mapa', detail: 'Preencha ao menos a cidade ou o CEP.' });
+            return;
+        }
+        this.localizando.set(true);
+        try {
+            const r = await this.geo.localizar({ endereco: v.logradouro, numero: v.numero, bairro: v.bairro, cidade: v.cidade, uf: v.uf, cep: v.cep }).catch(() => null);
+            if (!r) {
+                this.msg.add({ severity: 'info', summary: 'Endereço não encontrado', detail: 'Clique no mapa para marcar a posição.' });
+                return;
+            }
+            this.marcar(r.lat, r.lng);
+            this.centroMapa.set([r.lat, r.lng]);
+            if (r.precisao !== 'endereco') {
+                this.msg.add({ severity: 'info', summary: 'Posição aproximada', detail: 'Clique no mapa para ajustar o ponto exato.' });
+            }
+        } finally {
+            this.localizando.set(false);
+        }
     }
 
     descartar() {
@@ -517,7 +689,10 @@ export class PerfilPage {
             complemento: t(v.complemento),
             bairro: t(v.bairro),
             cidade: t(v.cidade),
-            uf: v.uf || null
+            uf: v.uf || null,
+            latitude: v.latitude,
+            longitude: v.longitude,
+            perfilPublico: this.anunciante() && v.perfilPublico
         };
         this.salvando.set(true);
         this.conta.salvarPerfil(form).subscribe({
@@ -578,8 +753,12 @@ export class PerfilPage {
             complemento: u.complemento ?? '',
             bairro: u.bairro ?? '',
             cidade: u.cidade ?? '',
-            uf: u.uf ?? null
+            uf: u.uf ?? null,
+            latitude: u.latitude ?? null,
+            longitude: u.longitude ?? null,
+            perfilPublico: !!u.perfilPublico
         });
+        this.centroMapa.set(u.latitude != null && u.longitude != null ? [u.latitude, u.longitude] : null);
     }
 }
 

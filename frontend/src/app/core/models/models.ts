@@ -103,6 +103,8 @@ export interface Anunciante {
     telefoneCompleto: boolean;
     creci: string | null;
     fotoUrl: string | null;
+    /** Tem página pública em /anunciante/{id}. */
+    perfilPublico: boolean;
 }
 
 /** O que o anunciante declarou sobre a foto: real, criada/alterada com IA ou não informado. */
@@ -321,6 +323,9 @@ export interface Usuario {
     bairro?: string | null;
     cidade?: string | null;
     uf?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    perfilPublico?: boolean;
 }
 
 /** O que o próprio usuário edita em "Meus dados". */
@@ -346,6 +351,10 @@ export interface PerfilForm {
     bairro: string | null;
     cidade: string | null;
     uf: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    /** Anunciantes: liga o perfil público (exige o cadastro completo, ver pendenciasPerfilPublico). */
+    perfilPublico: boolean;
 }
 
 export const UFS = ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'];
@@ -868,4 +877,106 @@ export const EXIBICOES_TELEFONE: { value: ExibicaoTelefone; label: string; dica:
     { value: 'MOSTRAR', label: 'Mostrar', dica: 'O telefone aparece completo para todos os visitantes.' },
     { value: 'MOSTRAR_APENAS_LOGADO', label: 'Mostrar apenas para quem está logado', dica: 'Aparece só o início, ex.: (61) 99999…; o número completo aparece ao clicar em "Ver telefone", para quem entrou na conta.' },
     { value: 'OCULTAR', label: 'Ocultar', dica: 'O telefone do anunciante não aparece no site; o contato fica só pelo formulário.' }
+];
+
+// ---------------------------------------------------------------- perfil público de anunciantes
+
+export type TipoAnunciante = 'CORRETOR' | 'IMOBILIARIA';
+
+/** Item do diretório /imobiliarias (lista + marcador no mapa). */
+export interface AnuncianteResumo {
+    id: number;
+    nome: string;
+    tipo: TipoAnunciante;
+    fotoUrl: string | null;
+    creci: string | null;
+    creciUf: string | null;
+    bairro: string | null;
+    cidade: string | null;
+    uf: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    totalAnuncios: number;
+}
+
+/** Página /anunciante/{id}. Telefone: mesma regra do anúncio (telefoneCompleto = false → só o início). */
+export interface AnunciantePerfil {
+    id: number;
+    nome: string;
+    tipo: TipoAnunciante;
+    razaoSocial: string | null;
+    fotoUrl: string | null;
+    creci: string | null;
+    creciUf: string | null;
+    sobre: string | null;
+    regioesAtuacao: string | null;
+    atuandoDesde: number | null;
+    site: string | null;
+    instagram: string | null;
+    facebook: string | null;
+    emailContato: string | null;
+    telefone: string | null;
+    telefoneCompleto: boolean;
+    whatsapp: string | null;
+    cep: string | null;
+    logradouro: string | null;
+    numero: string | null;
+    complemento: string | null;
+    bairro: string | null;
+    cidade: string | null;
+    uf: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    membroDesde: string;
+    totalAnuncios: number;
+}
+
+export interface AnuncianteFiltro {
+    tipo?: TipoAnunciante | null;
+    cidade?: string | null;
+    q?: string | null;
+}
+
+/** Dados que o perfil público exige (mesma regra do backend: UsuarioService.pendenciasPerfilPublico). */
+export interface DadosPerfilPublico {
+    fotoUrl: string | null;
+    nome: string;
+    imobiliaria: boolean;
+    razaoSocial: string;
+    creci: string;
+    creciUf: string | null;
+    telefone: string | null;
+    whatsapp: string | null;
+    sobre: string;
+    cep: string;
+    logradouro: string;
+    numero: string;
+    bairro: string;
+    cidade: string;
+    uf: string | null;
+    latitude: number | null;
+    longitude: number | null;
+}
+
+/** O que falta para o anunciante poder deixar o perfil público (lista vazia = pode ativar). */
+export function pendenciasPerfilPublico(d: DadosPerfilPublico): string[] {
+    const vazio = (s: string | null | undefined) => !s || !s.trim();
+    const f: string[] = [];
+    if (vazio(d.fotoUrl)) f.push('Foto ou logo');
+    if (vazio(d.nome)) f.push('Nome');
+    if (d.imobiliaria && vazio(d.razaoSocial)) f.push('Razão social');
+    if (vazio(d.creci) || vazio(d.creciUf)) f.push('CRECI e UF do CRECI');
+    if (vazio(d.telefone) && vazio(d.whatsapp)) f.push('Telefone ou WhatsApp');
+    if (vazio(d.sobre)) f.push('Apresentação ("Sobre")');
+    if ((d.cep ?? '').replace(/\D/g, '').length !== 8) f.push('CEP');
+    if (vazio(d.logradouro) || vazio(d.numero)) f.push('Logradouro e número');
+    if (vazio(d.bairro) || vazio(d.cidade) || vazio(d.uf)) f.push('Bairro, cidade e UF');
+    if (d.latitude == null || d.longitude == null) f.push('Posição no mapa');
+    return f;
+}
+
+export const TIPOS_ANUNCIANTE: { value: TipoAnunciante | null; label: string }[] = [
+    { value: null, label: 'Todos' },
+    { value: 'IMOBILIARIA', label: 'Imobiliárias' },
+    { value: 'CORRETOR', label: 'Corretores' }
 ];

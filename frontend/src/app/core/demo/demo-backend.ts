@@ -1,6 +1,6 @@
 import { HttpParams, HttpRequest } from '@angular/common/http';
-import { ContagemTipo, ExibicaoTelefone, FotoImovel, ImovelDetalhe, ImovelFiltro, ImovelResumo, ORIGENS_FOTO, OrigemFoto, PageResponse, Perfil, Sessao, StatusAnuncio, TIPOS, TipoImovel, tipoLabel } from '@/app/core/models/models';
-import { DemoDb, DemoImovel, DemoUsuario, criarDemoDb, fotosMock } from './demo-data';
+import { AnunciantePerfil, AnuncianteResumo, ContagemTipo, ExibicaoTelefone, FotoImovel, ImovelDetalhe, ImovelFiltro, ImovelResumo, ORIGENS_FOTO, OrigemFoto, PageResponse, Perfil, Sessao, StatusAnuncio, TIPOS, TipoImovel, TipoAnunciante, pendenciasPerfilPublico, tipoLabel } from '@/app/core/models/models';
+import { DemoDb, DemoImovel, DemoUsuario, criarDemoDb, fotosMock, perfilDemo } from './demo-data';
 
 /**
  * "Backend de mentira" que imita as rotas /app/** do Spring Boot dentro do navegador.
@@ -54,6 +54,10 @@ export class DemoBackend {
                         if (!i.fotos || i.fotos.length === 0) i.fotos = fotosMock(i.id - 1);
                         // versões antigas guardavam só a URL ou { url, editadaIa }; hoje é { url, origem }
                         i.fotos = (i.fotos as unknown[]).map((f) => origemFotoAntiga(f));
+                    });
+                    // bancos antigos não tinham o perfil público: completa os anunciantes de exemplo
+                    db.usuarios.forEach((u) => {
+                        if (u.perfilPublico === undefined) Object.assign(u, perfilDemo(u.id));
                     });
                     return db;
                 }
@@ -146,6 +150,18 @@ export class DemoBackend {
             const modo = this.db.config.telefoneAnunciante ?? 'MOSTRAR';
             // logado já recebe o número completo (como no backend)
             return this.detalhe(i, modo === 'MOSTRAR_APENAS_LOGADO' && this.sessao() ? 'MOSTRAR' : modo);
+        }
+        // ---- diretório e perfil público de anunciantes
+        if (url === '/app/public/anunciantes') return this.anunciantes(p);
+        if ((r = url.match(/^\/app\/public\/anunciantes\/(\d+)$/))) return this.perfilAnunciante(+r[1]);
+        if ((r = url.match(/^\/app\/public\/anunciantes\/(\d+)\/telefone$/))) {
+            const modo = this.db.config.telefoneAnunciante ?? 'MOSTRAR';
+            if (modo === 'OCULTAR') throw new DemoError(404, 'Telefone não disponível');
+            if (modo === 'MOSTRAR_APENAS_LOGADO' && !this.sessao()) throw new DemoError(401, 'Entre na sua conta para ver o telefone do anunciante');
+            const a = this.anunciantePublico(+r[1]);
+            const tel = a.telefone || a.whatsapp;
+            if (!tel) throw new DemoError(404, 'Telefone não disponível');
+            return { telefone: tel, whatsapp: a.whatsapp ?? null };
         }
         if ((r = url.match(/^\/app\/public\/imoveis\/(\d+)\/telefone$/))) {
             const modo = this.db.config.telefoneAnunciante ?? 'MOSTRAR';
@@ -267,6 +283,7 @@ export class DemoBackend {
             lancamento: p.get('lancamento') === 'true' ? true : null,
             destaque: p.get('destaque') === 'true' ? true : null,
             status: p.get('status') as StatusAnuncio | null,
+            anunciante: num('anunciante'),
             ordem: p.get('ordem'),
             page: num('page'),
             size: num('size')
@@ -279,6 +296,8 @@ export class DemoBackend {
             if (status && i.status !== status) return false;
             if (!status && f.status && i.status !== f.status) return false;
             if (anunciante != null && i.anuncianteId !== anunciante) return false;
+            // ?anunciante=ID na busca pública (página do perfil do anunciante)
+            if (anunciante == null && f.anunciante != null && i.anuncianteId !== f.anunciante) return false;
             if (f.finalidade && i.finalidade !== f.finalidade) return false;
             if (f.tipo && f.tipo.length && !f.tipo.includes(i.tipo)) return false;
             if (f.uf && low(i.uf) !== low(f.uf)) return false;
@@ -420,7 +439,7 @@ export class DemoBackend {
             ...resto,
             codigo: 'IM-' + String(i.id).padStart(6, '0'),
             tipoDescricao: tipoLabel(i.tipo),
-            anunciante: a ? { id: a.id, nome: a.nome, telefone, telefoneCompleto, creci: a.creci, fotoUrl: a.fotoUrl } : null
+            anunciante: a ? { id: a.id, nome: a.nome, telefone, telefoneCompleto, creci: a.creci, fotoUrl: a.fotoUrl, perfilPublico: this.temPerfilPublico(a) } : null
         };
     }
 
@@ -441,6 +460,84 @@ export class DemoBackend {
 
     // ------------------------------------------------------------------ conta
 
+    private temPerfilPublico(u: DemoUsuario): boolean {
+        return u.ativo && !!u.perfilPublico && u.papeis.includes('CORRETOR');
+    }
+
+    private anunciantePublico(id: number): DemoUsuario {
+        const u = this.db.usuarios.find((x) => x.id === id && this.temPerfilPublico(x));
+        if (!u) throw new DemoError(404, 'Perfil não encontrado');
+        return u;
+    }
+
+    private totalAtivos(id: number): number {
+        return this.db.imoveis.filter((i) => i.anuncianteId === id && i.status === 'ATIVO').length;
+    }
+
+    private anunciantes(p: HttpParams): AnuncianteResumo[] {
+        const sem = (s: string | null | undefined) => (s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        const tipo = p.get('tipo');
+        const cidade = sem(p.get('cidade'));
+        const q = sem(p.get('q'));
+        return this.db.usuarios
+            .filter((u) => this.temPerfilPublico(u))
+            .filter((u) => !tipo || (u.tipoAnunciante === 'IMOBILIARIA' ? 'IMOBILIARIA' : 'CORRETOR') === tipo)
+            .filter((u) => !cidade || sem(u.cidade) === cidade)
+            .filter((u) => !q || [u.nome, u.razaoSocial, u.bairro, u.cidade].some((c) => sem(c).includes(q)))
+            .map((u) => ({
+                id: u.id,
+                nome: u.nome,
+                tipo: (u.tipoAnunciante === 'IMOBILIARIA' ? 'IMOBILIARIA' : 'CORRETOR') as TipoAnunciante,
+                fotoUrl: u.fotoUrl,
+                creci: u.creci,
+                creciUf: u.creciUf ?? null,
+                bairro: u.bairro ?? null,
+                cidade: u.cidade ?? null,
+                uf: u.uf ?? null,
+                latitude: u.latitude ?? null,
+                longitude: u.longitude ?? null,
+                totalAnuncios: this.totalAtivos(u.id)
+            }))
+            .sort((a, b) => b.totalAnuncios - a.totalAnuncios || a.nome.localeCompare(b.nome));
+    }
+
+    private perfilAnunciante(id: number): AnunciantePerfil {
+        const u = this.anunciantePublico(id);
+        const modoConfig = this.db.config.telefoneAnunciante ?? 'MOSTRAR';
+        const modo = modoConfig === 'MOSTRAR_APENAS_LOGADO' && this.sessao() ? 'MOSTRAR' : modoConfig;
+        const tel = u.telefone || u.whatsapp || null;
+        return {
+            id: u.id,
+            nome: u.nome,
+            tipo: u.tipoAnunciante === 'IMOBILIARIA' ? 'IMOBILIARIA' : 'CORRETOR',
+            razaoSocial: u.razaoSocial ?? null,
+            fotoUrl: u.fotoUrl,
+            creci: u.creci,
+            creciUf: u.creciUf ?? null,
+            sobre: u.sobre ?? null,
+            regioesAtuacao: u.regioesAtuacao ?? null,
+            atuandoDesde: u.atuandoDesde ?? null,
+            site: u.site ?? null,
+            instagram: u.instagram ?? null,
+            facebook: u.facebook ?? null,
+            emailContato: u.emailContato ?? null,
+            telefone: !tel || modo === 'OCULTAR' ? null : modo === 'MOSTRAR' ? tel : tel.slice(0, Math.max(0, tel.length - 4)),
+            telefoneCompleto: !!tel && modo === 'MOSTRAR',
+            whatsapp: modo === 'MOSTRAR' ? (u.whatsapp ?? null) : null,
+            cep: u.cep ?? null,
+            logradouro: u.logradouro ?? null,
+            numero: u.numero ?? null,
+            complemento: u.complemento ?? null,
+            bairro: u.bairro ?? null,
+            cidade: u.cidade ?? null,
+            uf: u.uf ?? null,
+            latitude: u.latitude ?? null,
+            longitude: u.longitude ?? null,
+            membroDesde: u.criadoEm,
+            totalAnuncios: this.totalAtivos(u.id)
+        };
+    }
+
     private usuarioDto(u: DemoUsuario) {
         const { senha, ...resto } = u;
         return { ...resto, perfisPermitidos: permitidos(u.papeis) };
@@ -451,7 +548,13 @@ export class DemoBackend {
         let r: RegExpMatchArray | null;
         if (url === '/app/conta/perfil') {
             if (m === 'PUT') {
-                Object.assign(u, b);
+                const anunciante = u.papeis.includes('CORRETOR');
+                const novo = { ...u, ...b, perfilPublico: anunciante && !!b.perfilPublico };
+                if (novo.perfilPublico) {
+                    const faltando = pendenciasPerfilPublico({ ...novo, imobiliaria: u.tipoAnunciante === 'IMOBILIARIA', nome: novo.nome ?? '', razaoSocial: novo.razaoSocial ?? '', creci: novo.creci ?? '', sobre: novo.sobre ?? '', cep: novo.cep ?? '', logradouro: novo.logradouro ?? '', numero: novo.numero ?? '', bairro: novo.bairro ?? '', cidade: novo.cidade ?? '', creciUf: novo.creciUf ?? null, uf: novo.uf ?? null, latitude: novo.latitude ?? null, longitude: novo.longitude ?? null, whatsapp: novo.whatsapp ?? null });
+                    if (faltando.length) throw new DemoError(422, 'Para deixar o perfil público, complete: ' + faltando.join(', ').toLowerCase() + '.');
+                }
+                Object.assign(u, novo);
                 this.salvarDb();
             }
             return this.usuarioDto(u);

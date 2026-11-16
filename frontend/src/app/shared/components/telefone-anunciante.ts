@@ -3,10 +3,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { AuthService } from '@/app/core/services/auth.service';
-import { TelefoneAnuncianteService } from '@/app/core/services/telefone-anunciante.service';
+import { OrigemTelefone, TelefoneAnuncianteService } from '@/app/core/services/telefone-anunciante.service';
 import { TelefonePipe, digitos } from '@/app/core/pipes/formatos';
 import { TooltipModule } from 'primeng/tooltip';
-import { Anunciante } from '@/app/core/models/models';
+
 
 /**
  * Telefone do anunciante conforme Configurações > Regras:
@@ -144,8 +144,12 @@ import { Anunciante } from '@/app/core/models/models';
     `
 })
 export class TelefoneAnunciante {
-    imovelId = input.required<number>();
-    anunciante = input<Anunciante | null>(null);
+    /** Telefone do anúncio... */
+    imovelId = input<number | null>(null);
+    /** ...ou do perfil do anunciante (/anunciante/{id}). */
+    anuncianteId = input<number | null>(null);
+    /** Só o que o componente usa: o anúncio manda o anunciante; o perfil manda ele mesmo. */
+    anunciante = input<{ telefone: string | null; telefoneCompleto: boolean } | null>(null);
     variante = input<'texto' | 'botao'>('texto');
 
     protected auth = inject(AuthService);
@@ -158,9 +162,10 @@ export class TelefoneAnunciante {
         const a = this.anunciante();
         if (!a?.telefone) return null;
         // "!== false": API antiga (sem o campo) manda o número completo
-        return a.telefoneCompleto !== false ? digitos(a.telefone) : this.revelados.numero(this.imovelId())();
+        return a.telefoneCompleto !== false ? digitos(a.telefone) : this.revelados.numero(this.origem())();
     });
-    carregando = computed(() => this.revelados.carregando(this.imovelId())());
+    origem = computed<OrigemTelefone>(() => (this.anuncianteId() != null ? { tipo: 'anunciante', id: this.anuncianteId()! } : { tipo: 'imovel', id: this.imovelId() ?? 0 }));
+    carregando = computed(() => this.revelados.carregando(this.origem())());
     /** "6199999" → "(61) 99999-••••"; fixo "613333" → "(61) 3333-••••" */
     parcial = computed(() => {
         const d = digitos(this.anunciante()?.telefone);
@@ -187,7 +192,7 @@ export class TelefoneAnunciante {
             return;
         }
         try {
-            await this.revelados.revelar(this.imovelId());
+            await this.revelados.revelar(this.origem());
         } catch (e) {
             if (e instanceof HttpErrorResponse && e.status === 401) {
                 this.irParaLogin();

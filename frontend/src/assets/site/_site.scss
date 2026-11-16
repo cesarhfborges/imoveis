@@ -2007,6 +2007,13 @@ body {
     border: 3px solid #fff;
     box-shadow: 0 2px 6px rgb(0 0 0 / 0.35);
 }
+/* pino selecionado (diretório de imobiliárias): maior e na cor de destaque */
+.pino-mapa--ativo span {
+    width: 32px;
+    height: 32px;
+    margin: -4px 0 0 -2px;
+    background: var(--p-orange-500, #f97316);
+}
 
 /* ---------------------------------------------------------------- rodapé */
 .site-footer {

@@ -121,7 +121,8 @@ export class SiteHeader {
         { label: 'Alugar', rota: '/aluguel', icone: 'pi-key', descricao: 'Para morar ou trabalhar' },
         { label: 'Lançamentos', rota: '/imovel-novo', icone: 'pi-sparkles', descricao: 'Imóveis novos e na planta' },
         { label: 'Temporada', rota: '/temporada', icone: 'pi-sun', descricao: 'Estadias curtas' },
-        { label: 'Mapa', rota: '/mapa', icone: 'pi-map', descricao: 'Busque pela localização' }
+        { label: 'Mapa', rota: '/mapa', icone: 'pi-map', descricao: 'Busque pela localização' },
+        { label: 'Imobiliárias', rota: '/imobiliarias', icone: 'pi-building', descricao: 'Imobiliárias e corretores' }
     ];
 
     menuAberto = signal(false);
