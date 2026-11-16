@@ -632,7 +632,21 @@ body {
 .filtros__campos {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.65rem;
+}
+
+/* rótulo em cima de cada campo do filtro */
+.filtros__campo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-width: 0;
+    > label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--p-text-muted-color);
+        cursor: pointer;
+    }
 }
 
 .filtros .p-button.filtros__botao,
@@ -2675,4 +2689,9 @@ html.rolagem-travada body {
     .carrossel-trilho {
         transition: none;
     }
+}
+
+.p-drawer-left {
+    width: 100%!important;
+    max-width: 26rem!important;
 }

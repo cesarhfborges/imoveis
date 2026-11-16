@@ -9,6 +9,8 @@ import { InputIconModule } from 'primeng/inputicon';
 import { Finalidade, ImovelFiltro, OpcoesBusca, TIPOS, TipoImovel } from '@/app/core/models/models';
 import { ImovelService } from '@/app/core/services/imovel.service';
 
+let instancias = 0;
+
 export type AbaBusca = 'VENDA' | 'ALUGUEL' | 'NOVO' | 'TEMPORADA';
 
 /**
@@ -27,37 +29,54 @@ export type AbaBusca = 'VENDA' | 'ALUGUEL' | 'NOVO' | 'TEMPORADA';
                 }
             </div>
 
+            <!-- cada campo com o seu rótulo; as classes filtros__tipo, filtros__uf... posicionam o bloco na grade do hero -->
             <div class="filtros__campos">
-                <p-select [options]="tipos" formControlName="tipo" class="filtros__tipo" optionLabel="label" optionValue="value" placeholder="Tipo (todos)" [showClear]="true" styleClass="w-full" ariaLabel="Tipo de imóvel" />
-                <p-select [options]="ufs()" formControlName="uf" class="filtros__uf" placeholder="UF" [showClear]="true" styleClass="w-full" ariaLabel="Estado" />
-                <p-select [options]="cidades()" formControlName="cidade" class="filtros__cidade" placeholder="Cidade (todas)" [showClear]="true" [filter]="true" filterPlaceholder="Filtrar" styleClass="w-full" ariaLabel="Cidade" />
-                <p-select [options]="bairros()" formControlName="bairro" class="filtros__bairro" placeholder="Bairro (todos)" [showClear]="true" [filter]="true" filterPlaceholder="Filtrar" styleClass="w-full" ariaLabel="Bairro" />
-                <div class="grid grid-cols-2 gap-2 filtros__dupla">
-                    <p-select [options]="quartosOpcoes" formControlName="quartos" class="filtros__quartos" optionLabel="label" optionValue="value" placeholder="Quartos" [showClear]="true" styleClass="w-full" ariaLabel="Quartos" />
-                    <p-inputnumber
-                        formControlName="precoMax"
-                        class="filtros__preco"
-                        mode="currency"
-                        currency="BRL"
-                        locale="pt-BR"
-                        [maxFractionDigits]="0"
-                        placeholder="Valor até"
-                        styleClass="w-full"
-                        inputStyleClass="w-full"
-                        ariaLabel="Valor máximo"
-                    />
+                <div class="filtros__campo filtros__tipo">
+                    <label [for]="id('tipo')" [id]="id('tipo') + '-rotulo'">Tipo de imóvel</label>
+                    <p-select [inputId]="id('tipo')" [ariaLabelledBy]="id('tipo') + '-rotulo'" [options]="tipos" formControlName="tipo" optionLabel="label" optionValue="value" placeholder="Todos" [showClear]="true" styleClass="w-full" />
                 </div>
-                <p-iconfield class="filtros__texto">
-                    <p-inputicon class="pi pi-search" />
-                    <input pInputText type="text" formControlName="q" placeholder="Endereço, bairro ou código" class="w-full" aria-label="Busca por texto: endereço, bairro ou código" />
-                </p-iconfield>
+                <div class="filtros__campo filtros__uf">
+                    <label [for]="id('uf')" [id]="id('uf') + '-rotulo'">UF</label>
+                    <p-select [inputId]="id('uf')" [ariaLabelledBy]="id('uf') + '-rotulo'" [options]="ufs()" formControlName="uf" placeholder="Todas" [showClear]="true" styleClass="w-full" />
+                </div>
+                <div class="filtros__campo filtros__cidade">
+                    <label [for]="id('cidade')" [id]="id('cidade') + '-rotulo'">Cidade</label>
+                    <p-select [inputId]="id('cidade')" [ariaLabelledBy]="id('cidade') + '-rotulo'" [options]="cidades()" formControlName="cidade" placeholder="Todas" [showClear]="true" [filter]="true" filterPlaceholder="Filtrar" styleClass="w-full" />
+                </div>
+                <div class="filtros__campo filtros__bairro">
+                    <label [for]="id('bairro')" [id]="id('bairro') + '-rotulo'">Bairro</label>
+                    <p-select [inputId]="id('bairro')" [ariaLabelledBy]="id('bairro') + '-rotulo'" [options]="bairros()" formControlName="bairro" placeholder="Todos" [showClear]="true" [filter]="true" filterPlaceholder="Filtrar" styleClass="w-full" />
+                </div>
+                <div class="filtros__campo filtros__quartos">
+                    <label [for]="id('quartos')" [id]="id('quartos') + '-rotulo'">Quartos</label>
+                    <p-select [inputId]="id('quartos')" [ariaLabelledBy]="id('quartos') + '-rotulo'" [options]="quartosOpcoes" formControlName="quartos" optionLabel="label" optionValue="value" placeholder="Qualquer" [showClear]="true" styleClass="w-full" />
+                </div>
+                <div class="filtros__campo filtros__preco">
+                    <label [for]="id('preco')">Valor até</label>
+                    <p-inputnumber [inputId]="id('preco')" formControlName="precoMax" mode="currency" currency="BRL" locale="pt-BR" [maxFractionDigits]="0" placeholder="Sem limite" styleClass="w-full" inputStyleClass="w-full" />
+                </div>
+                <div class="filtros__campo filtros__texto">
+                    <label [for]="id('texto')">Endereço, bairro ou código</label>
+                    <p-iconfield>
+                        <p-inputicon class="pi pi-search" />
+                        <input pInputText type="text" [id]="id('texto')" formControlName="q" placeholder="Ex.: SQN 303 ou IM-000012" class="w-full" />
+                    </p-iconfield>
+                </div>
             </div>
-            <p-button type="submit" label="Pesquisar" icon="pi pi-search" iconPos="right" styleClass="filtros__botao" />
+            <div class="flex justify-end">
+                <!-- largura total em telas pequenas; à direita, no tamanho do conteúdo, a partir de lg -->
+                <p-button type="submit" label="Pesquisar" icon="pi pi-search" iconPos="right" styleClass="filtros__botao" />
+            </div>
         </form>
     `
 })
 export class FiltrosBusca {
     private imoveis = inject(ImovelService);
+    /** Sufixo dos ids: o filtro pode aparecer duas vezes na mesma página (coluna e gaveta do celular). */
+    private readonly sufixo = ++instancias;
+    id(campo: string): string {
+        return `fb-${campo}-${this.sufixo}`;
+    }
 
     variante = input<'lateral' | 'hero'>('lateral');
     valor = input<ImovelFiltro>({});

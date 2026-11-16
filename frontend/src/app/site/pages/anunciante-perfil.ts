@@ -156,9 +156,15 @@ const POR_PAGINA = 12;
                             } @else if (!imoveis().length) {
                                 <app-empty-state titulo="Nenhum imóvel no ar" texto="Este anunciante não tem anúncios publicados no momento." icone="pi-home" />
                             } @else {
-                                <div class="perfil-pub__grade">
-                                    @for (i of imoveis(); track i.id) {
-                                        <app-imovel-card-mini [imovel]="i" />
+                                <div class="perfil-pub__grade" aria-live="polite">
+                                    <!-- cada lote entra em cascata; os cards que já estavam não se mexem (track por id) -->
+                                    @for (i of imoveis(); track i.id; let n = $index) {
+                                        <app-imovel-card-mini class="card-entra" [imovel]="i" [style.--ordem]="n - inicioLote()" />
+                                    }
+                                    @if (carregandoImoveis()) {
+                                        @for (k of [1, 2, 3, 4]; track k) {
+                                            <p-skeleton height="260px" styleClass="card-carregando" />
+                                        }
                                     }
                                 </div>
                                 @if (temMais()) {
@@ -793,6 +799,31 @@ const POR_PAGINA = 12;
             gap: 1rem;
             grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
         }
+        /* "Ver mais imóveis": os novos sobem e aparecem em cascata (70 ms entre um e outro) */
+        .card-entra {
+            display: block;
+            animation: card-entrar 0.55s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+            animation-delay: calc(var(--ordem, 0) * 70ms);
+        }
+        @keyframes card-entrar {
+            from {
+                opacity: 0;
+                transform: translateY(24px) scale(0.96);
+                filter: blur(2px);
+            }
+            60% {
+                filter: blur(0);
+            }
+        }
+        :host ::ng-deep .card-carregando {
+            animation: card-entrar 0.3s ease both;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .card-entra,
+            :host ::ng-deep .card-carregando {
+                animation: none;
+            }
+        }
 
         @media (max-width: 575px) {
             .capa__corpo {
@@ -858,6 +889,8 @@ export class AnunciantePerfilPage {
     private pagina = 0;
     private totalPaginas = 0;
     temMais = signal(false);
+    /** Índice do primeiro card do último lote carregado (base do atraso da animação de entrada). */
+    inicioLote = signal(0);
     /** Todos os imóveis no ar do anunciante com posição (o mapa não pagina). */
     private imoveisMapa = signal<ImovelResumo[]>([]);
     private preco = new PrecoPipe();
@@ -912,6 +945,7 @@ export class AnunciantePerfilPage {
         this.fotoFalhou.set(false);
         this.capaFalhou.set(false);
         this.imoveis.set([]);
+        this.inicioLote.set(0);
         this.imoveisMapa.set([]);
         this.pagina = 0;
         this.anunciantes.perfil(id).subscribe({
@@ -925,6 +959,8 @@ export class AnunciantePerfilPage {
     }
 
     carregarMais() {
+        // os próximos cards contam a cascata a partir daqui (os já exibidos não animam de novo)
+        this.inicioLote.set(this.imoveis().length);
         this.pagina++;
         this.buscarImoveis();
     }
