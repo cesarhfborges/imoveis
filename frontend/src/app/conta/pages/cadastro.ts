@@ -8,9 +8,12 @@ import { ConfigService } from '@/app/core/services/config.service';
     selector: 'app-cadastro-page',
     imports: [RouterLink, AuthCard, CadastroForm],
     template: `
-        <app-auth-card titulo="Criar conta" subtitulo="É grátis e leva menos de um minuto." largura="34rem">
+        <app-auth-card titulo="Criar conta" subtitulo="É grátis e leva menos de um minuto." largura="44rem">
             <app-cadastro-form modo="escolha" (cadastrou)="router.navigateByUrl('/conta')" />
-            <p class="text-center mt-6 mb-0">Já tem conta? <a routerLink="/conta/login" class="text-primary font-semibold hover:underline">Entrar</a></p>
+            <div rodape class="flex flex-col gap-3">
+                <p class="text-center text-muted-color m-0">Já tem conta?</p>
+                <a routerLink="/conta/login" class="p-button p-button-outlined w-full justify-center gap-2"><i class="pi pi-sign-in" aria-hidden="true"></i> Entrar na minha conta</a>
+            </div>
         </app-auth-card>
     `
 })

@@ -19,12 +19,19 @@ import { Avisos } from './avisos';
                     <div class="w-full bg-surface-0 dark:bg-surface-900 py-10 px-6 sm:px-12 rounded-[1.8rem]">
                         <div class="text-center mb-8">
                             <a routerLink="/" class="inline-block mb-6" aria-label="Página inicial do site"><app-logo /></a>
+                            @if (selo()) {
+                                <span class="inline-flex items-center gap-2 mb-3 px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 dark:bg-orange-400/15 dark:text-orange-300">
+                                    <i class="pi pi-lock text-xs" aria-hidden="true"></i> {{ selo() }}
+                                </span>
+                            }
                             <h1 class="text-surface-900 dark:text-surface-0 text-2xl font-semibold mb-2">{{ titulo() }}</h1>
                             @if (subtitulo()) {
                                 <p class="text-muted-color m-0">{{ subtitulo() }}</p>
                             }
                         </div>
                         <ng-content />
+                        <!-- rodapé (links para entrar/cadastrar), separado do botão principal; some quando vazio -->
+                        <div class="mt-8 pt-6 border-t border-surface flex flex-col gap-3 empty:hidden"><ng-content select="[rodape]" /></div>
                     </div>
                 </div>
             </div>
@@ -35,5 +42,7 @@ import { Avisos } from './avisos';
 export class AuthCard {
     titulo = input.required<string>();
     subtitulo = input<string | null>(null);
-    largura = input('30rem');
+    largura = input('38rem');
+    /** Selo acima do título (ex.: "Área restrita" no login da administração). */
+    selo = input<string | null>(null);
 }

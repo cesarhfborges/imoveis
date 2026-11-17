@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthCard } from '@/app/shared/components/auth-card';
 import { LoginForm } from '@/app/shared/components/login-form';
 import { ConfigService } from '@/app/core/services/config.service';
@@ -7,10 +7,11 @@ import { ConfigService } from '@/app/core/services/config.service';
 /** /admin/login: única entrada para o perfil de administrador. */
 @Component({
     selector: 'app-admin-login-page',
-    imports: [AuthCard, LoginForm],
+    imports: [RouterLink, AuthCard, LoginForm],
     template: `
-        <app-auth-card titulo="Administração" subtitulo="Acesso restrito aos administradores do sistema.">
+        <app-auth-card titulo="Administração" subtitulo="Entre com a sua conta de administrador do sistema." selo="Área restrita">
             <app-login-form area="admin" (entrou)="entrou()" />
+            <p rodape class="text-center text-sm text-muted-color m-0">Não é administrador? <a routerLink="/conta/login" class="text-primary font-semibold hover:underline">Entrar como cliente ou corretor</a></p>
         </app-auth-card>
     `
 })

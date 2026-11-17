@@ -1,4 +1,5 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
@@ -28,23 +29,59 @@ interface ContaDemo {
     selector: 'app-login-form',
     imports: [ReactiveFormsModule, InputTextModule, PasswordModule, ButtonModule, SelectButtonModule, MessageModule],
     template: `
-        <form [formGroup]="form" (ngSubmit)="entrar()" class="flex flex-col gap-4" novalidate>
+        <form [formGroup]="form" (ngSubmit)="entrar()" class="flex flex-col gap-5" novalidate>
             @if (area() === 'conta') {
                 <div class="flex flex-col gap-2">
                     <span id="lg-perfil" class="font-medium">Entrar como</span>
-                    <p-selectbutton formControlName="perfil" [options]="perfis" optionLabel="label" optionValue="value" [allowEmpty]="false" ariaLabelledBy="lg-perfil" styleClass="w-full" />
+                    <p-selectbutton formControlName="perfil" [options]="perfis" optionLabel="label" optionValue="value" [allowEmpty]="false" ariaLabelledBy="lg-perfil" [fluid]="true">
+                        <ng-template #item let-o>
+                            <span class="inline-flex items-center gap-2"><i class="pi {{ o.icone }}" aria-hidden="true"></i>{{ o.label }}</span>
+                        </ng-template>
+                    </p-selectbutton>
+                    <small class="text-muted-color">{{ dicaPerfil() }}</small>
                 </div>
             }
             <div class="flex flex-col gap-2">
                 <label for="lg-email" class="font-medium">E-mail</label>
-                <input pInputText id="lg-email" type="email" formControlName="email" autocomplete="username" placeholder="seu@email.com" class="w-full" />
+                <input
+                    pInputText
+                    id="lg-email"
+                    type="email"
+                    formControlName="email"
+                    autocomplete="username"
+                    placeholder="seu@email.com"
+                    class="w-full"
+                    [attr.aria-invalid]="invalido('email')"
+                    [attr.aria-describedby]="invalido('email') ? 'lg-email-erro' : null"
+                />
+                @if (invalido('email')) {
+                    <small id="lg-email-erro" class="text-red-600 dark:text-red-400">{{ form.controls.email.hasError('required') ? 'Informe o e-mail.' : 'E-mail inválido.' }}</small>
+                }
             </div>
             <div class="flex flex-col gap-2">
                 <label for="lg-senha" class="font-medium">Senha</label>
-                <p-password inputId="lg-senha" formControlName="senha" [feedback]="false" [toggleMask]="true" [fluid]="true" autocomplete="current-password" placeholder="Sua senha" />
+                <p-password
+                    inputId="lg-senha"
+                    formControlName="senha"
+                    [feedback]="false"
+                    [toggleMask]="true"
+                    [fluid]="true"
+                    autocomplete="current-password"
+                    placeholder="Sua senha"
+                    [invalid]="invalido('senha')"
+                    (keydown)="verificarCaps($event)"
+                    (keyup)="verificarCaps($event)"
+                    (focusout)="capsLock.set(false)"
+                />
+                @if (invalido('senha')) {
+                    <small class="text-red-600 dark:text-red-400">Informe a senha.</small>
+                }
+                @if (capsLock()) {
+                    <small class="inline-flex items-center gap-1 text-orange-700 dark:text-orange-300" role="status"><i class="pi pi-exclamation-triangle text-xs" aria-hidden="true"></i> Caps Lock está ligado.</small>
+                }
             </div>
             @if (erro()) {
-                <p-message severity="error" [text]="erro()!" />
+                <p-message severity="error" [text]="erro()!" role="alert" />
             }
             <p-button type="submit" [label]="area() === 'admin' ? 'Entrar na administração' : 'Entrar'" icon="pi pi-sign-in" [loading]="enviando()" styleClass="w-full" />
         </form>
@@ -67,9 +104,9 @@ interface ContaDemo {
                     }
                 </div>
                 @if (area() === 'conta') {
-                    <p class="text-sm mt-3 mb-0">Painel de administração: <a href="/admin/login" class="text-primary font-semibold hover:underline">/admin/login</a> (admin@imoveis.local / admin12345)</p>
+                    <div class="text-sm pt-3">Painel de administração: <a href="/admin/login" class="text-primary font-semibold hover:underline">/admin/login</a> (admin@imoveis.local / admin12345)</div>
                 } @else {
-                    <p class="text-sm mt-3 mb-0">Área de cliente e corretor: <a href="/conta/login" class="text-primary font-semibold hover:underline">/conta/login</a></p>
+                    <div class="text-sm pt-3">Área de cliente e corretor: <a href="/conta/login" class="text-primary font-semibold hover:underline">/conta/login</a></div>
                 }
             </section>
         }
@@ -85,16 +122,31 @@ export class LoginForm {
     area = input<'conta' | 'admin'>('conta');
     entrou = output<Sessao>();
 
-    perfis: { label: string; value: Perfil }[] = [
-        { label: 'Cliente', value: 'CLIENTE' },
-        { label: 'Corretor', value: 'CORRETOR' }
+    perfis: { label: string; value: Perfil; icone: string; dica: string }[] = [
+        { label: 'Cliente', value: 'CLIENTE', icone: 'pi-heart', dica: 'Para salvar favoritos, comparar imóveis e falar com anunciantes.' },
+        { label: 'Corretor', value: 'CORRETOR', icone: 'pi-building', dica: 'Para publicar e gerenciar anúncios e responder contatos.' }
     ];
+
 
     form = this.fb.group({
         perfil: this.fb.control<Perfil>('CLIENTE'),
         email: ['', [Validators.required, Validators.email]],
         senha: ['', Validators.required]
     });
+
+    private perfil = toSignal(this.form.controls.perfil.valueChanges, { initialValue: 'CLIENTE' as Perfil });
+    dicaPerfil = computed(() => this.perfis.find((p) => p.value === this.perfil())?.dica ?? '');
+    capsLock = signal(false);
+    private tentou = signal(false);
+
+    invalido(campo: 'email' | 'senha'): boolean {
+        const c = this.form.controls[campo];
+        return c.invalid && (c.touched || this.tentou());
+    }
+
+    verificarCaps(e: Event) {
+        if (e instanceof KeyboardEvent && typeof e.getModifierState === 'function') this.capsLock.set(e.getModifierState('CapsLock'));
+    }
 
     enviando = signal(false);
     erro = signal<string | null>(null);
@@ -119,9 +171,11 @@ export class LoginForm {
     }
 
     entrar() {
+        this.tentou.set(true);
         if (this.form.invalid) {
             this.form.markAllAsTouched();
-            this.erro.set('Informe um e-mail válido e a senha.');
+            this.erro.set(null);
+            document.getElementById(this.form.controls.email.invalid ? 'lg-email' : 'lg-senha')?.focus();
             return;
         }
         const v = this.form.getRawValue();

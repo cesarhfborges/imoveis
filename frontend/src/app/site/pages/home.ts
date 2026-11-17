@@ -83,12 +83,53 @@ import { HeroDecor } from '@/app/shared/components/hero-decor';
 
         <section class="site-container secao">
             <div class="cta-anunciar">
-                <div>
-                    <div class="cta-anunciar__chapeu">Seu imóvel anunciado</div>
-                    <h2 class="cta-anunciar__titulo">Em nosso portal</h2>
-                    <p>Corretores e imobiliárias publicam anúncios, recebem contatos e acompanham visualizações em um painel simples.</p>
+                <div class="cta-anunciar__conteudo">
+                    <span class="cta-anunciar__chapeu"><i class="pi pi-megaphone" aria-hidden="true"></i> Para corretores e imobiliárias</span>
+                    <h2 id="cta-anunciar-titulo" class="cta-anunciar__titulo">Seu imóvel na frente de quem está procurando</h2>
+                    <p class="cta-anunciar__texto">Publique anúncios, receba contatos e acompanhe visitas e resultados em um painel simples.</p>
+                    <ul class="cta-anunciar__beneficios">
+                        <li><i class="pi pi-bolt" aria-hidden="true"></i> Publicação em minutos</li>
+                        <li><i class="pi pi-inbox" aria-hidden="true"></i> Contatos direto no painel</li>
+                        <li><i class="pi pi-chart-line" aria-hidden="true"></i> Visitas por dia e por região</li>
+                    </ul>
+                    <div class="cta-anunciar__acoes">
+                        <a routerLink="/anunciar" class="cta-anunciar__botao cta-anunciar__botao--principal">Quero anunciar <i class="pi pi-arrow-right" aria-hidden="true"></i></a>
+                        <a routerLink="/conta/login" class="cta-anunciar__botao cta-anunciar__botao--contorno">Já anuncio, entrar</a>
+                    </div>
                 </div>
-                <a routerLink="/anunciar" class="site-acao site-acao--escuro site-acao--grande">Quero anunciar</a>
+
+                <!-- ilustração do painel do anunciante (decorativa) -->
+                <div class="cta-anunciar__ilustracao" aria-hidden="true">
+                    <div class="cta-anunciar__painel">
+                        <div class="cta-anunciar__painel-topo">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <div class="cta-anunciar__stats">
+                            <div>
+                                <small>Visitas na semana</small>
+                                <strong>1.284</strong>
+                                <em><i class="pi pi-arrow-up"></i> 18%</em>
+                            </div>
+                            <div>
+                                <small>Contatos</small>
+                                <strong>37</strong>
+                                <em><i class="pi pi-arrow-up"></i> 9%</em>
+                            </div>
+                        </div>
+                        <div class="cta-anunciar__barras">
+                            @for (h of barrasCta; track $index) {
+                                <span [style.height.%]="h"></span>
+                            }
+                        </div>
+                    </div>
+                    <div class="cta-anunciar__notificacao">
+                        <span class="cta-anunciar__notificacao-icone"><i class="pi pi-envelope"></i></span>
+                        <span>
+                            <strong>Novo contato</strong>
+                            <small>"Gostaria de agendar uma visita…"</small>
+                        </span>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -108,6 +149,8 @@ import { HeroDecor } from '@/app/shared/components/hero-decor';
     `
 })
 export class HomePage {
+    /** Alturas (%) das barras da ilustração do card "anunciar". */
+    readonly barrasCta = [38, 52, 45, 70, 62, 84, 100];
     private imoveis = inject(ImovelService);
     private router = inject(Router);
     private config = inject(ConfigService);

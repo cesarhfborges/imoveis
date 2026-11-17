@@ -12,8 +12,12 @@ import { ConfigService } from '@/app/core/services/config.service';
     template: `
         <app-auth-card titulo="Acessar conta" subtitulo="Entre como cliente para salvar favoritos ou como corretor para gerenciar anúncios.">
             <app-login-form area="conta" (entrou)="entrou($event)" />
-            <p class="text-center mt-6 mb-0">Ainda não tem conta? <a routerLink="/conta/cadastro" class="text-primary font-semibold hover:underline">Cadastre-se</a></p>
-            <p class="text-center mt-2 mb-0 text-sm text-muted-color">Quer anunciar? <a routerLink="/anunciar" class="text-primary hover:underline">Cadastro de corretor/imobiliária</a></p>
+            <div rodape class="flex flex-col gap-3">
+                <p class="text-center text-muted-color m-0">Ainda não tem conta?</p>
+                <a routerLink="/conta/cadastro" class="p-button p-button-outlined w-full justify-center gap-2"><i class="pi pi-user-plus" aria-hidden="true"></i> Criar conta grátis</a>
+                <!-- espaçamento por padding: o "p { margin }" global do tema (fora das camadas do Tailwind) anula mt-* em <p> -->
+                <div class="pt-6 text-center text-sm text-muted-color">É corretor ou imobiliária? <a routerLink="/anunciar" class="text-primary font-semibold hover:underline">Saiba como anunciar</a></div>
+            </div>
         </app-auth-card>
     `
 })
