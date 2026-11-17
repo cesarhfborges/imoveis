@@ -32,7 +32,8 @@ export const CONFIG_PADRAO: Configuracao = {
     abrirAnuncioNovaJanela: false,
     telefoneAnunciante: 'MOSTRAR',
     simulacaoFinanciamento: true,
-    alertaQuedaPreco: true
+    alertaQuedaPreco: true,
+    impressaoAnuncio: true
 };
 
 /** Configuração global (nome, logos, SEO e tema) definida em /admin/configuracoes. */

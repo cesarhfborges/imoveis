@@ -22,7 +22,7 @@ import { SimulacaoDialog } from '@/app/shared/components/financiamento/simulacao
 import { motivoInelegivel, parcelaEstimada } from '@/app/shared/components/financiamento/simulacao';
 
 const MAX = 4;
-const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
 type Tipo = 'moeda' | 'numero' | 'texto' | 'sim-nao';
 
@@ -95,7 +95,7 @@ const SELOS: { linha: string; texto: string; icone: string }[] = [
                             <ng-template #item let-f>
                                 <div class="flex flex-col">
                                     <span>{{ f.titulo }}</span>
-                                    <small class="text-muted-color">{{ f.bairro }}, {{ f.cidade }} · {{ f.preco | currency: 'BRL' : 'symbol' : '1.0-0' }}</small>
+                                    <small class="text-muted-color">{{ f.bairro }}, {{ f.cidade }} · {{ f.preco | currency: 'BRL' }}</small>
                                 </div>
                             </ng-template>
                         </p-multiselect>
@@ -135,7 +135,7 @@ const SELOS: { linha: string; texto: string; icone: string }[] = [
                             <div class="p-3 flex flex-col gap-2 grow">
                                 <a [routerLink]="['/imovel', i.id, slugTexto(i.titulo)]" class="font-semibold text-primary hover:underline line-clamp-2">{{ i.titulo }}</a>
                                 <span class="text-sm text-muted-color">{{ i.bairro }}, {{ i.cidade }}/{{ i.uf }}</span>
-                                <span class="text-xl font-semibold">{{ i.preco | currency: 'BRL' : 'symbol' : '1.0-0' }}</span>
+                                <span class="text-xl font-semibold">{{ i.preco | currency: 'BRL' }}</span>
                                 <div class="flex flex-wrap gap-1">
                                     @for (s of selosDe(i.id); track s.texto) {
                                         <p-tag severity="info" [value]="s.texto" [icon]="'pi ' + s.icone" />

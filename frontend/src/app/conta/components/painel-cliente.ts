@@ -71,7 +71,7 @@ const ITENS_PERFIL: { rotulo: string; ok: (u: Usuario) => boolean }[] = [
                     <a [routerLink]="['/imovel', q.imovelId, slugTexto(q.titulo)]" class="flex items-center justify-between gap-3 py-2 border-b border-surface last:border-0 hover:bg-emphasis rounded-border px-1">
                         <span class="min-w-0">
                             <span class="block truncate font-medium text-color">{{ q.titulo }}</span>
-                            <span class="text-sm text-muted-color"><s>{{ q.precoAnterior | currency: 'BRL' : 'symbol' : '1.0-0' }}</s> → {{ q.precoAtual | currency: 'BRL' : 'symbol' : '1.0-0' }}</span>
+                            <span class="text-sm text-muted-color"><s>{{ q.precoAnterior | currency: 'BRL' }}</s> → {{ q.precoAtual | currency: 'BRL' }}</span>
                         </span>
                         <p-tag severity="success" [value]="'↓ ' + (q.percentual | number: '1.0-1') + '%'" />
                     </a>
@@ -106,7 +106,7 @@ const ITENS_PERFIL: { rotulo: string; ok: (u: Usuario) => boolean }[] = [
                         <div class="min-w-0">
                             <a [routerLink]="['/imovel', f.imovel.id, slugTexto(f.imovel.titulo)]" class="font-medium text-primary hover:underline block truncate">{{ f.imovel.titulo }}</a>
                             <div class="text-sm text-muted-color">
-                                {{ f.imovel.preco | currency: 'BRL' : 'symbol' : '1.0-0' }}
+                                {{ f.imovel.preco | currency: 'BRL' }}
                                 @if (f.melhor; as m) {
                                     · a partir de <strong class="text-color">{{ m.parcela | currency: 'BRL' }}/mês</strong> com {{ m.nome }}
                                 } @else {

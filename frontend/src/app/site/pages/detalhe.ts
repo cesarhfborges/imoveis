@@ -9,6 +9,7 @@ import { GestaoAnunciosService, ImovelService } from '@/app/core/services/imovel
 import { ContaService } from '@/app/core/services/conta.service';
 import { AuthService } from '@/app/core/services/auth.service';
 import { ConfigService } from '@/app/core/services/config.service';
+import { FichaPdfService } from '@/app/core/services/ficha-pdf.service';
 import { CepPipe, PrecoPipe, TempoAtrasPipe, ValorM2Pipe, slug } from '@/app/core/pipes/formatos';
 import { TelefoneAnunciante } from '@/app/shared/components/telefone-anunciante';
 import { GaleriaFotos } from '@/app/shared/components/galeria-fotos';
@@ -18,6 +19,7 @@ import { ImovelCardMini } from '@/app/shared/components/imovel-card-mini';
 import { EmptyState } from '@/app/shared/components/empty-state';
 import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
 import { SimulacaoDialog } from '@/app/shared/components/financiamento/simulacao-dialog';
+import { compartilharWhatsapp } from '@/app/shared/pages/contato-resposta';
 
 /** Página do imóvel. */
 @Component({
@@ -85,6 +87,11 @@ import { SimulacaoDialog } from '@/app/shared/components/financiamento/simulacao
                                 <span class="detalhe__compartilhar">
                                     <button type="button" class="detalhe__icone-acao" (click)="copiarLink()" aria-label="Copiar link do anúncio" title="Copiar link"><i class="pi pi-link" aria-hidden="true"></i></button>
                                     <a [href]="linkWhatsapp()" target="_blank" rel="noopener" class="detalhe__icone-acao" aria-label="Compartilhar no WhatsApp" title="Compartilhar no WhatsApp"><i class="pi pi-whatsapp" aria-hidden="true"></i></a>
+                                    @if (impressao() && !previa()) {
+                                        <button type="button" class="detalhe__icone-acao" (click)="imprimirFicha()" [disabled]="gerandoFicha()" [attr.aria-busy]="gerandoFicha()" aria-label="Imprimir ficha do imóvel" title="Imprimir ficha do imóvel">
+                                            <i class="pi" [class.pi-print]="!gerandoFicha()" [class.pi-spin]="gerandoFicha()" [class.pi-spinner]="gerandoFicha()" aria-hidden="true"></i>
+                                        </button>
+                                    }
                                 </span>
                             </div>
                         </header>
@@ -316,6 +323,7 @@ export class DetalhePage {
     private router = inject(Router);
     private msg = inject(MessageService);
     private config = inject(ConfigService);
+    private fichaPdf = inject(FichaPdfService);
 
     /** :id da rota (ligado pelo router). */
     id = input.required<string>();
@@ -329,6 +337,9 @@ export class DetalhePage {
         return !!s && s !== 'ATIVO';
     });
     ehAdmin = computed(() => this.auth.perfil() === 'ADMIN');
+    /** Regra do site: botão "Imprimir ficha" (Configurações > Regras). */
+    impressao = computed(() => this.config.config().impressaoAnuncio !== false);
+    gerandoFicha = signal(false);
     statusLabel = (s: ImovelDetalhe['status']) => statusInfo(s).label.replace(/\s*\(.*\)$/, '');
     descricaoAberta = signal(false);
     denunciaAberta = signal(false);
@@ -382,9 +393,12 @@ export class DetalhePage {
         const i = this.imovel();
         return i?.lancamento ? '/imovel-novo' : i?.finalidade === 'ALUGUEL' ? '/aluguel' : i?.finalidade === 'TEMPORADA' ? '/temporada' : '/venda';
     });
+    /** Compartilhar com local, valores, ficha e condições (api.whatsapp.com: o wa.me estraga os emojis). */
     linkWhatsapp = computed(() => {
         const i = this.imovel();
-        return 'https://wa.me/?text=' + encodeURIComponent((i ? tituloAnuncio(i) + ' ' : '') + location.href);
+        const link = location.href.split('#')[0];
+        const texto = i ? compartilharWhatsapp(i, link, this.config.config().nomeApp) : link;
+        return 'https://api.whatsapp.com/send?text=' + encodeURIComponent(texto);
     });
 
     constructor() {
@@ -434,6 +448,20 @@ export class DetalhePage {
         alvo.scrollIntoView({ behavior: reduzido ? 'auto' : 'smooth', block: 'start' });
         if (!alvo.hasAttribute('tabindex')) alvo.setAttribute('tabindex', '-1');
         alvo.focus({ preventScroll: true });
+    }
+
+    /** Gera a ficha em PDF no navegador e abre a impressão (sem página intermediária). */
+    async imprimirFicha() {
+        const i = this.imovel();
+        if (!i || this.gerandoFicha()) return;
+        this.gerandoFicha.set(true);
+        try {
+            await this.fichaPdf.imprimir(i);
+        } catch {
+            this.msg.add({ severity: 'error', summary: 'Não foi possível gerar a ficha', detail: 'Tente de novo em instantes.' });
+        } finally {
+            this.gerandoFicha.set(false);
+        }
     }
 
     copiarLink() {

@@ -41,7 +41,12 @@
                         "allowedCommonJsDependencies": [
                             "leaflet",
                             "pusher-js",
-                            "quill-delta"
+                            "quill-delta",
+                            "html2canvas",
+                            "canvg",
+                            "core-js",
+                            "raf",
+                            "rgbcolor"
                         ]
                     },
                     "configurations": {

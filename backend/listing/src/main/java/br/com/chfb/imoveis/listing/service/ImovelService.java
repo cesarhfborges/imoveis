@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -172,6 +173,16 @@ public class ImovelService {
             atividade.registrarVisto(usuario.id(), id);
         }
         return detalhe(imovel, ExibicaoTelefonePolicy.efetivo(exibicaoTelefone.telefoneAnunciante(), usuario != null));
+    }
+
+    /**
+     * Anúncio ativo para a prévia de link (WhatsApp, redes sociais): sem contar visualização nem visita, porque
+     * quem pede é o robô do aplicativo, e sem telefone.
+     */
+    @Transactional(readOnly = true)
+    public Optional<ImovelDetalhe> detalheParaPrevia(Long id) {
+        return imoveis.findById(id).filter(i -> i.getStatus() == StatusAnuncio.ATIVO)
+                .map(i -> detalhe(i, ExibicaoTelefonePolicy.Modo.OCULTAR));
     }
 
     /** Telefone completo do anunciante para o botão "Ver telefone" (modo MOSTRAR_APENAS_LOGADO). */

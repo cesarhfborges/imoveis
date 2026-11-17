@@ -55,8 +55,8 @@ import { PageHeader } from '@/app/shared/components/page-header';
                         <td>{{ rotuloSistema(f.sistemaAmortizacao) }}</td>
                         <td class="text-sm">
                             @if (f.valorMinimoImovel || f.valorMaximoImovel) {
-                                {{ f.valorMinimoImovel ? (f.valorMinimoImovel | currency: 'BRL' : 'symbol' : '1.0-0') : 'sem mínimo' }} a
-                                {{ f.valorMaximoImovel ? (f.valorMaximoImovel | currency: 'BRL' : 'symbol' : '1.0-0') : 'sem máximo' }}
+                                {{ f.valorMinimoImovel ? (f.valorMinimoImovel | currency: 'BRL') : 'sem mínimo' }} a
+                                {{ f.valorMaximoImovel ? (f.valorMaximoImovel | currency: 'BRL') : 'sem máximo' }}
                             } @else {
                                 Qualquer valor
                             }

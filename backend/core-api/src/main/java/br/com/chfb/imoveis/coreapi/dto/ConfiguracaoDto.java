@@ -36,7 +36,9 @@ public record ConfiguracaoDto(
         /** Simulação de financiamento nos anúncios (nulo mantém o valor atual). */
         Boolean simulacaoFinanciamento,
         /** Aviso de queda de preço nos favoritos (nulo mantém o valor atual). */
-        Boolean alertaQuedaPreco) {
+        Boolean alertaQuedaPreco,
+        /** Ficha do imóvel para imprimir (nulo mantém o valor atual). */
+        Boolean impressaoAnuncio) {
 
     public static ConfiguracaoDto of(Configuracao c) {
         return new ConfiguracaoDto(c.getNomeApp(), c.getSlogan(), c.getLogoUrl(), c.getLogoEscuroUrl(),
@@ -45,7 +47,7 @@ public record ConfiguracaoDto(
                 c.getFacebook(), c.getTextoRodape(), c.getTemaPreset(), c.getTemaPrimaria(), c.getTemaSurface(),
                 c.getTemaModo(), c.isModerarAnuncios(), c.isPermitirCadastroCorretor(),
                 c.isAbrirAnuncioNovaJanela(), c.getTelefoneAnunciante(), c.isSimulacaoFinanciamento(),
-                c.isAlertaQuedaPreco());
+                c.isAlertaQuedaPreco(), c.isImpressaoAnuncio());
     }
 
     public void aplicar(Configuracao c) {
@@ -80,6 +82,9 @@ public record ConfiguracaoDto(
         }
         if (alertaQuedaPreco != null) {
             c.setAlertaQuedaPreco(alertaQuedaPreco);
+        }
+        if (impressaoAnuncio != null) {
+            c.setImpressaoAnuncio(impressaoAnuncio);
         }
     }
 }

@@ -33,8 +33,8 @@ import { ContatoForm } from '@/app/shared/components/contato-form';
                         <div class="flex flex-wrap items-center gap-2 -mb-1 text-sm" role="note">
                             <p-tag severity="success" [value]="'↓ ' + (q.percentual | number: '1.0-1') + '%'" [attr.aria-label]="'Preço caiu ' + (q.percentual | number: '1.0-1') + ' por cento'" />
                             <span class="text-muted-color">
-                                Baixou de <s>{{ q.precoAnterior | currency: 'BRL' : 'symbol' : '1.0-0' }}</s> para
-                                <strong class="text-color">{{ q.precoAtual | currency: 'BRL' : 'symbol' : '1.0-0' }}</strong> desde que você salvou
+                                Baixou de <s>{{ q.precoAnterior | currency: 'BRL' }}</s> para
+                                <strong class="text-color">{{ q.precoAtual | currency: 'BRL' }}</strong> desde que você salvou
                             </span>
                         </div>
                     }

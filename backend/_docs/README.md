@@ -80,6 +80,7 @@ Variáveis de produção: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `APP_FRONTEND_ORIG
 | `GET /app/public/imoveis` (+ `/api/v1/imoveis`) — busca com filtros `finalidade, tipo, uf, cidade, bairro, quartos, vagas, precoMin, precoMax, areaMin, q, ordem, page, size` | público / token |
 | `GET /app/public/imoveis/{id}`, `/destaques`, `/opcoes`, `/contagem-tipos`, `/mapa`, `/{id}/similares` | público |
 | `POST /app/public/imoveis/{id}/contato` | público |
+| `GET /app/public/previa/imovel/{id}` — HTML só com tags Open Graph (foto de capa, título, valor) para a prévia de link; o nginx manda para cá apenas os robôs de prévia (WhatsApp, Facebook, X…) que pedem `/imovel/{id}/…` | público |
 | `GET/POST /app/corretor/imoveis`, `GET/PUT/DELETE /app/corretor/imoveis/{id}`, `PATCH .../status` | corretor |
 | `GET /app/corretor/contatos`, `PATCH /app/corretor/contatos/{id}?lido=` | corretor |
 | `GET /app/corretor/anuncios/estatisticas`, `GET /app/corretor/anuncios/painel?dias=7\|30\|90` (gráficos: visitas/contatos por dia, por região, tipo, finalidade e mais vistos; no admin, também por anunciante) | corretor |

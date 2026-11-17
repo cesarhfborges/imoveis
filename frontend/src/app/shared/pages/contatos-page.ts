@@ -284,7 +284,7 @@ export class ContatosPage {
         };
     }
 
-    /** Número no formato do wa.me (assume Brasil quando vem sem DDI). */
+    /** Número no formato do WhatsApp (assume Brasil quando vem sem DDI). */
     numeroWhatsapp(c: Contato): string | null {
         if (!c.telefone) return null;
         const n = this.digitos(c.telefone);
@@ -296,7 +296,8 @@ export class ContatosPage {
         const n = this.numeroWhatsapp(c);
         if (!n) return;
         const texto = respostaWhatsapp(this.dadosResposta(c));
-        window.open(`https://wa.me/${n}?text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
+        // api.whatsapp.com direto: o redirecionamento do wa.me estraga os emojis do texto (chegam como "�")
+        window.open(`https://api.whatsapp.com/send?phone=${n}&text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
     }
 
     responderEmail(c: Contato) {

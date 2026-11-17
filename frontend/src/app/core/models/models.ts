@@ -602,6 +602,8 @@ export interface Configuracao {
     simulacaoFinanciamento: boolean;
     /** Regra: aviso de favoritos que baixaram de preço. */
     alertaQuedaPreco: boolean;
+    /** Regra: botão "Imprimir ficha" na página do imóvel (PDF gerado no navegador). */
+    impressaoAnuncio: boolean;
     permitirCadastroCorretor: boolean;
 }
 

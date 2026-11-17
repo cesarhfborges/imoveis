@@ -77,6 +77,8 @@ public class Configuracao extends BaseEntity {
     private boolean simulacaoFinanciamento = true;
     @Column(name = "alerta_queda_preco")
     private boolean alertaQuedaPreco = true;
+    @Column(name = "impressao_anuncio")
+    private boolean impressaoAnuncio = true;
 
     public String getNomeApp() { return nomeApp; }
     public void setNomeApp(String nomeApp) { this.nomeApp = nomeApp; }
@@ -126,6 +128,8 @@ public class Configuracao extends BaseEntity {
     public void setSimulacaoFinanciamento(boolean simulacaoFinanciamento) { this.simulacaoFinanciamento = simulacaoFinanciamento; }
     public boolean isAlertaQuedaPreco() { return alertaQuedaPreco; }
     public void setAlertaQuedaPreco(boolean alertaQuedaPreco) { this.alertaQuedaPreco = alertaQuedaPreco; }
+    public boolean isImpressaoAnuncio() { return impressaoAnuncio; }
+    public void setImpressaoAnuncio(boolean impressaoAnuncio) { this.impressaoAnuncio = impressaoAnuncio; }
     public boolean isAbrirAnuncioNovaJanela() { return abrirAnuncioNovaJanela; }
     public void setAbrirAnuncioNovaJanela(boolean abrirAnuncioNovaJanela) { this.abrirAnuncioNovaJanela = abrirAnuncioNovaJanela; }
     public boolean isPermitirCadastroCorretor() { return permitirCadastroCorretor; }

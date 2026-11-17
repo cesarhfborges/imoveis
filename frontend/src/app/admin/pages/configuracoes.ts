@@ -503,7 +503,7 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                                                         <span class="text-xs text-muted-color">Asa Norte · Brasília</span>
                                                     </div>
                                                     <span class="font-medium">Apartamento 3 quartos, nascente</span>
-                                                    <span class="text-lg font-bold text-primary">R$ 1.190.000</span>
+                                                    <span class="text-lg font-bold text-primary">R$ 1.190.000,00</span>
                                                     <div class="flex flex-wrap gap-2">
                                                         <p-button label="Ver imóvel" size="small" />
                                                         <p-button label="Favoritar" icon="pi pi-heart" severity="secondary" size="small" [outlined]="true" />
@@ -662,7 +662,8 @@ export class ConfiguracoesPage {
         abrirAnuncioNovaJanela: [false],
         telefoneAnunciante: this.fb.control<ExibicaoTelefone>('MOSTRAR'),
         simulacaoFinanciamento: [true],
-        alertaQuedaPreco: [true]
+        alertaQuedaPreco: [true],
+        impressaoAnuncio: [true]
     });
 
     readonly exibicoesTelefone = EXIBICOES_TELEFONE;
@@ -715,6 +716,12 @@ export class ConfiguracoesPage {
                     label: 'Aviso de queda de preço nos favoritos',
                     ligado: 'O cliente vê quais favoritos baixaram de preço desde que foram salvos (painel e página de favoritos).',
                     desligado: 'O aviso some do site. As mudanças de preço continuam registradas e voltam a aparecer ao religar.'
+                },
+                {
+                    campo: 'impressaoAnuncio',
+                    label: 'Ficha do imóvel para imprimir',
+                    ligado: 'A página do imóvel mostra o botão de imprimir: uma folha A4 com fotos, valores e condições da finalidade, QR code do anúncio e espaço para anotações da visita.',
+                    desligado: 'O botão de imprimir some da página do imóvel e a ficha deixa de abrir.'
                 }
             ]
         }
@@ -800,7 +807,8 @@ export class ConfiguracoesPage {
             abrirAnuncioNovaJanela: c.abrirAnuncioNovaJanela,
             telefoneAnunciante: c.telefoneAnunciante ?? 'MOSTRAR',
             simulacaoFinanciamento: c.simulacaoFinanciamento ?? true,
-            alertaQuedaPreco: c.alertaQuedaPreco ?? true
+            alertaQuedaPreco: c.alertaQuedaPreco ?? true,
+            impressaoAnuncio: c.impressaoAnuncio ?? true
         });
         this.tema.set({ preset: c.temaPreset as PresetName, primary: c.temaPrimaria, surface: c.temaSurface, mode: c.temaModo });
         this.temaSalvo.set(this.tema());

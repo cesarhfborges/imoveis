@@ -53,7 +53,7 @@ export type AbaBusca = 'VENDA' | 'ALUGUEL' | 'NOVO' | 'TEMPORADA';
                 </div>
                 <div class="filtros__campo filtros__preco">
                     <label [for]="id('preco')">Valor até</label>
-                    <p-inputnumber [inputId]="id('preco')" formControlName="precoMax" mode="currency" currency="BRL" locale="pt-BR" [maxFractionDigits]="0" placeholder="Sem limite" styleClass="w-full" inputStyleClass="w-full" />
+                    <p-inputnumber [inputId]="id('preco')" formControlName="precoMax" mode="currency" currency="BRL" locale="pt-BR" placeholder="Sem limite" styleClass="w-full" inputStyleClass="w-full" />
                 </div>
                 <div class="filtros__campo filtros__texto">
                     <label [for]="id('texto')">Endereço, bairro ou código</label>
