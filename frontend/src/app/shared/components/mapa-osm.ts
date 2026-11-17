@@ -112,8 +112,11 @@ export class MapaOsm implements AfterViewInit, OnDestroy {
         this.L = L as typeof Leaflet;
         const centro = this.centro() ?? this.mediaPontos() ?? [-15.7939, -47.8828];
         this.mapa = this.L.map(this.alvo().nativeElement, { scrollWheelZoom: true, wheelPxPerZoomLevel: 90 }).setView(centro, this.zoom());
-        this.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        this.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
+            // A política de uso do OSM exige o Referer; o site pode receber "Referrer-Policy: same-origin"
+            // (ex.: cabeçalhos de segurança da Cloudflare), que o removeria e faria os tiles voltarem 403.
+            referrerPolicy: 'strict-origin-when-cross-origin',
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
         }).addTo(this.mapa);
         this.camada = this.L.layerGroup().addTo(this.mapa);
