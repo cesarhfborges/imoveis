@@ -26,6 +26,7 @@ import br.com.chfb.imoveis.listing.dto.ImovelForm;
 import br.com.chfb.imoveis.listing.dto.ImovelResumo;
 import br.com.chfb.imoveis.listing.dto.OpcoesBusca;
 import br.com.chfb.imoveis.listing.dto.StatusForm;
+import br.com.chfb.imoveis.listing.entity.Finalidade;
 import br.com.chfb.imoveis.listing.entity.FotoImovel;
 import br.com.chfb.imoveis.listing.entity.Imovel;
 import br.com.chfb.imoveis.listing.entity.OrigemFoto;
@@ -359,14 +360,29 @@ public class ImovelService {
         i.setLatitude(f.latitude());
         i.setLongitude(f.longitude());
         i.setLancamento(f.lancamento());
-        i.setAceitaFinanciamento(f.aceitaFinanciamento());
-        i.setAceitaFgts(f.aceitaFgts());
-        i.setAceitaPermuta(f.aceitaPermuta());
-        i.setEscrituraRegistrada(f.escrituraRegistrada());
-        i.setQuitado(f.quitado());
-        i.setFinanceirasTodas(f.aceitaFinanciamento() && f.financeirasTodas());
+        // documentação e formas de pagamento de venda só valem para venda
+        boolean venda = f.finalidade() == Finalidade.VENDA;
+        boolean aluguel = f.finalidade() == Finalidade.ALUGUEL;
+        boolean temporada = f.finalidade() == Finalidade.TEMPORADA;
+        i.setAceitaFinanciamento(venda && f.aceitaFinanciamento());
+        i.setAceitaFgts(venda && f.aceitaFgts());
+        i.setAceitaPermuta(venda && f.aceitaPermuta());
+        i.setEscrituraRegistrada(venda && f.escrituraRegistrada());
+        i.setQuitado(venda && f.quitado());
+        i.getCondicoes().clear();
+        if (f.condicoes() != null) {
+            f.condicoes().stream().filter(Objects::nonNull).filter(c -> c.getFinalidade() == f.finalidade())
+                    .forEach(i.getCondicoes()::add);
+        }
+        i.setContratoMinimoMeses(aluguel ? f.contratoMinimoMeses() : null);
+        i.setNoitesMinimas(temporada ? f.noitesMinimas() : null);
+        i.setHospedesMaximo(temporada ? f.hospedesMaximo() : null);
+        i.setTaxaLimpeza(temporada ? f.taxaLimpeza() : null);
+        i.setHorarioCheckin(temporada ? vazioComoNulo(f.horarioCheckin()) : null);
+        i.setHorarioCheckout(temporada ? vazioComoNulo(f.horarioCheckout()) : null);
+        i.setFinanceirasTodas(i.isAceitaFinanciamento() && f.financeirasTodas());
         i.getFinanceiras().clear();
-        if (f.aceitaFinanciamento() && !f.financeirasTodas()) {
+        if (i.isAceitaFinanciamento() && !f.financeirasTodas()) {
             i.getFinanceiras().addAll(financeiras.porIds(f.financeiras()));
         }
         i.getFotos().clear();
@@ -391,6 +407,10 @@ public class ImovelService {
                 !i.getFotos().isEmpty() && i.getFotos().get(0).getOrigem() == OrigemFoto.IA, i.getFotos().size(), i.isLancamento(),
                 i.isDestaque(), i.isAceitaFinanciamento(), i.isAceitaFgts(), i.getVisualizacoes(), i.getAnuncianteId(),
                 anunciante == null ? null : anunciante.nome(), i.getCriadoEm());
+    }
+
+    private static String vazioComoNulo(String s) {
+        return s == null || s.isBlank() ? null : s.trim();
     }
 
     private static String resumir(String texto) {
@@ -489,6 +509,8 @@ public class ImovelService {
                 i.getUf(), i.getCidade(), i.getBairro(), i.getEndereco(), i.getNumero(), i.getCep(), i.getLatitude(), i.getLongitude(),
                 i.isLancamento(), i.isDestaque(),
                 i.isAceitaFinanciamento(), i.isAceitaFgts(), i.isAceitaPermuta(), i.isEscrituraRegistrada(), i.isQuitado(),
+                Set.copyOf(i.getCondicoes()), i.getContratoMinimoMeses(), i.getNoitesMinimas(), i.getHospedesMaximo(),
+                i.getTaxaLimpeza(), i.getHorarioCheckin(), i.getHorarioCheckout(),
                 i.isFinanceirasTodas(), i.getFinanceiras().stream().map(f -> f.getId()).sorted().toList(),
                 financeiras.doAnuncio(i),
                 i.getFotos().stream().map(FotoDto::of).toList(), Set.copyOf(i.getCaracteristicas()),

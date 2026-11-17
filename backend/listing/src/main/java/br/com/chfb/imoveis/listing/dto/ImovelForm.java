@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
+import br.com.chfb.imoveis.listing.entity.CondicaoAnuncio;
 import br.com.chfb.imoveis.listing.entity.Finalidade;
 import br.com.chfb.imoveis.listing.entity.TipoImovel;
 import jakarta.validation.Valid;
@@ -45,6 +46,16 @@ public record ImovelForm(
         boolean aceitaPermuta,
         boolean escrituraRegistrada,
         boolean quitado,
+        /** Condições da finalidade; as de outra finalidade são descartadas ao salvar. */
+        @Size(max = 40) Set<CondicaoAnuncio> condicoes,
+        /** Aluguel: prazo mínimo do contrato. */
+        @Min(1) @Max(120) Integer contratoMinimoMeses,
+        /** Temporada: estadia mínima, capacidade, taxa de limpeza e horários (HH:mm). */
+        @Min(1) @Max(365) Integer noitesMinimas,
+        @Min(1) @Max(100) Integer hospedesMaximo,
+        @DecimalMin("0.0") BigDecimal taxaLimpeza,
+        @Pattern(regexp = "^$|^([01]\\d|2[0-3]):[0-5]\\d$", message = "Horário de check-in inválido (use HH:mm)") String horarioCheckin,
+        @Pattern(regexp = "^$|^([01]\\d|2[0-3]):[0-5]\\d$", message = "Horário de check-out inválido (use HH:mm)") String horarioCheckout,
         /** Aceita todas as financeiras ativas; quando falso, valem as de {@code financeiras}. */
         boolean financeirasTodas,
         @Size(max = 50) Set<Long> financeiras,

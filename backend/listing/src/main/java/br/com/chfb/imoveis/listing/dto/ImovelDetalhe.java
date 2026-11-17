@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
+import br.com.chfb.imoveis.listing.entity.CondicaoAnuncio;
 import br.com.chfb.imoveis.listing.entity.Finalidade;
 import br.com.chfb.imoveis.listing.entity.StatusAnuncio;
 import br.com.chfb.imoveis.listing.entity.TipoImovel;
@@ -43,6 +44,14 @@ public record ImovelDetalhe(
         boolean aceitaPermuta,
         boolean escrituraRegistrada,
         boolean quitado,
+        /** Condições específicas da finalidade (aluguel/temporada e extras de venda). */
+        Set<CondicaoAnuncio> condicoes,
+        Integer contratoMinimoMeses,
+        Integer noitesMinimas,
+        Integer hospedesMaximo,
+        BigDecimal taxaLimpeza,
+        String horarioCheckin,
+        String horarioCheckout,
         boolean financeirasTodas,
         /** Financeiras selecionadas no formulário (edição). */
         List<Long> financeirasIds,

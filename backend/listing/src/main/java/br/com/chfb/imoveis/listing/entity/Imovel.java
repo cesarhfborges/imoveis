@@ -126,6 +126,26 @@ public class Imovel extends BaseEntity {
     @Column(name = "nome", length = 60)
     private Set<String> caracteristicas = new LinkedHashSet<>();
 
+    /** Condições específicas da finalidade (garantias do aluguel, regras da temporada…). */
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "imovel_condicoes", joinColumns = @JoinColumn(name = "imovel_id"))
+    @Column(name = "codigo", length = 40)
+    @Enumerated(EnumType.STRING)
+    private Set<CondicaoAnuncio> condicoes = new LinkedHashSet<>();
+
+    @Column(name = "contrato_minimo_meses")
+    private Integer contratoMinimoMeses;
+    @Column(name = "noites_minimas")
+    private Integer noitesMinimas;
+    @Column(name = "hospedes_maximo")
+    private Integer hospedesMaximo;
+    @Column(name = "taxa_limpeza", precision = 15, scale = 2)
+    private BigDecimal taxaLimpeza;
+    @Column(name = "horario_checkin", length = 5)
+    private String horarioCheckin;
+    @Column(name = "horario_checkout", length = 5)
+    private String horarioCheckout;
+
     /** Aceita todas as financeiras ativas (inclusive as cadastradas depois); senão, só as de {@link #financeiras}. */
     @Column(name = "financeiras_todas")
     private boolean financeirasTodas;
@@ -206,6 +226,19 @@ public class Imovel extends BaseEntity {
     public List<FotoImovel> getFotos() { return fotos; }
     public void setFotos(List<FotoImovel> fotos) { this.fotos = fotos; }
     public Set<String> getCaracteristicas() { return caracteristicas; }
+    public Set<CondicaoAnuncio> getCondicoes() { return condicoes; }
+    public Integer getContratoMinimoMeses() { return contratoMinimoMeses; }
+    public void setContratoMinimoMeses(Integer v) { this.contratoMinimoMeses = v; }
+    public Integer getNoitesMinimas() { return noitesMinimas; }
+    public void setNoitesMinimas(Integer v) { this.noitesMinimas = v; }
+    public Integer getHospedesMaximo() { return hospedesMaximo; }
+    public void setHospedesMaximo(Integer v) { this.hospedesMaximo = v; }
+    public BigDecimal getTaxaLimpeza() { return taxaLimpeza; }
+    public void setTaxaLimpeza(BigDecimal v) { this.taxaLimpeza = v; }
+    public String getHorarioCheckin() { return horarioCheckin; }
+    public void setHorarioCheckin(String v) { this.horarioCheckin = v; }
+    public String getHorarioCheckout() { return horarioCheckout; }
+    public void setHorarioCheckout(String v) { this.horarioCheckout = v; }
     public boolean isFinanceirasTodas() { return financeirasTodas; }
     public void setFinanceirasTodas(boolean financeirasTodas) { this.financeirasTodas = financeirasTodas; }
     public Set<Financeira> getFinanceiras() { return financeiras; }
