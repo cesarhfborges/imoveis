@@ -56,6 +56,15 @@ public class AnexoService {
         this.anexos = anexos;
     }
 
+    /** Caminho do arquivo de um anexo (para apagar o arquivo na exclusão de conta). */
+    public Path caminho(String nome) {
+        Path p = dir.resolve(nome).normalize();
+        if (!p.startsWith(dir)) {
+            throw new BusinessException("Nome de arquivo inválido");
+        }
+        return p;
+    }
+
     @Transactional
     public String salvar(MultipartFile arquivo, AuthUser u) {
         if (u.perfil() != Perfil.CORRETOR && u.perfil() != Perfil.ADMIN) {

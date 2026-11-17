@@ -81,6 +81,20 @@ public class UploadService {
         return WebConfig.UPLOADS_PATH + nome;
     }
 
+    /**
+     * Arquivo local de um endereço de upload ({@code /app/public/uploads/<nome>}); vazio para endereço externo
+     * ou fora da pasta de uploads.
+     */
+    public java.util.Optional<Path> arquivoLocal(String url) {
+        if (url == null || !url.startsWith(WebConfig.UPLOADS_PATH)) {
+            return java.util.Optional.empty();
+        }
+        String nome = url.substring(WebConfig.UPLOADS_PATH.length());
+        Path dir = Path.of(props.uploads().dir()).toAbsolutePath().normalize();
+        Path p = dir.resolve(nome).normalize();
+        return nome.isBlank() || nome.contains("/") || !p.startsWith(dir) ? java.util.Optional.empty() : java.util.Optional.of(p);
+    }
+
     private static boolean assinaturaValida(byte[] b, String ext) {
         if (b.length < 4) {
             return false;

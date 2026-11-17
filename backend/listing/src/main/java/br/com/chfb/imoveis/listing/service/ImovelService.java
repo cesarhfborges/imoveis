@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -174,6 +175,16 @@ public class ImovelService {
         return detalhe(imovel, ExibicaoTelefonePolicy.efetivo(exibicaoTelefone.telefoneAnunciante(), usuario != null));
     }
 
+    /**
+     * Anúncio ativo para a prévia de link (WhatsApp, redes sociais): sem contar visualização nem visita, porque
+     * quem pede é o robô do aplicativo, e sem telefone.
+     */
+    @Transactional(readOnly = true)
+    public Optional<ImovelDetalhe> detalheParaPrevia(Long id) {
+        return imoveis.findById(id).filter(i -> i.getStatus() == StatusAnuncio.ATIVO)
+                .map(i -> detalhe(i, ExibicaoTelefonePolicy.Modo.OCULTAR));
+    }
+
     /** Telefone completo do anunciante para o botão "Ver telefone" (modo MOSTRAR_APENAS_LOGADO). */
     @Transactional(readOnly = true)
     public String telefoneAnunciante(Long id, AuthUser usuario) {
@@ -267,6 +278,32 @@ public class ImovelService {
         contatos.deleteByImovelId(imovel.getId());
         favoritos.deleteByImovelId(imovel.getId());
         imoveis.delete(imovel);
+    }
+
+    /**
+     * Exclusão definitiva de conta (LGPD): apaga os anúncios da pessoa (com contatos recebidos, favoritos e o
+     * resto que depende do anúncio) e os contatos que ela enviou. As denúncias desses anúncios precisam ter sido
+     * apagadas antes pela moderação.
+     *
+     * @return endereços das fotos dos anúncios, para apagar os arquivos depois do commit
+     */
+    @Transactional(readOnly = true)
+    public List<Long> idsDoAnunciante(Long anuncianteId) {
+        return imoveis.findByAnuncianteId(anuncianteId).stream().map(Imovel::getId).toList();
+    }
+
+    @Transactional
+    public List<String> apagarDadosDoUsuario(Long usuarioId) {
+        List<String> fotos = new ArrayList<>();
+        for (Imovel imovel : imoveis.findByAnuncianteId(usuarioId)) {
+            imovel.getFotos().forEach(f -> fotos.add(f.getUrl()));
+            contatos.deleteByImovelId(imovel.getId());
+            favoritos.deleteByImovelId(imovel.getId());
+            imoveis.delete(imovel);
+        }
+        contatos.deleteByUsuarioId(usuarioId);
+        imoveis.flush();
+        return fotos;
     }
 
     /**

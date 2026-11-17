@@ -25,12 +25,14 @@ public final class ContaDtos {
     }
 
     /**
-     * Dados que o próprio usuário edita. Documento (CPF/CNPJ) e tipo de anunciante não mudam por aqui.
+     * Dados que o próprio usuário edita.
      *
      * @param razaoSocial    imobiliária: razão social (o {@code nome} é o nome de exibição/fantasia)
      * @param sobre          apresentação exibida aos clientes (texto simples)
      * @param regioesAtuacao bairros/regiões em que atua, separados por vírgula
      * @param atuandoDesde   ano em que começou a atuar
+     * @param tipoAnunciante anunciantes: CORRETOR (CPF) ou IMOBILIARIA (CNPJ); nulo mantém o atual
+     * @param documento      anunciantes: CPF ou CNPJ conforme o tipo; vazio mantém o atual
      */
     public record PerfilForm(@NotBlank @Size(max = 120) String nome, @Size(max = 30) String telefone,
             @Size(max = 30) String creci, @Size(max = 500) String fotoUrl,
@@ -49,7 +51,9 @@ public final class ContaDtos {
             /** anunciantes: liga o perfil público (exige o cadastro completo, ver UsuarioService.pendenciasPerfilPublico) */
             Boolean perfilPublico,
             /** anunciantes: capa do perfil público (nula = degradê padrão) */
-            @Size(max = 500) String capaUrl) {
+            @Size(max = 500) String capaUrl,
+            @Pattern(regexp = "CORRETOR|IMOBILIARIA") String tipoAnunciante,
+            @Pattern(regexp = "^$|^\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}$|^\\d{2}\\.?\\d{3}\\.?\\d{3}/?\\d{4}-?\\d{2}$", message = "CPF ou CNPJ inválido") String documento) {
     }
 
     public record SenhaForm(@NotBlank String senhaAtual, @NotBlank @Size(min = 8, max = 72) String novaSenha) {
@@ -80,7 +84,27 @@ public final class ContaDtos {
             @Size(max = 30) String creci,
             @NotEmpty Set<Perfil> papeis,
             boolean ativo,
-            @Size(min = 8, max = 72) String senha) {
+            @Size(min = 8, max = 72) String senha,
+            /** corretores: CORRETOR (CPF) ou IMOBILIARIA (CNPJ) */
+            @Pattern(regexp = "CORRETOR|IMOBILIARIA") String tipoAnunciante,
+            /** corretores: CPF ou CNPJ conforme o tipo; vazio apaga */
+            @Pattern(regexp = "^$|^\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}$|^\\d{2}\\.?\\d{3}\\.?\\d{3}/?\\d{4}-?\\d{2}$", message = "CPF ou CNPJ inválido") String documento) {
+    }
+
+    /**
+     * "Remover conta" em Meus dados.
+     *
+     * @param disponivel     o usuário pode pedir (regra ligada e não é administrador)
+     * @param diasEspera     dias de espera configurados
+     * @param removerSePedirAgora quando a conta seria apagada se o pedido fosse feito agora
+     * @param solicitadaEm   pedido em andamento (nulo = nenhum)
+     * @param removerEm      quando a conta será apagada (nulo = nenhum pedido)
+     */
+    public record ExclusaoContaStatus(boolean disponivel, int diasEspera, Instant removerSePedirAgora,
+            Instant solicitadaEm, Instant removerEm) {
+    }
+
+    public record ExclusaoContaForm(@NotBlank String senha) {
     }
 
     public record ResetSenhaForm(@NotBlank @Size(min = 8, max = 72) String novaSenha) {

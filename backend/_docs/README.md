@@ -80,13 +80,14 @@ Variáveis de produção: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `APP_FRONTEND_ORIG
 | `GET /app/public/imoveis` (+ `/api/v1/imoveis`) — busca com filtros `finalidade, tipo, uf, cidade, bairro, quartos, vagas, precoMin, precoMax, areaMin, q, ordem, page, size` | público / token |
 | `GET /app/public/imoveis/{id}`, `/destaques`, `/opcoes`, `/contagem-tipos`, `/mapa`, `/{id}/similares` | público |
 | `POST /app/public/imoveis/{id}/contato` | público |
+| `GET /app/public/previa/imovel/{id}` — HTML só com tags Open Graph (foto de capa, título, valor) para a prévia de link; o nginx manda para cá apenas os robôs de prévia (WhatsApp, Facebook, X…) que pedem `/imovel/{id}/…` | público |
 | `GET/POST /app/corretor/imoveis`, `GET/PUT/DELETE /app/corretor/imoveis/{id}`, `PATCH .../status` | corretor |
 | `GET /app/corretor/contatos`, `PATCH /app/corretor/contatos/{id}?lido=` | corretor |
 | `GET /app/corretor/anuncios/estatisticas`, `GET /app/corretor/anuncios/painel?dias=7\|30\|90` (gráficos: visitas/contatos por dia, por região, tipo, finalidade e mais vistos; no admin, também por anunciante) | corretor |
 | as mesmas rotas em `/app/admin/...` | admin (todos os anúncios) |
 | `GET /app/public/financeiras` (ativas), `GET/POST /app/admin/financeiras`, `PUT/DELETE /app/admin/financeiras/{id}` — bancos e regras da simulação; no `ImovelForm`, `financeirasTodas` + `financeiras` (ids) valem quando `aceitaFinanciamento`; o `ImovelDetalhe` traz `financeiras` (ativas, só venda) para o botão de simular | público / admin |
 | `GET /app/conta/painel` (painel do cliente: contatos enviados, atividade por mês, recomendados, vistos, novidades, quedas de preço, favoritos financiáveis), `GET /app/conta/favoritos/quedas`, `GET /app/conta/favoritos/comparar?ids=1,2,3` (detalhes de até 4 favoritos do próprio usuário, sem contar visita) | logado |
-| `GET /app/admin/dashboard?dias=` (inclui novos cadastros por dia), `GET/POST/PUT/DELETE /app/admin/usuarios` | admin |
+| `GET /app/admin/dashboard?dias=` (inclui novos cadastros por dia), `GET/POST/PUT/DELETE /app/admin/usuarios` (DELETE só desativa), `DELETE /app/admin/usuarios/{id}/definitivo` (exclusão LGPD: apaga a conta e os dados) | admin |
 | `GET /app/public/configuracao`, `PUT /app/admin/configuracao` | público / admin |
 | `GET /app/public/documentos`, `GET /app/public/documentos/{slug}`, `GET /app/public/documentos/cadastro?perfil=` — termos de uso, privacidade (LGPD), código de conduta… | público |
 | `GET /app/conta/documentos/pendentes`, `POST /app/conta/documentos/aceites` — aceite obrigatório de quem já tem conta (registra versão, data e IP) | logado |

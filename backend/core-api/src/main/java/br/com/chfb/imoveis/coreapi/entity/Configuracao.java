@@ -77,6 +77,16 @@ public class Configuracao extends BaseEntity {
     private boolean simulacaoFinanciamento = true;
     @Column(name = "alerta_queda_preco")
     private boolean alertaQuedaPreco = true;
+    @Column(name = "impressao_anuncio")
+    private boolean impressaoAnuncio = true;
+
+    /** Mostra "Remover conta" em Meus dados (o próprio usuário pede a remoção definitiva). */
+    @Column(name = "auto_exclusao_conta")
+    private boolean autoExclusaoConta = true;
+
+    /** Dias de espera entre o pedido de remoção e a remoção definitiva. */
+    @Column(name = "dias_espera_exclusao")
+    private int diasEsperaExclusao = 7;
 
     public String getNomeApp() { return nomeApp; }
     public void setNomeApp(String nomeApp) { this.nomeApp = nomeApp; }
@@ -126,6 +136,12 @@ public class Configuracao extends BaseEntity {
     public void setSimulacaoFinanciamento(boolean simulacaoFinanciamento) { this.simulacaoFinanciamento = simulacaoFinanciamento; }
     public boolean isAlertaQuedaPreco() { return alertaQuedaPreco; }
     public void setAlertaQuedaPreco(boolean alertaQuedaPreco) { this.alertaQuedaPreco = alertaQuedaPreco; }
+    public boolean isImpressaoAnuncio() { return impressaoAnuncio; }
+    public void setImpressaoAnuncio(boolean impressaoAnuncio) { this.impressaoAnuncio = impressaoAnuncio; }
+    public boolean isAutoExclusaoConta() { return autoExclusaoConta; }
+    public void setAutoExclusaoConta(boolean autoExclusaoConta) { this.autoExclusaoConta = autoExclusaoConta; }
+    public int getDiasEsperaExclusao() { return diasEsperaExclusao; }
+    public void setDiasEsperaExclusao(int diasEsperaExclusao) { this.diasEsperaExclusao = diasEsperaExclusao; }
     public boolean isAbrirAnuncioNovaJanela() { return abrirAnuncioNovaJanela; }
     public void setAbrirAnuncioNovaJanela(boolean abrirAnuncioNovaJanela) { this.abrirAnuncioNovaJanela = abrirAnuncioNovaJanela; }
     public boolean isPermitirCadastroCorretor() { return permitirCadastroCorretor; }

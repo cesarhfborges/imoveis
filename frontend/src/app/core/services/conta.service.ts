@@ -104,6 +104,11 @@ export class AdminService {
     desativarUsuario(id: number): Observable<void> {
         return this.api.delete(`/app/admin/usuarios/${id}`);
     }
+
+    /** Exclusão definitiva (LGPD): apaga a conta e os dados dela; não pode ser desfeita. */
+    excluirUsuarioDefinitivo(id: number): Observable<void> {
+        return this.api.delete(`/app/admin/usuarios/${id}/definitivo`);
+    }
 }
 
 /** Envio de imagens: devolve a URL pública. */

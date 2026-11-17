@@ -55,8 +55,8 @@ import { PageHeader } from '@/app/shared/components/page-header';
                         <td>{{ rotuloSistema(f.sistemaAmortizacao) }}</td>
                         <td class="text-sm">
                             @if (f.valorMinimoImovel || f.valorMaximoImovel) {
-                                {{ f.valorMinimoImovel ? (f.valorMinimoImovel | currency: 'BRL' : 'symbol' : '1.0-0') : 'sem mínimo' }} a
-                                {{ f.valorMaximoImovel ? (f.valorMaximoImovel | currency: 'BRL' : 'symbol' : '1.0-0') : 'sem máximo' }}
+                                {{ f.valorMinimoImovel ? (f.valorMinimoImovel | currency: 'BRL') : 'sem mínimo' }} a
+                                {{ f.valorMaximoImovel ? (f.valorMaximoImovel | currency: 'BRL') : 'sem máximo' }}
                             } @else {
                                 Qualquer valor
                             }
@@ -152,7 +152,7 @@ import { PageHeader } from '@/app/shared/components/page-header';
             </form>
             <ng-template #footer>
                 <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="dialogo.set(false)" />
-                <p-button type="submit" form="form-financeira" label="Salvar" icon="pi pi-check" [loading]="salvando()" />
+                <p-button (onClick)="salvar()" label="Salvar" icon="pi pi-check" [loading]="salvando()" />
             </ng-template>
         </p-dialog>
     `

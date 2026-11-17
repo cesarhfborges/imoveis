@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputMaskModule } from 'primeng/inputmask';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -18,12 +18,14 @@ import { ContaService } from '@/app/core/services/conta.service';
 import { AuthService } from '@/app/core/services/auth.service';
 import { ConfigService } from '@/app/core/services/config.service';
 import { mensagemErro } from '@/app/core/services/api.service';
-import { PerfilForm, UFS, Usuario, pendenciasPerfilPublico } from '@/app/core/models/models';
+import { PerfilForm, TipoAnunciante, UFS, Usuario, pendenciasPerfilPublico } from '@/app/core/models/models';
 import { PageHeader } from '@/app/shared/components/page-header';
 import { ImageUpload } from '@/app/shared/components/image-upload';
 import { RECORTES } from '@/app/shared/components/image-editor';
 import { TelefoneInput } from '@/app/shared/components/telefone-input';
-import { DocumentoPipe, digitos, slug } from '@/app/core/pipes/formatos';
+import { digitos, slug } from '@/app/core/pipes/formatos';
+import { documentoValido, erroDocumento } from '@/app/core/pipes/documentos';
+import { RadioButtonModule } from 'primeng/radiobutton';
 import { CheckboxModule } from 'primeng/checkbox';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
@@ -39,7 +41,7 @@ const MAX_SOBRE = 2000;
 /** Meus dados (qualquer perfil): identificação, contato, atuação profissional (anunciantes), endereço e senha. */
 @Component({
     selector: 'app-perfil-page',
-    imports: [DatePipe, ReactiveFormsModule, InputTextModule, InputMaskModule, InputNumberModule, InputGroupModule, InputGroupAddonModule, SelectModule, TextareaModule, PasswordModule, ButtonModule, TagModule, PageHeader, ImageUpload, TelefoneInput, DocumentoPipe, CheckboxModule, RouterLink, MapaOsm],
+    imports: [DatePipe, ReactiveFormsModule, InputTextModule, InputMaskModule, InputNumberModule, InputGroupModule, InputGroupAddonModule, SelectModule, TextareaModule, PasswordModule, ButtonModule, TagModule, PageHeader, ImageUpload, TelefoneInput, CheckboxModule, RadioButtonModule, RouterLink, MapaOsm],
     template: `
         <app-page-header titulo="Meus dados" subtitulo="Como você aparece no portal e como os clientes falam com você" />
 
@@ -127,10 +129,32 @@ const MAX_SOBRE = 2000;
                                 <input pInputText id="pf-email" [value]="usuario()?.email ?? ''" readonly aria-describedby="pf-email-dica" />
                                 <small id="pf-email-dica" class="text-muted-color">Usado para entrar. Para trocar, fale com o suporte.</small>
                             </div>
-                            @if (usuario()?.documento) {
+                            @if (anunciante()) {
+                                <fieldset class="border-0 p-0 m-0 sm:col-span-2">
+                                    <legend class="mb-2">Você anuncia como</legend>
+                                    <div class="flex flex-wrap gap-5">
+                                        <label for="pf-tipo-pf" class="flex items-center gap-2 cursor-pointer"><p-radiobutton formControlName="tipoAnunciante" name="pf-tipo-anunciante" value="CORRETOR" inputId="pf-tipo-pf" /> Corretor (CPF)</label>
+                                        <label for="pf-tipo-pj" class="flex items-center gap-2 cursor-pointer"><p-radiobutton formControlName="tipoAnunciante" name="pf-tipo-anunciante" value="IMOBILIARIA" inputId="pf-tipo-pj" /> Imobiliária (CNPJ)</label>
+                                    </div>
+                                </fieldset>
                                 <div class="flex flex-col gap-2">
                                     <label for="pf-doc">{{ imobiliaria() ? 'CNPJ' : 'CPF' }}</label>
-                                    <input pInputText id="pf-doc" [value]="usuario()!.documento | documento" readonly />
+                                    <!-- trocar Corretor/Imobiliária troca a máscara e limpa o campo (CPF e CNPJ têm tamanhos diferentes) -->
+                                    <p-inputmask
+                                        inputId="pf-doc"
+                                        formControlName="documento"
+                                        [mask]="imobiliaria() ? '99.999.999/9999-99' : '999.999.999-99'"
+                                        [unmask]="true"
+                                        [autoClear]="false"
+                                        inputmode="numeric"
+                                        [fluid]="true"
+                                        [invalid]="invalido('documento')"
+                                        [placeholder]="imobiliaria() ? '12.345.678/0001-90' : '123.456.789-09'"
+                                        [attr.aria-describedby]="invalido('documento') ? 'pf-doc-erro' : null"
+                                    />
+                                    @if (invalido('documento')) {
+                                        <small id="pf-doc-erro" class="text-red-600">{{ erroDoc() }}</small>
+                                    }
                                 </div>
                             }
                         </div>
@@ -504,7 +528,8 @@ export class PerfilPage {
     centroMapa = signal<[number, number] | null>(null);
 
     anunciante = computed(() => !!this.usuario()?.papeis.includes('CORRETOR'));
-    imobiliaria = computed(() => this.anunciante() && this.usuario()?.tipoAnunciante === 'IMOBILIARIA');
+    /** Segue a escolha no formulário (rótulos e máscara do CPF/CNPJ mudam na hora). */
+    imobiliaria = computed(() => (this.valores(), this.anunciante() && this.dados.controls.tipoAnunciante.value === 'IMOBILIARIA'));
     tipoRotulo = computed(() => (this.imobiliaria() ? 'Imobiliária' : this.anunciante() ? 'Corretor' : 'Cliente'));
 
     dados = this.fb.group({
@@ -532,7 +557,9 @@ export class PerfilPage {
         latitude: this.fb.control<number | null>(null),
         longitude: this.fb.control<number | null>(null),
         perfilPublico: [false],
-        capaUrl: this.fb.control<string | null>(null)
+        capaUrl: this.fb.control<string | null>(null),
+        tipoAnunciante: this.fb.control<TipoAnunciante>('CORRETOR'),
+        documento: ['', (c: AbstractControl) => this.validarDocumento(c)]
     });
 
     senha = this.fb.group({
@@ -597,10 +624,35 @@ export class PerfilPage {
                 this.msg.add({ severity: 'warn', summary: 'Perfil público', detail: 'Complete os itens da lista para ativar o perfil público.' });
             }
         });
+        // CPF e CNPJ têm máscaras de tamanhos diferentes: ao trocar o tipo, o campo começa do zero
+        // (só quando a troca é do usuário; o reset() ao carregar deixa o controle intacto)
+        this.dados.controls.tipoAnunciante.valueChanges.subscribe(() => {
+            const doc = this.dados.controls.documento;
+            if (this.dados.controls.tipoAnunciante.dirty) doc.reset('');
+            doc.updateValueAndValidity();
+        });
         this.conta.perfil().subscribe({
             next: (u) => this.preencher(u),
             error: (e) => this.msg.add({ severity: 'error', summary: 'Meus dados', detail: mensagemErro(e) })
         });
+    }
+
+    /** CPF/CNPJ do anunciante: obrigatório se já havia um ou se trocou o tipo; o gravado sem mudança não é revalidado. */
+    private validarDocumento(c: AbstractControl): ValidationErrors | null {
+        const u = this.usuario();
+        if (!u?.papeis.includes('CORRETOR')) return null;
+        const tipo = this.dados?.controls.tipoAnunciante.value ?? 'CORRETOR';
+        const tipoMudou = tipo !== (u.tipoAnunciante ?? 'CORRETOR');
+        const d = digitos(c.value);
+        if (!d) return u.documento || tipoMudou ? { required: true } : null;
+        if (d === u.documento && !tipoMudou) return null;
+        const imobiliaria = tipo === 'IMOBILIARIA';
+        if (d.length < (imobiliaria ? 14 : 11)) return { incompleto: true };
+        return documentoValido(d, imobiliaria) ? null : { documento: true };
+    }
+
+    erroDoc() {
+        return erroDocumento(this.dados.controls.documento.errors, this.imobiliaria());
     }
 
     invalido(campo: keyof typeof this.dados.controls) {
@@ -714,7 +766,9 @@ export class PerfilPage {
             latitude: v.latitude,
             longitude: v.longitude,
             perfilPublico: this.anunciante() && v.perfilPublico,
-            capaUrl: this.anunciante() ? v.capaUrl : null
+            capaUrl: this.anunciante() ? v.capaUrl : null,
+            tipoAnunciante: this.anunciante() ? v.tipoAnunciante : null,
+            documento: this.anunciante() ? digitos(v.documento) || null : null
         };
         this.salvando.set(true);
         this.conta.salvarPerfil(form).subscribe({
@@ -779,7 +833,9 @@ export class PerfilPage {
             latitude: u.latitude ?? null,
             longitude: u.longitude ?? null,
             perfilPublico: !!u.perfilPublico,
-            capaUrl: u.capaUrl ?? null
+            capaUrl: u.capaUrl ?? null,
+            tipoAnunciante: u.tipoAnunciante === 'IMOBILIARIA' ? 'IMOBILIARIA' : 'CORRETOR',
+            documento: u.documento ?? ''
         });
         this.centroMapa.set(u.latitude != null && u.longitude != null ? [u.latitude, u.longitude] : null);
     }

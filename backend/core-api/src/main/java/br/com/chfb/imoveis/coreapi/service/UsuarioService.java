@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -36,6 +37,8 @@ import br.com.chfb.imoveis.sharedkernel.port.UsuarioDiretorio;
 import br.com.chfb.imoveis.sharedkernel.port.ContaModeracao;
 import br.com.chfb.imoveis.sharedkernel.security.AuthUser;
 import br.com.chfb.imoveis.sharedkernel.security.Perfil;
+import br.com.chfb.imoveis.sharedkernel.util.Digitos;
+import br.com.chfb.imoveis.sharedkernel.util.DocumentoFiscal;
 
 @Service
 public class UsuarioService implements AnuncianteProvider, UsuarioDiretorio, ContaModeracao {
@@ -159,6 +162,8 @@ public class UsuarioService implements AnuncianteProvider, UsuarioDiretorio, Con
         u.setLongitude(form.longitude());
         // dados profissionais: só para anunciantes (corretor/imobiliária)
         if (u.getPapeis().contains(Perfil.CORRETOR)) {
+            // documento em branco mantém o atual: o anunciante corrige, mas não apaga o CPF/CNPJ
+            aplicarDocumento(u, form.tipoAnunciante(), form.documento(), true);
             u.setCreci(vazioNulo(form.creci()));
             u.setCreciUf(vazioNulo(form.creciUf()));
             u.setRazaoSocial("IMOBILIARIA".equals(u.getTipoAnunciante()) ? vazioNulo(form.razaoSocial()) : null);
@@ -206,6 +211,32 @@ public class UsuarioService implements AnuncianteProvider, UsuarioDiretorio, Con
         if (vazio(u.getBairro()) || vazio(u.getCidade()) || vazio(u.getUf())) f.add("bairro, cidade e UF");
         if (u.getLatitude() == null || u.getLongitude() == null) f.add("posição no mapa");
         return f;
+    }
+
+    /**
+     * Tipo de anunciante e CPF/CNPJ, que precisam combinar: CPF para corretor, CNPJ para imobiliária.
+     * Só valida os dígitos quando algo muda, para não travar quem já tem um documento antigo gravado.
+     *
+     * @param vazioMantem documento em branco mantém o atual (conta) em vez de apagar (admin)
+     */
+    static void aplicarDocumento(Usuario u, String tipo, String documento, boolean vazioMantem) {
+        String novoTipo = tipo != null ? tipo : u.getTipoAnunciante() != null ? u.getTipoAnunciante() : "CORRETOR";
+        String doc = Digitos.somente(documento);
+        if (doc == null && vazioMantem) {
+            doc = u.getDocumento();
+        }
+        boolean mudou = !Objects.equals(doc, u.getDocumento()) || !Objects.equals(novoTipo, u.getTipoAnunciante());
+        if (mudou && doc != null) {
+            boolean imobiliaria = "IMOBILIARIA".equals(novoTipo);
+            if (imobiliaria ? !DocumentoFiscal.cnpjValido(doc) : !DocumentoFiscal.cpfValido(doc)) {
+                throw new BusinessException(imobiliaria ? "CNPJ inválido. Confira os números." : "CPF inválido. Confira os números.");
+            }
+        }
+        u.setTipoAnunciante(novoTipo);
+        u.setDocumento(doc);
+        if (!"IMOBILIARIA".equals(novoTipo)) {
+            u.setRazaoSocial(null);
+        }
     }
 
     private static boolean vazio(String v) {
@@ -290,6 +321,9 @@ public class UsuarioService implements AnuncianteProvider, UsuarioDiretorio, Con
         u.setEmail(email);
         u.setTelefone(f.telefone());
         u.setCreci(f.creci());
+        if (f.papeis().contains(Perfil.CORRETOR)) {
+            aplicarDocumento(u, f.tipoAnunciante(), f.documento(), false);
+        }
         if (f.ativo() && !u.isAtivo()) {
             // reativar a conta tira o banimento
             u.setBanidoEm(null);

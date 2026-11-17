@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import br.com.chfb.imoveis.coreapi.dto.ContaDtos.UsuarioAdminForm;
 import br.com.chfb.imoveis.coreapi.dto.ContaDtos.UsuarioDto;
 import br.com.chfb.imoveis.coreapi.dto.DashboardDto;
+import br.com.chfb.imoveis.coreapi.service.ExclusaoContaService;
 import br.com.chfb.imoveis.coreapi.service.UsuarioService;
 import br.com.chfb.imoveis.listing.service.ImovelService;
 import br.com.chfb.imoveis.listing.service.PainelService;
@@ -33,10 +34,12 @@ public class AdminUsuarioController {
 
     private final UsuarioService usuarios;
     private final ImovelService imoveis;
+    private final ExclusaoContaService exclusao;
 
-    public AdminUsuarioController(UsuarioService usuarios, ImovelService imoveis) {
+    public AdminUsuarioController(UsuarioService usuarios, ImovelService imoveis, ExclusaoContaService exclusao) {
         this.usuarios = usuarios;
         this.imoveis = imoveis;
+        this.exclusao = exclusao;
     }
 
     @GetMapping("/dashboard")
@@ -77,5 +80,12 @@ public class AdminUsuarioController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void desativar(@PathVariable Long id, @AuthenticationPrincipal AuthUser admin) {
         usuarios.excluir(id, admin);
+    }
+
+    /** Exclusão definitiva (LGPD): apaga a conta e os dados dela. Não pode ser desfeita. */
+    @DeleteMapping("/usuarios/{id}/definitivo")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void excluirDefinitivamente(@PathVariable Long id, @AuthenticationPrincipal AuthUser admin) {
+        exclusao.excluirDefinitivamente(id, admin);
     }
 }

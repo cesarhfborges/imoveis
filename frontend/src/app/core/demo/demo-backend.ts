@@ -1,6 +1,7 @@
 import { HttpParams, HttpRequest } from '@angular/common/http';
 import { AnunciantePerfil, AnuncianteResumo, CONDICOES, ClientePainel, CondicaoAnuncio, Finalidade, ContagemTipo, Financeira, QuedaPreco, FatiaPainel, PainelAnuncios, PeriodoPainel, PontoDia, ExibicaoTelefone, FotoImovel, ImovelDetalhe, ImovelFiltro, ImovelResumo, ORIGENS_FOTO, OrigemFoto, PageResponse, Perfil, Sessao, StatusAnuncio, TIPOS, TipoImovel, TipoAnunciante, pendenciasPerfilPublico, tipoLabel } from '@/app/core/models/models';
 import { DocumentosDemo } from './demo-documentos';
+import { documentoValido } from '@/app/core/pipes/documentos';
 import { DemoDb, DemoImovel, DemoUsuario, criarDemoDb, financeirasDemo, fotosMock, perfilDemo } from './demo-data';
 
 /**
@@ -625,15 +626,29 @@ export class DemoBackend {
         return { ...resto, perfisPermitidos: permitidos(u.papeis) };
     }
 
+    /** Espelha UsuarioService.aplicarDocumento: CPF para corretor, CNPJ para imobiliária; só valida o que mudou. */
+    private documentoAnunciante(u: { documento: string | null; tipoAnunciante: string | null }, tipo: TipoAnunciante | null | undefined, documento: string | null | undefined, vazioMantem: boolean) {
+        const novoTipo: TipoAnunciante = tipo ?? (u.tipoAnunciante === 'IMOBILIARIA' ? 'IMOBILIARIA' : 'CORRETOR');
+        let doc: string | null = String(documento ?? '').replace(/\D/g, '') || null;
+        if (!doc && vazioMantem) doc = u.documento;
+        const mudou = doc !== u.documento || novoTipo !== u.tipoAnunciante;
+        const imobiliaria = novoTipo === 'IMOBILIARIA';
+        if (mudou && doc && !documentoValido(doc, imobiliaria)) throw new DemoError(400, imobiliaria ? 'CNPJ inválido. Confira os números.' : 'CPF inválido. Confira os números.');
+        return { tipoAnunciante: novoTipo, documento: doc, ...(imobiliaria ? {} : { razaoSocial: null }) };
+    }
+
     private conta(url: string, m: string, b: any): unknown {
         const { u } = this.exigir();
         let r: RegExpMatchArray | null;
         if (url === '/app/conta/perfil') {
             if (m === 'PUT') {
                 const anunciante = u.papeis.includes('CORRETOR');
-                const novo = { ...u, ...b, perfilPublico: anunciante && !!b.perfilPublico };
+                const { tipoAnunciante, documento, ...resto } = b;
+                const novo = { ...u, ...resto, perfilPublico: anunciante && !!b.perfilPublico };
+                // documento em branco mantém o atual: o anunciante corrige, mas não apaga o CPF/CNPJ
+                if (anunciante) Object.assign(novo, this.documentoAnunciante(u, tipoAnunciante, documento, true));
                 if (novo.perfilPublico) {
-                    const faltando = pendenciasPerfilPublico({ ...novo, imobiliaria: u.tipoAnunciante === 'IMOBILIARIA', nome: novo.nome ?? '', razaoSocial: novo.razaoSocial ?? '', creci: novo.creci ?? '', sobre: novo.sobre ?? '', cep: novo.cep ?? '', logradouro: novo.logradouro ?? '', numero: novo.numero ?? '', bairro: novo.bairro ?? '', cidade: novo.cidade ?? '', creciUf: novo.creciUf ?? null, uf: novo.uf ?? null, latitude: novo.latitude ?? null, longitude: novo.longitude ?? null, whatsapp: novo.whatsapp ?? null });
+                    const faltando = pendenciasPerfilPublico({ ...novo, imobiliaria: novo.tipoAnunciante === 'IMOBILIARIA', nome: novo.nome ?? '', razaoSocial: novo.razaoSocial ?? '', creci: novo.creci ?? '', sobre: novo.sobre ?? '', cep: novo.cep ?? '', logradouro: novo.logradouro ?? '', numero: novo.numero ?? '', bairro: novo.bairro ?? '', cidade: novo.cidade ?? '', creciUf: novo.creciUf ?? null, uf: novo.uf ?? null, latitude: novo.latitude ?? null, longitude: novo.longitude ?? null, whatsapp: novo.whatsapp ?? null });
                     if (faltando.length) throw new DemoError(422, 'Para deixar o perfil público, complete: ' + faltando.join(', ').toLowerCase() + '.');
                 }
                 Object.assign(u, novo);
@@ -1094,6 +1109,7 @@ export class DemoBackend {
                 creci: b.creci ?? null,
                 documento: null,
                 tipoAnunciante: null,
+                ...(b.papeis?.includes('CORRETOR') ? this.documentoAnunciante({ documento: null, tipoAnunciante: null }, b.tipoAnunciante, b.documento, false) : {}),
                 fotoUrl: null,
                 ativo: b.ativo !== false,
                 papeis: Array.from(new Set<Perfil>([...(b.papeis ?? []), 'CLIENTE'])),
@@ -1103,6 +1119,23 @@ export class DemoBackend {
             this.db.usuarios.push(u);
             this.salvarDb();
             return this.usuarioDto(u);
+        }
+        // exclusão definitiva (LGPD): a conta e tudo o que é dela
+        if ((r = url.match(/^\/app\/admin\/usuarios\/(\d+)\/definitivo$/)) && m === 'DELETE') {
+            const id = +r[1];
+            if (id === atual.id) throw new DemoError(400, 'Você não pode excluir a própria conta');
+            if (!this.db.usuarios.some((u) => u.id === id)) throw new DemoError(404, 'Usuário não encontrado');
+            const anuncios = new Set(this.db.imoveis.filter((i) => i.anuncianteId === id).map((i) => i.id));
+            this.db.imoveis = this.db.imoveis.filter((i) => !anuncios.has(i.id));
+            this.db.contatos = this.db.contatos.filter((c) => !anuncios.has(c.imovelId) && c.usuarioId !== id);
+            this.db.favoritos = this.db.favoritos.filter((f) => !anuncios.has(f.imovelId) && f.usuarioId !== id);
+            this.db.tokens = this.db.tokens.filter((t) => t.usuarioId !== id);
+            this.db.vistos = (this.db.vistos ?? []).filter((v) => !anuncios.has(v.imovelId) && v.usuarioId !== id);
+            this.db.precos = (this.db.precos ?? []).filter((p) => !anuncios.has(p.imovelId));
+            this.db.documentoAceites = (this.db.documentoAceites ?? []).filter((a) => a.usuarioId !== id);
+            this.db.usuarios = this.db.usuarios.filter((u) => u.id !== id);
+            this.salvarDb();
+            return null;
         }
         if ((r = url.match(/^\/app\/admin\/usuarios\/(\d+)$/))) {
             const u = this.db.usuarios.find((x) => x.id === +r![1]);
@@ -1118,7 +1151,8 @@ export class DemoBackend {
                     telefone: b.telefone ?? null,
                     creci: b.creci ?? null,
                     ativo: !!b.ativo,
-                    papeis: Array.from(new Set<Perfil>([...(b.papeis ?? []), 'CLIENTE']))
+                    papeis: Array.from(new Set<Perfil>([...(b.papeis ?? []), 'CLIENTE'])),
+                    ...(b.papeis?.includes('CORRETOR') ? this.documentoAnunciante(u, b.tipoAnunciante, b.documento, false) : {})
                 });
                 if (b.senha) u.senha = b.senha;
             }

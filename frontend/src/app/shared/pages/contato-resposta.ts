@@ -1,6 +1,6 @@
-import { Contato, ImovelDetalhe } from '@/app/core/models/models';
+import { Contato, ImovelDetalhe, tituloAnuncio } from '@/app/core/models/models';
 
-const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const NUM = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
 
 export interface DadosResposta {
@@ -94,4 +94,12 @@ export function respostaEmail(d: DadosResposta) {
 /** Texto da mensagem do WhatsApp (negrito com *...* e emojis). */
 export function respostaWhatsapp(d: DadosResposta) {
     return corpo(d, true).join('\n');
+}
+
+/**
+ * Texto do botão "Compartilhar no WhatsApp" da página do imóvel: os mesmos detalhes da resposta ao contato
+ * (local, valores, ficha e condições), sem saudação nem assinatura, porque quem compartilha não é o anunciante.
+ */
+export function compartilharWhatsapp(i: ImovelDetalhe, link: string, site: string) {
+    return [`🏠 *${i.titulo || tituloAnuncio(i)}* (cód. ${i.codigo})`, ...detalhes(i, true), '', `Veja todas as fotos e detalhes no ${site}:`, link].join('\n');
 }

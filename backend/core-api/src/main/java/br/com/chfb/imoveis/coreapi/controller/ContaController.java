@@ -17,10 +17,13 @@ import org.springframework.web.bind.annotation.RestController;
 import br.com.chfb.imoveis.coreapi.dto.ContaDtos.ApiTokenCriado;
 import br.com.chfb.imoveis.coreapi.dto.ContaDtos.ApiTokenDto;
 import br.com.chfb.imoveis.coreapi.dto.ContaDtos.ApiTokenForm;
+import br.com.chfb.imoveis.coreapi.dto.ContaDtos.ExclusaoContaForm;
+import br.com.chfb.imoveis.coreapi.dto.ContaDtos.ExclusaoContaStatus;
 import br.com.chfb.imoveis.coreapi.dto.ContaDtos.PerfilForm;
 import br.com.chfb.imoveis.coreapi.dto.ContaDtos.SenhaForm;
 import br.com.chfb.imoveis.coreapi.dto.ContaDtos.UsuarioDto;
 import br.com.chfb.imoveis.coreapi.service.ApiTokenService;
+import br.com.chfb.imoveis.coreapi.service.SolicitacaoExclusaoService;
 import br.com.chfb.imoveis.coreapi.service.UsuarioService;
 import br.com.chfb.imoveis.sharedkernel.security.AuthUser;
 import jakarta.validation.Valid;
@@ -32,10 +35,30 @@ public class ContaController {
 
     private final UsuarioService usuarios;
     private final ApiTokenService tokens;
+    private final SolicitacaoExclusaoService exclusao;
 
-    public ContaController(UsuarioService usuarios, ApiTokenService tokens) {
+    public ContaController(UsuarioService usuarios, ApiTokenService tokens, SolicitacaoExclusaoService exclusao) {
         this.usuarios = usuarios;
         this.tokens = tokens;
+        this.exclusao = exclusao;
+    }
+
+    /** "Remover conta": situação do pedido e prazo de espera. */
+    @GetMapping("/exclusao")
+    public ExclusaoContaStatus exclusao(@AuthenticationPrincipal AuthUser u) {
+        return exclusao.status(u);
+    }
+
+    /** Pede a remoção definitiva da conta (confirmada com a senha); a conta é apagada depois do prazo de espera. */
+    @PostMapping("/exclusao")
+    public ExclusaoContaStatus pedirExclusao(@Valid @RequestBody ExclusaoContaForm form, @AuthenticationPrincipal AuthUser u) {
+        return exclusao.solicitar(u, form.senha());
+    }
+
+    /** Desiste do pedido de remoção. */
+    @DeleteMapping("/exclusao")
+    public ExclusaoContaStatus desistirExclusao(@AuthenticationPrincipal AuthUser u) {
+        return exclusao.desistir(u);
     }
 
     @GetMapping("/perfil")

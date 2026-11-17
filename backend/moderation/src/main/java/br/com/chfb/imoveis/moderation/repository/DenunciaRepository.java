@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
@@ -51,6 +52,16 @@ public interface DenunciaRepository extends JpaRepository<Denuncia, Long> {
     List<Long> apuracoesComPrazo(@Param("status") StatusDenuncia status);
 
     void deleteByImovelId(Long imovelId);
+
+    /** Exclusão de conta (LGPD): tira o vínculo das denúncias que a pessoa fez. */
+    @Modifying
+    @Query(value = "update denuncias set denunciante_id = null where denunciante_id = :usuario", nativeQuery = true)
+    int anonimizarDenunciante(@Param("usuario") Long usuarioId);
+
+    /** Exclusão de conta (LGPD): mensagens da pessoa ficam sem autor e sem os anexos dela (que são apagados). */
+    @Modifying
+    @Query(value = "update denuncia_mensagens set autor_id = null, anexos = null where autor_id = :usuario", nativeQuery = true)
+    int anonimizarMensagens(@Param("usuario") Long usuarioId);
 
     /** Ids dos anúncios com denúncias nos status informados, do mais recente para o mais antigo. */
     @Query("""

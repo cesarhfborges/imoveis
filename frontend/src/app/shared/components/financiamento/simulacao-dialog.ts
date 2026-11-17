@@ -73,7 +73,7 @@ const ROTULO_SISTEMA: Record<Sistema, string> = { SAC: 'SAC (parcelas decrescent
                                                 <dt class="text-muted-color">Prazo máximo</dt>
                                                 <dd class="m-0 font-medium text-color">{{ o.f.prazoMaximoMeses }} meses ({{ o.f.prazoMaximoMeses / 12 | number: '1.0-1' }} anos)</dd>
                                                 <dt class="text-muted-color">Entrada mínima</dt>
-                                                <dd class="m-0 font-medium text-color">{{ o.f.entradaMinimaPercentual | number: '1.0-2' }}% · {{ o.entrada | currency: 'BRL' : 'symbol' : '1.0-0' }}</dd>
+                                                <dd class="m-0 font-medium text-color">{{ o.f.entradaMinimaPercentual | number: '1.0-2' }}% · {{ o.entrada | currency: 'BRL' }}</dd>
                                                 <dt class="text-muted-color">Sistema</dt>
                                                 <dd class="m-0 font-medium text-color">{{ o.sistemas }}</dd>
                                                 <dt class="text-muted-color">Renda comprometida</dt>
@@ -114,7 +114,7 @@ const ROTULO_SISTEMA: Record<Sistema, string> = { SAC: 'SAC (parcelas decrescent
                                     <div class="flex flex-col gap-2">
                                         <label for="sim-entrada" class="font-medium">Entrada</label>
                                         <p-inputnumber inputId="sim-entrada" formControlName="entrada" mode="currency" currency="BRL" locale="pt-BR" [min]="0" [max]="preco()" fluid />
-                                        <small class="text-muted-color">Mínimo {{ minimaEntrada() | currency: 'BRL' : 'symbol' : '1.0-0' }} ({{ f.entradaMinimaPercentual | number: '1.0-2' }}%){{ f.aceitaFgts ? ' · pode usar FGTS' : '' }}</small>
+                                        <small class="text-muted-color">Mínimo {{ minimaEntrada() | currency: 'BRL' }} ({{ f.entradaMinimaPercentual | number: '1.0-2' }}%){{ f.aceitaFgts ? ' · pode usar FGTS' : '' }}</small>
                                     </div>
                                     <div class="flex flex-col gap-2">
                                         <label for="sim-prazo" class="font-medium">Prazo (meses)</label>
@@ -168,21 +168,21 @@ const ROTULO_SISTEMA: Record<Sistema, string> = { SAC: 'SAC (parcelas decrescent
                                     </div>
                                     <div class="p-3 rounded-border bg-surface-100 dark:bg-surface-800">
                                         <div class="text-sm text-muted-color">Valor financiado</div>
-                                        <div class="text-xl font-semibold">{{ r.valorFinanciado | currency: 'BRL' : 'symbol' : '1.0-0' }}</div>
+                                        <div class="text-xl font-semibold">{{ r.valorFinanciado | currency: 'BRL' }}</div>
                                     </div>
                                     <div class="p-3 rounded-border bg-surface-100 dark:bg-surface-800">
                                         <div class="text-sm text-muted-color">Renda mínima</div>
-                                        <div class="text-xl font-semibold">{{ r.rendaMinima | currency: 'BRL' : 'symbol' : '1.0-0' }}</div>
+                                        <div class="text-xl font-semibold">{{ r.rendaMinima | currency: 'BRL' }}</div>
                                     </div>
                                 </div>
                                 <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 mt-4 mb-0">
                                     <div class="flex justify-between"><dt class="text-muted-color">Financeira</dt><dd class="m-0 font-medium">{{ selecionada()?.nome }}</dd></div>
                                     <div class="flex justify-between"><dt class="text-muted-color">Sistema / prazo</dt><dd class="m-0 font-medium">{{ form.getRawValue().sistema }} · {{ form.getRawValue().prazo }} meses</dd></div>
                                     <div class="flex justify-between"><dt class="text-muted-color">Juros</dt><dd class="m-0 font-medium">{{ selecionada()?.taxaJurosAnual | number: '1.2-2' }}% a.a. ({{ r.taxaMensal * 100 | number: '1.3-3' }}% a.m.)</dd></div>
-                                    <div class="flex justify-between"><dt class="text-muted-color">Total de juros</dt><dd class="m-0 font-medium">{{ r.totalJuros | currency: 'BRL' : 'symbol' : '1.0-0' }}</dd></div>
-                                    <div class="flex justify-between"><dt class="text-muted-color">Seguros e taxas</dt><dd class="m-0 font-medium">{{ r.totalEncargos | currency: 'BRL' : 'symbol' : '1.0-0' }}</dd></div>
-                                    <div class="flex justify-between"><dt class="text-muted-color">Total pago ao banco</dt><dd class="m-0 font-medium">{{ r.totalPago | currency: 'BRL' : 'symbol' : '1.0-0' }}</dd></div>
-                                    <div class="flex justify-between"><dt class="text-muted-color">Custo total (com entrada)</dt><dd class="m-0 font-semibold">{{ r.custoTotal | currency: 'BRL' : 'symbol' : '1.0-0' }}</dd></div>
+                                    <div class="flex justify-between"><dt class="text-muted-color">Total de juros</dt><dd class="m-0 font-medium">{{ r.totalJuros | currency: 'BRL' }}</dd></div>
+                                    <div class="flex justify-between"><dt class="text-muted-color">Seguros e taxas</dt><dd class="m-0 font-medium">{{ r.totalEncargos | currency: 'BRL' }}</dd></div>
+                                    <div class="flex justify-between"><dt class="text-muted-color">Total pago ao banco</dt><dd class="m-0 font-medium">{{ r.totalPago | currency: 'BRL' }}</dd></div>
+                                    <div class="flex justify-between"><dt class="text-muted-color">Custo total (com entrada)</dt><dd class="m-0 font-semibold">{{ r.custoTotal | currency: 'BRL' }}</dd></div>
                                     @if (r.comprometimento !== null) {
                                         <div class="flex justify-between">
                                             <dt class="text-muted-color">Renda comprometida</dt>

@@ -2,6 +2,8 @@ package br.com.chfb.imoveis.coreapi.dto;
 
 import br.com.chfb.imoveis.coreapi.entity.Configuracao;
 import br.com.chfb.imoveis.sharedkernel.port.ExibicaoTelefonePolicy;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -36,7 +38,13 @@ public record ConfiguracaoDto(
         /** Simulação de financiamento nos anúncios (nulo mantém o valor atual). */
         Boolean simulacaoFinanciamento,
         /** Aviso de queda de preço nos favoritos (nulo mantém o valor atual). */
-        Boolean alertaQuedaPreco) {
+        Boolean alertaQuedaPreco,
+        /** Ficha do imóvel para imprimir (nulo mantém o valor atual). */
+        Boolean impressaoAnuncio,
+        /** "Remover conta" em Meus dados (nulo mantém o valor atual). */
+        Boolean autoExclusaoConta,
+        /** Dias entre o pedido de remoção da conta e a remoção definitiva (nulo mantém o valor atual). */
+        @Min(1) @Max(90) Integer diasEsperaExclusao) {
 
     public static ConfiguracaoDto of(Configuracao c) {
         return new ConfiguracaoDto(c.getNomeApp(), c.getSlogan(), c.getLogoUrl(), c.getLogoEscuroUrl(),
@@ -45,7 +53,7 @@ public record ConfiguracaoDto(
                 c.getFacebook(), c.getTextoRodape(), c.getTemaPreset(), c.getTemaPrimaria(), c.getTemaSurface(),
                 c.getTemaModo(), c.isModerarAnuncios(), c.isPermitirCadastroCorretor(),
                 c.isAbrirAnuncioNovaJanela(), c.getTelefoneAnunciante(), c.isSimulacaoFinanciamento(),
-                c.isAlertaQuedaPreco());
+                c.isAlertaQuedaPreco(), c.isImpressaoAnuncio(), c.isAutoExclusaoConta(), c.getDiasEsperaExclusao());
     }
 
     public void aplicar(Configuracao c) {
@@ -80,6 +88,15 @@ public record ConfiguracaoDto(
         }
         if (alertaQuedaPreco != null) {
             c.setAlertaQuedaPreco(alertaQuedaPreco);
+        }
+        if (impressaoAnuncio != null) {
+            c.setImpressaoAnuncio(impressaoAnuncio);
+        }
+        if (autoExclusaoConta != null) {
+            c.setAutoExclusaoConta(autoExclusaoConta);
+        }
+        if (diasEsperaExclusao != null) {
+            c.setDiasEsperaExclusao(diasEsperaExclusao);
         }
     }
 }

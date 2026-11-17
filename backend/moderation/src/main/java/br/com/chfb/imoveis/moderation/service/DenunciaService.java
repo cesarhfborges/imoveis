@@ -335,7 +335,9 @@ public class DenunciaService {
         Set<Long> pessoas = new HashSet<>();
         pessoas.add(imovel.getAnuncianteId());
         lista.forEach(d -> {
-            pessoas.add(d.getDenuncianteId());
+            if (d.getDenuncianteId() != null) {
+                pessoas.add(d.getDenuncianteId());
+            }
             d.getMensagens().stream().map(DenunciaMensagem::getAutorId).filter(Objects::nonNull).forEach(pessoas::add);
         });
         Map<Long, AnuncianteInfo> nomes = usuarios.buscarTodos(pessoas);
@@ -593,7 +595,7 @@ public class DenunciaService {
         if (d.getStatus().aberta()) {
             throw new BusinessException(409, "A denúncia ainda está aberta: julgue de novo pelos botões de julgamento");
         }
-        if (denuncias.existsByImovelIdAndDenuncianteIdAndTipoIdAndStatusIn(d.getImovelId(), d.getDenuncianteId(),
+        if (d.getDenuncianteId() != null && denuncias.existsByImovelIdAndDenuncianteIdAndTipoIdAndStatusIn(d.getImovelId(), d.getDenuncianteId(),
                 d.getTipo().getId(), ABERTAS)) {
             throw new BusinessException(409, "O denunciante tem outra denúncia deste tipo aberta para este anúncio: continue por ela");
         }
@@ -790,7 +792,9 @@ public class DenunciaService {
         Instant agora = Instant.now();
         Set<Long> pessoas = new HashSet<>();
         alteradas.forEach(d -> {
-            pessoas.add(d.getDenuncianteId());
+            if (d.getDenuncianteId() != null) {
+                pessoas.add(d.getDenuncianteId());
+            }
             d.getMensagens().stream().map(DenunciaMensagem::getAutorId).filter(Objects::nonNull).forEach(pessoas::add);
         });
         Map<Long, AnuncianteInfo> nomes = pessoas.isEmpty() ? Map.of() : usuarios.buscarTodos(pessoas);
@@ -879,6 +883,9 @@ public class DenunciaService {
     }
 
     private void notificarDenunciante(Denuncia d, Imovel imovel, String titulo, String mensagem) {
+        if (d.getDenuncianteId() == null) {
+            return; // denunciante excluiu a conta
+        }
         notificador.notificar(new Notificador.Nova(d.getDenuncianteId(), "DENUNCIA_SITUACAO", titulo,
                 "Anúncio " + imovel.getCodigo() + " (" + d.getTipo().getNome() + "). " + mensagem, "pi-flag",
                 "/conta/denuncias", "DENUNCIA", d.getId()));
@@ -946,7 +953,7 @@ public class DenunciaService {
     }
 
     private DenunciaDto dtoAdmin(Denuncia d) {
-        Set<Long> pessoas = Stream.concat(Stream.of(d.getDenuncianteId()),
+        Set<Long> pessoas = Stream.concat(Stream.ofNullable(d.getDenuncianteId()),
                 d.getMensagens().stream().map(DenunciaMensagem::getAutorId).filter(Objects::nonNull)).collect(Collectors.toSet());
         return dto(d, Instant.now(), true, usuarios.buscarTodos(pessoas));
     }
@@ -963,10 +970,15 @@ public class DenunciaService {
                 .toList();
         PrazoDto prazo = prazos.dto(d, agora);
         return new DenunciaDto(d.getId(), TipoPublicoDto.of(d.getTipo()), GravidadeResumo.of(d.getGravidade()),
-                d.getDescricao(), d.getStatus(), prazo, den == null ? null : den.nome(), den == null ? null : den.email(),
+                d.getDescricao(), d.getStatus(), prazo,
+                den != null ? den.nome() : admin && d.getDenuncianteId() == null ? USUARIO_EXCLUIDO : null,
+                den == null ? null : den.email(),
                 d.getCriadoEm(), d.getResolvidoEm(), d.getConclusao(), d.getNatureza(), d.getMedida(),
                 admin ? d.getPenalidade() : null, d.getJulgadoEm(), admin ? d.getApuracaoPrazoEm() : null, msgs);
     }
+
+    /** Nome exibido no lugar de quem excluiu a conta (LGPD). */
+    static final String USUARIO_EXCLUIDO = "Usuário excluído";
 
     private static String autor(DenunciaMensagem m, boolean admin, Map<Long, AnuncianteInfo> nomes) {
         return switch (m.getPapel()) {

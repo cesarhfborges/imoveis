@@ -28,7 +28,8 @@ public class Denuncia extends BaseEntity {
     @Column(name = "imovel_id", nullable = false)
     private Long imovelId;
 
-    @Column(name = "denunciante_id", nullable = false)
+    /** Nulo quando o denunciante excluiu a conta (LGPD): a denúncia fica no histórico, anonimizada. */
+    @Column(name = "denunciante_id")
     private Long denuncianteId;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)

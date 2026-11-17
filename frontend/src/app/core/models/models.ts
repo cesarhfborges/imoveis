@@ -543,7 +543,10 @@ export interface PerfilForm {
     /** Anunciantes: liga o perfil público (exige o cadastro completo, ver pendenciasPerfilPublico). */
     perfilPublico: boolean;
     /** Anunciantes: capa do perfil público (nula = degradê padrão). */
-    capaUrl: string | null;
+    capaUrl: string | null; /** Anunciantes: CORRETOR (CPF) ou IMOBILIARIA (CNPJ). */
+    tipoAnunciante: TipoAnunciante | null;
+    /** Anunciantes: CPF ou CNPJ conforme o tipo; vazio mantém o atual. */
+    documento: string | null;
 }
 
 export const UFS = ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'];
@@ -555,7 +558,10 @@ export interface UsuarioAdminForm {
     creci: string | null;
     papeis: Perfil[];
     ativo: boolean;
-    senha: string | null;
+    senha: string | null; /** Corretores: CORRETOR (CPF) ou IMOBILIARIA (CNPJ). */
+    tipoAnunciante: TipoAnunciante | null;
+    /** Corretores: CPF ou CNPJ conforme o tipo; vazio apaga. */
+    documento: string | null;
 }
 
 export interface ApiToken {
@@ -602,6 +608,8 @@ export interface Configuracao {
     simulacaoFinanciamento: boolean;
     /** Regra: aviso de favoritos que baixaram de preço. */
     alertaQuedaPreco: boolean;
+    /** Regra: botão "Imprimir ficha" na página do imóvel (PDF gerado no navegador). */
+    impressaoAnuncio: boolean;
     permitirCadastroCorretor: boolean;
 }
 

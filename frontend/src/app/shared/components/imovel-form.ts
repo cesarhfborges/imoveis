@@ -82,7 +82,7 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
                             </div>
                             <div class="flex flex-col gap-2">
                                 <label for="im-preco" class="font-medium">Preço *</label>
-                                <p-inputnumber inputId="im-preco" formControlName="preco" mode="currency" currency="BRL" locale="pt-BR" [maxFractionDigits]="0" styleClass="w-full" inputStyleClass="w-full" />
+                                <p-inputnumber inputId="im-preco" formControlName="preco" mode="currency" currency="BRL" locale="pt-BR" styleClass="w-full" inputStyleClass="w-full" />
                             </div>
                             <div class="flex flex-col gap-2">
                                 <span class="font-medium" aria-hidden="true">Lançamento</span>
@@ -205,7 +205,11 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
                             @for (c of numeros; track c.campo) {
                                 <div class="flex flex-col gap-2 min-w-0">
                                     <label [for]="'im-' + c.campo" class="font-medium">{{ c.label }}</label>
-                                    <p-inputnumber [inputId]="'im-' + c.campo" [formControlName]="c.campo" [min]="0" [showButtons]="c.botoes" [suffix]="c.sufixo" [fluid]="true" />
+                                    @if (c.moeda) {
+                                        <p-inputnumber [inputId]="'im-' + c.campo" [formControlName]="c.campo" [min]="0" mode="currency" currency="BRL" locale="pt-BR" [fluid]="true" />
+                                    } @else {
+                                        <p-inputnumber [inputId]="'im-' + c.campo" [formControlName]="c.campo" [min]="0" [showButtons]="c.botoes" [suffix]="c.sufixo" [fluid]="true" />
+                                    }
                                 </div>
                             }
                         </div>
@@ -555,8 +559,8 @@ export class ImovelFormComponent {
         { campo: 'suites', label: 'Suítes', sufixo: '', botoes: true },
         { campo: 'banheiros', label: 'Banheiros', sufixo: '', botoes: true },
         { campo: 'vagas', label: 'Vagas', sufixo: '', botoes: true },
-        { campo: 'condominio', label: 'Condomínio (R$)', sufixo: '', botoes: false },
-        { campo: 'iptu', label: 'IPTU anual (R$)', sufixo: '', botoes: false }
+        { campo: 'condominio', label: 'Condomínio', sufixo: '', botoes: false, moeda: true },
+        { campo: 'iptu', label: 'IPTU anual', sufixo: '', botoes: false, moeda: true }
     ];
 
     sugestoes = signal<string[]>([]);
@@ -632,7 +636,7 @@ export class ImovelFormComponent {
     precoPrevia = computed(() => {
         const v = this.valores();
         if (!v.preco) return 'Preço a definir';
-        const preco = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v.preco);
+        const preco = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v.preco);
         return v.finalidade === 'ALUGUEL' ? `${preco}/mês` : v.finalidade === 'TEMPORADA' ? `${preco}/diária` : preco;
     });
 

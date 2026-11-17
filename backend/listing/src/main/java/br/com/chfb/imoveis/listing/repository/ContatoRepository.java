@@ -15,4 +15,7 @@ public interface ContatoRepository extends JpaRepository<Contato, Long> {
     long countByImovelAnuncianteIdAndLidoFalse(Long anuncianteId);
 
     void deleteByImovelId(Long imovelId);
+
+    /** Contatos que a pessoa enviou a anunciantes (exclusão de conta). */
+    void deleteByUsuarioId(Long usuarioId);
 }

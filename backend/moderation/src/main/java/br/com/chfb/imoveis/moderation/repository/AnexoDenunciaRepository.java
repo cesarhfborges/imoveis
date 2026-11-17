@@ -1,5 +1,7 @@
 package br.com.chfb.imoveis.moderation.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,4 +20,6 @@ public interface AnexoDenunciaRepository extends JpaRepository<AnexoDenuncia, St
                  and position(:url in coalesce(m.anexos, '')) > 0)
             """, nativeQuery = true)
     boolean visivelParaAnunciante(@Param("url") String url, @Param("usuario") Long usuarioId);
+
+    List<AnexoDenuncia> findByUsuarioId(Long usuarioId);
 }

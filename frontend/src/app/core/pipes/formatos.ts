@@ -1,10 +1,10 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { Finalidade } from '@/app/core/models/models';
 
-const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const NUM = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
 
-/** R$ 850.000 (com "/mês" ou "/dia" conforme a finalidade). */
+/** R$ 850.000,00 (com "/mês" ou "/dia" conforme a finalidade). */
 @Pipe({ name: 'preco' })
 export class PrecoPipe implements PipeTransform {
     transform(valor: number | null | undefined, finalidade?: Finalidade | null): string {

@@ -31,6 +31,14 @@ map $upstream_http_content_type $cache_do_site {
     default       $upstream_http_cache_control;
 }
 
+# Robôs de prévia de link (WhatsApp, Facebook/Instagram/iMessage, X, Telegram, LinkedIn, Slack, Discord…).
+# Eles não executam JavaScript: em /imovel/{id}/... recebem do backend um HTML com as tags Open Graph do anúncio
+# (foto de capa, título e valor). Buscadores (Google, Bing) ficam de fora e recebem o site normal.
+map $http_user_agent $robo_previa {
+    default 0;
+    "~*(whatsapp|facebookexternalhit|facebot|twitterbot|telegrambot|linkedinbot|slackbot|discordbot|skypeuripreview|pinterestbot|redditbot|vkshare|embedly|iframely|mastodon)" 1;
+}
+
 map $http_upgrade $connection_upgrade {
     default upgrade;
     ''      close;
@@ -80,6 +88,19 @@ server {
         proxy_read_timeout 1h;
         proxy_send_timeout 1h;
         proxy_buffering off;
+    }
+
+    # Página do imóvel: robôs de prévia de link vão para a prévia do backend (ver map $robo_previa);
+    # visitantes recebem o site normal, como em "location /".
+    location ~ ^/imovel/[0-9]+(/|$) {
+        include /etc/nginx/snippets/proxy.conf;
+        if ($robo_previa) {
+            rewrite ^/imovel/([0-9]+) /app/public/previa/imovel/$1 break;
+            proxy_pass $backend;
+        }
+        proxy_pass $site;
+        proxy_hide_header Cache-Control;
+        add_header Cache-Control $cache_do_site always;
     }
 
     # Site (Angular)
