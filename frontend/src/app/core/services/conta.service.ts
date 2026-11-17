@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Observable, catchError, of, tap } from 'rxjs';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
-import { ApiToken, ApiTokenCriado, ClientePainel, Dashboard, ImovelDetalhe, QuedaPreco, ImovelResumo, PageResponse, PeriodoPainel, Perfil, PerfilForm, Usuario, UsuarioAdminForm } from '@/app/core/models/models';
+import { ApiToken, ApiTokenCriado, ClientePainel, ExclusaoContaStatus, Dashboard, ImovelDetalhe, QuedaPreco, ImovelResumo, PageResponse, PeriodoPainel, Perfil, PerfilForm, Usuario, UsuarioAdminForm } from '@/app/core/models/models';
 
 /** Dados da própria conta, favoritos e tokens de API. */
 @Injectable({ providedIn: 'root' })
@@ -65,6 +65,21 @@ export class ContaService {
 
     trocarSenha(senhaAtual: string, novaSenha: string): Observable<void> {
         return this.api.put('/app/conta/senha', { senhaAtual, novaSenha });
+    }
+
+    /** "Remover conta": situação do pedido e prazo de espera. */
+    exclusao(): Observable<ExclusaoContaStatus> {
+        return this.api.get('/app/conta/exclusao');
+    }
+
+    /** Pede a remoção definitiva da conta (confirmada com a senha). */
+    pedirExclusao(senha: string): Observable<ExclusaoContaStatus> {
+        return this.api.post('/app/conta/exclusao', { senha });
+    }
+
+    /** Desiste do pedido de remoção. */
+    desistirExclusao(): Observable<ExclusaoContaStatus> {
+        return this.api.delete('/app/conta/exclusao');
     }
 
     tokens(): Observable<ApiToken[]> {

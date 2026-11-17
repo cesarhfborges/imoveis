@@ -155,6 +155,8 @@ export interface DemoDb {
     /** Documentos do site (termos, privacidade…) e aceites; opcionais em bancos antigos. */
     documentos?: DemoDocumentosDb['documentos'];
     documentoAceites?: DemoDocumentosDb['documentoAceites'];
+    /** Pedidos de remoção de conta ("Remover conta" em Meus dados); opcional em bancos antigos. */
+    exclusoes?: { usuarioId: number; solicitadaEm: string; removerEm: string; canceladaEm: string | null }[];
 }
 
 /** Financeiras fictícias do modo demonstração. */

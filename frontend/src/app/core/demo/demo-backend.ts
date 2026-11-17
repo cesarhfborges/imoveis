@@ -2,6 +2,15 @@ import { HttpParams, HttpRequest } from '@angular/common/http';
 import { AnunciantePerfil, AnuncianteResumo, CONDICOES, ClientePainel, CondicaoAnuncio, Finalidade, ContagemTipo, Financeira, QuedaPreco, FatiaPainel, PainelAnuncios, PeriodoPainel, PontoDia, ExibicaoTelefone, FotoImovel, ImovelDetalhe, ImovelFiltro, ImovelResumo, ORIGENS_FOTO, OrigemFoto, PageResponse, Perfil, Sessao, StatusAnuncio, TIPOS, TipoImovel, TipoAnunciante, pendenciasPerfilPublico, tipoLabel } from '@/app/core/models/models';
 import { DocumentosDemo } from './demo-documentos';
 import { documentoValido } from '@/app/core/pipes/documentos';
+
+/** Primeira execução da remoção (03:00) depois dos dias de espera; espelha SolicitacaoExclusaoService. */
+function dataDaRemocao(pedido: Date, dias: number): Date {
+    const minimo = new Date(pedido.getTime() + dias * 86400000);
+    const remocao = new Date(minimo);
+    remocao.setHours(3, 0, 0, 0);
+    if (remocao < minimo) remocao.setDate(remocao.getDate() + 1);
+    return remocao;
+}
 import { DemoDb, DemoImovel, DemoUsuario, criarDemoDb, financeirasDemo, fotosMock, perfilDemo } from './demo-data';
 
 /**
@@ -656,6 +665,28 @@ export class DemoBackend {
             }
             return this.usuarioDto(u);
         }
+        if (url === '/app/conta/exclusao') {
+            // espelha SolicitacaoExclusaoService (no demo não há a tarefa das 03:00: o pedido só fica agendado)
+            const cfg = this.db.config;
+            const dias = cfg.diasEsperaExclusao ?? 7;
+            const disponivel = cfg.autoExclusaoConta !== false && !u.papeis.includes('ADMIN');
+            const lista = (this.db.exclusoes ??= []);
+            const pendente = () => lista.find((e) => e.usuarioId === u.id && !e.canceladaEm);
+            if (m === 'POST' && !pendente()) {
+                if (!disponivel) throw new DemoError(u.papeis.includes('ADMIN') ? 400 : 403, u.papeis.includes('ADMIN') ? 'Contas de administrador não podem ser removidas por aqui. Peça a outro administrador.' : 'A remoção de conta pelo site está desligada. Fale com o suporte do site.');
+                if (b.senha !== u.senha) throw new DemoError(400, 'Senha incorreta');
+                lista.push({ usuarioId: u.id, solicitadaEm: new Date().toISOString(), removerEm: dataDaRemocao(new Date(), dias).toISOString(), canceladaEm: null });
+                this.salvarDb();
+            }
+            if (m === 'DELETE') {
+                const p = pendente();
+                if (!p) throw new DemoError(404, 'Não há pedido de remoção da conta em andamento');
+                p.canceladaEm = new Date().toISOString();
+                this.salvarDb();
+            }
+            const p = pendente();
+            return { disponivel, diasEspera: dias, removerSePedirAgora: dataDaRemocao(new Date(), dias).toISOString(), solicitadaEm: p?.solicitadaEm ?? null, removerEm: p?.removerEm ?? null };
+        }
         if (url === '/app/conta/senha') {
             if (b.senhaAtual !== u.senha) throw new DemoError(400, 'Senha atual incorreta');
             u.senha = b.novaSenha;
@@ -1133,6 +1164,7 @@ export class DemoBackend {
             this.db.vistos = (this.db.vistos ?? []).filter((v) => !anuncios.has(v.imovelId) && v.usuarioId !== id);
             this.db.precos = (this.db.precos ?? []).filter((p) => !anuncios.has(p.imovelId));
             this.db.documentoAceites = (this.db.documentoAceites ?? []).filter((a) => a.usuarioId !== id);
+            this.db.exclusoes = (this.db.exclusoes ?? []).filter((e) => e.usuarioId !== id);
             this.db.usuarios = this.db.usuarios.filter((u) => u.id !== id);
             this.salvarDb();
             return null;

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 785.008 247.792">
+  <defs>
+    <style>
+      .cls-1{fill:url(#linear-gradient-1)}
+      .cls-2{fill:url(#linear-gradient-2)}
+      .cls-3{font-family:Players, sans-serif;font-size:12px;fill:#000000;text-anchor:middle}
+    </style>
+    <linearGradient id="linear-gradient-1" x1="146.915" y1="192.458" x2="113.9" y2="68.958" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#122f54"/>
+      <stop offset="1" stop-color="#053778"/>
+    </linearGradient>
+    <linearGradient id="linear-gradient-2" x1="0" y1="226.926" x2="359.72" y2="194.035" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3d9bff"/>
+      <stop offset="1" stop-color="#000f5b"/>
+    </linearGradient>
+  </defs>
+  <title>Asset 3</title>
+  <g id="Layer_2" data-name="Layer 2">
+    <g>
+      <g>
+        <g>
+          <path d="M104.673 50.64 L172.369 0 L172.369 192.39 C148.748 198.627 125.658 205.159 104.673 210.744 Z M185.197 85.109 L185.197 61.034 L241.111 94.194 L241.111 64.213 L276.556 91.458 L276.556 170.548 L276.556 170.548 C248.055 173.943 216.413 181.049 185.197 189.05 L185.197 96.743 L241.111 131.863 L241.111 120.229 Z M53.287 114.175 L92.76 77.101 L92.76 213.865 C78.125 217.63 64.765 220.765 53.287 222.794 L53.287 222.794 Z M285.208 169.625 L285.208 103.622 L313.251 128.299 L313.251 168.486 C304.448 168.282 295.047 168.704 285.208 169.625 Z" class="cls-1"/>
+        </g>
+        <path d="M321.587 174.013 C377.255 178.119 366.239 212.902 325.273 230.46 C332.427 225.278 353.665 207.647 347.147 196.832 C329.471 167.5 139.887 254.838 38.132 247.333 C-17.535 243.227 -6.52 208.445 34.447 190.886 C27.293 196.068 6.055 213.699 12.572 224.514 C29.981 253.4 221.612 166.639 321.587 174.013 Z" class="cls-2"/>
+      </g>
+      <g>
+        <text transform="matrix(9.452 0 0 9.452 579.944 116.689)" x="0" y="0" xml:space="preserve" class="cls-3"><tspan x="0" y="0">ImOveis</tspan></text>
+        <text transform="matrix(9.452 0 0 9.452 545.124 224.61)" x="0" y="0" xml:space="preserve" class="cls-3"><tspan x="0" y="0">Brasil</tspan></text>
+      </g>
+    </g>
+  </g>
+</svg>

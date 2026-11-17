@@ -610,7 +610,24 @@ export interface Configuracao {
     alertaQuedaPreco: boolean;
     /** Regra: botão "Imprimir ficha" na página do imóvel (PDF gerado no navegador). */
     impressaoAnuncio: boolean;
+    /** Regra: "Remover conta" em Meus dados (o próprio usuário pede a remoção definitiva). */
+    autoExclusaoConta: boolean;
+    /** Dias entre o pedido de remoção da conta e a remoção definitiva (1 a 90). */
+    diasEsperaExclusao: number;
     permitirCadastroCorretor: boolean;
+}
+
+/** Situação do "Remover conta" em Meus dados. */
+export interface ExclusaoContaStatus {
+    /** O usuário pode pedir (regra ligada e não é administrador). */
+    disponivel: boolean;
+    diasEspera: number;
+    /** Quando a conta seria apagada se o pedido fosse feito agora. */
+    removerSePedirAgora: string;
+    /** Pedido em andamento (nulo = nenhum). */
+    solicitadaEm: string | null;
+    /** Quando a conta será apagada (nulo = nenhum pedido). */
+    removerEm: string | null;
 }
 
 export interface Dashboard {

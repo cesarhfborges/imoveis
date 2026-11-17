@@ -10,6 +10,7 @@ import { ButtonModule } from 'primeng/button';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TabsModule } from 'primeng/tabs';
 import { RadioButtonModule } from 'primeng/radiobutton';
+import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { MessageModule } from 'primeng/message';
 import { AutoCompleteModule } from 'primeng/autocomplete';
@@ -38,6 +39,7 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
         ToggleSwitchModule,
         TabsModule,
         RadioButtonModule,
+        SelectModule,
         TagModule,
         MessageModule,
         AutoCompleteModule,
@@ -543,6 +545,21 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                                     </section>
                                 }
 
+                                <!-- Prazo da remoção de conta pedida pelo usuário -->
+                                <section class="flex flex-col gap-4 p-4 rounded-border border border-surface" aria-labelledby="rg-exclusao">
+                                    <div>
+                                        <h3 id="rg-exclusao" class="text-base font-semibold m-0 flex items-center gap-2"><i class="pi pi-hourglass text-primary" aria-hidden="true"></i> Prazo para remover a conta</h3>
+                                        <p class="text-sm text-muted-color mt-1 mb-0">Tempo entre o pedido de "Remover conta" e a remoção definitiva, feita todo dia às 03:00. Nesse período a conta funciona normalmente e o usuário pode desistir.</p>
+                                    </div>
+                                    <div class="flex flex-col gap-2 sm:max-w-xs">
+                                        <label for="cf-dias-exclusao" class="font-medium">Tempo de espera</label>
+                                        <p-select inputId="cf-dias-exclusao" formControlName="diasEsperaExclusao" [options]="diasEspera" optionLabel="label" optionValue="value" aria-describedby="cf-dias-exclusao-dica" />
+                                        <small id="cf-dias-exclusao-dica" class="text-muted-color">
+                                            {{ seo().autoExclusaoConta ? 'Vale para os pedidos feitos depois de salvar; os já agendados mantêm a data.' : 'A remoção pelo próprio usuário está desligada (grupo Contas e privacidade). Pedidos já agendados continuam valendo.' }}
+                                        </small>
+                                    </div>
+                                </section>
+
                                 <!-- Telefone do anunciante -->
                                 <section class="flex flex-col gap-4 p-4 rounded-border border border-surface" aria-labelledby="rg-tel">
                                     <div>
@@ -663,8 +680,13 @@ export class ConfiguracoesPage {
         telefoneAnunciante: this.fb.control<ExibicaoTelefone>('MOSTRAR'),
         simulacaoFinanciamento: [true],
         alertaQuedaPreco: [true],
-        impressaoAnuncio: [true]
+        impressaoAnuncio: [true],
+        autoExclusaoConta: [true],
+        diasEsperaExclusao: [7]
     });
+
+    /** Opções do prazo de espera da remoção de conta. */
+    readonly diasEspera = [1, 2, 3, 5, 7, 10, 15, 30, 60, 90].map((d) => ({ value: d, label: d === 1 ? '1 dia' : `${d} dias` }));
 
     readonly exibicoesTelefone = EXIBICOES_TELEFONE;
     /**
@@ -722,6 +744,20 @@ export class ConfiguracoesPage {
                     label: 'Ficha do imóvel para imprimir',
                     ligado: 'A página do imóvel mostra o botão de imprimir: uma folha A4 com fotos, valores e condições da finalidade, QR code do anúncio e espaço para anotações da visita.',
                     desligado: 'O botão de imprimir some da página do imóvel e a ficha deixa de abrir.'
+                }
+            ]
+        },
+        {
+            id: 'contas',
+            titulo: 'Contas e privacidade',
+            icone: 'pi-user',
+            descricao: 'O que o próprio usuário pode fazer com a conta dele (LGPD).',
+            regras: [
+                {
+                    campo: 'autoExclusaoConta',
+                    label: 'Remover conta pelo próprio usuário',
+                    ligado: 'Clientes, corretores e imobiliárias veem "Remover conta" em Meus dados. A conta e os dados são apagados depois do prazo de espera, e até lá o usuário pode desistir.',
+                    desligado: 'O botão some de Meus dados; para sair, o usuário precisa pedir ao suporte. Pedidos já agendados continuam valendo.'
                 }
             ]
         }
@@ -808,7 +844,9 @@ export class ConfiguracoesPage {
             telefoneAnunciante: c.telefoneAnunciante ?? 'MOSTRAR',
             simulacaoFinanciamento: c.simulacaoFinanciamento ?? true,
             alertaQuedaPreco: c.alertaQuedaPreco ?? true,
-            impressaoAnuncio: c.impressaoAnuncio ?? true
+            impressaoAnuncio: c.impressaoAnuncio ?? true,
+            autoExclusaoConta: c.autoExclusaoConta ?? true,
+            diasEsperaExclusao: c.diasEsperaExclusao ?? 7
         });
         this.tema.set({ preset: c.temaPreset as PresetName, primary: c.temaPrimaria, surface: c.temaSurface, mode: c.temaModo });
         this.temaSalvo.set(this.tema());

@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, formatDate } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { AbstractControl, NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { AbstractControl, FormControl, NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputMaskModule } from 'primeng/inputmask';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -18,7 +18,7 @@ import { ContaService } from '@/app/core/services/conta.service';
 import { AuthService } from '@/app/core/services/auth.service';
 import { ConfigService } from '@/app/core/services/config.service';
 import { mensagemErro } from '@/app/core/services/api.service';
-import { PerfilForm, TipoAnunciante, UFS, Usuario, pendenciasPerfilPublico } from '@/app/core/models/models';
+import { ExclusaoContaStatus, PerfilForm, TipoAnunciante, UFS, Usuario, pendenciasPerfilPublico } from '@/app/core/models/models';
 import { PageHeader } from '@/app/shared/components/page-header';
 import { ImageUpload } from '@/app/shared/components/image-upload';
 import { RECORTES } from '@/app/shared/components/image-editor';
@@ -26,6 +26,8 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
 import { digitos, slug } from '@/app/core/pipes/formatos';
 import { documentoValido, erroDocumento } from '@/app/core/pipes/documentos';
 import { RadioButtonModule } from 'primeng/radiobutton';
+import { DialogModule } from 'primeng/dialog';
+import { MessageModule } from 'primeng/message';
 import { CheckboxModule } from 'primeng/checkbox';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
@@ -41,9 +43,17 @@ const MAX_SOBRE = 2000;
 /** Meus dados (qualquer perfil): identificação, contato, atuação profissional (anunciantes), endereço e senha. */
 @Component({
     selector: 'app-perfil-page',
-    imports: [DatePipe, ReactiveFormsModule, InputTextModule, InputMaskModule, InputNumberModule, InputGroupModule, InputGroupAddonModule, SelectModule, TextareaModule, PasswordModule, ButtonModule, TagModule, PageHeader, ImageUpload, TelefoneInput, CheckboxModule, RadioButtonModule, RouterLink, MapaOsm],
+    imports: [DatePipe, ReactiveFormsModule, InputTextModule, InputMaskModule, InputNumberModule, InputGroupModule, InputGroupAddonModule, SelectModule, TextareaModule, PasswordModule, ButtonModule, TagModule, PageHeader, ImageUpload, TelefoneInput, CheckboxModule, RadioButtonModule, DialogModule, MessageModule, RouterLink, MapaOsm],
     template: `
         <app-page-header titulo="Meus dados" subtitulo="Como você aparece no portal e como os clientes falam com você" />
+
+        @if (exclusao()?.removerEm; as data) {
+            <p-message severity="warn" icon="pi pi-clock" styleClass="mb-4">
+                <span>
+                    <strong>Sua conta será removida em {{ data | date: "dd/MM/yyyy 'às' HH:mm" }}.</strong> Todos os seus dados serão apagados. Mudou de ideia? Use <strong>Desistir da remoção</strong> no fim desta página.
+                </span>
+            </p-message>
+        }
 
         <div class="perfil">
             <!-- cartão lateral: foto, resumo e completude -->
@@ -382,8 +392,52 @@ const MAX_SOBRE = 2000;
                     </div>
                     <div class="flex justify-end mt-4"><p-button type="submit" label="Trocar senha" severity="secondary" [outlined]="true" icon="pi pi-key" [loading]="trocando()" /></div>
                 </form>
+
+                <!-- remover conta (LGPD): só com a regra ligada, ou com um pedido já em andamento -->
+                @if (exclusao(); as ex) {
+                    @if (ex.disponivel || ex.removerEm) {
+                        <section class="card !mb-0 border border-red-200 dark:border-red-900" aria-labelledby="sec-remover">
+                            <h2 id="sec-remover" class="perfil__titulo"><i class="pi pi-trash" aria-hidden="true"></i>Remover conta</h2>
+                            @if (ex.removerEm) {
+                                <p class="m-0 mb-4">
+                                    A remoção da sua conta está agendada para <strong>{{ ex.removerEm | date: "dd/MM/yyyy 'às' HH:mm" }}</strong>. Nessa hora, a conta e todos os seus dados são apagados de vez. Até lá tudo continua funcionando, e você pode desistir.
+                                </p>
+                                <div class="flex justify-end">
+                                    <p-button label="Desistir da remoção" icon="pi pi-undo" severity="secondary" [outlined]="true" [loading]="processandoExclusao()" (onClick)="desistirExclusao()" />
+                                </div>
+                            } @else {
+                                <p class="m-0 mb-4">
+                                    Apaga sua conta e todos os seus dados do site{{ anunciante() ? ', incluindo seus anúncios, fotos e contatos recebidos' : '' }}. A remoção acontece {{ ex.diasEspera === 1 ? '1 dia' : ex.diasEspera + ' dias' }} depois do pedido; até lá a conta continua funcionando e você pode desistir.
+                                </p>
+                                <div class="flex justify-end">
+                                    <p-button label="Remover conta" icon="pi pi-trash" severity="danger" [outlined]="true" (onClick)="abrirExclusao()" />
+                                </div>
+                            }
+                        </section>
+                    }
+                }
             </div>
         </div>
+
+        <p-dialog [blockScroll]="true" [visible]="dialogoExclusao()" (visibleChange)="!$event && fecharExclusao()" [modal]="true" header="Remover sua conta" [style]="{ width: '32rem' }" [breakpoints]="{ '575px': '95vw' }">
+            @if (exclusao(); as ex) {
+                <form class="flex flex-col gap-4" id="form-exclusao" (ngSubmit)="pedirExclusao()">
+                    <p-message severity="warn" icon="pi pi-exclamation-triangle">Depois da data abaixo, não há como recuperar a conta.</p-message>
+                    <p class="m-0">
+                        Se confirmar agora, sua conta e seus dados serão apagados em <strong>{{ ex.removerSePedirAgora | date: "dd/MM/yyyy 'às' HH:mm" }}</strong>: dados pessoais, favoritos, contatos enviados, notificações{{ anunciante() ? ', anúncios com fotos, contatos recebidos e tokens de API' : '' }}.
+                    </p>
+                    <p class="m-0 text-sm text-muted-color">Até lá você continua usando o site normalmente e pode desistir aqui mesmo, em Meus dados.</p>
+                    <div class="flex flex-col gap-2">
+                        <label for="pf-exc-senha">Para confirmar, digite sua senha</label>
+                        <p-password inputId="pf-exc-senha" [formControl]="senhaExclusao" [feedback]="false" [toggleMask]="true" [fluid]="true" autocomplete="current-password" />
+                    </div>
+                </form>
+            }
+            <ng-template #footer>
+                <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="fecharExclusao()" />
+                <p-button label="Agendar remoção" icon="pi pi-trash" severity="danger" [disabled]="!senhaExclusaoValor()" [loading]="processandoExclusao()" (onClick)="pedirExclusao()" />
+            </ng-template>
+        </p-dialog>
     `,
     styles: `
         .perfil {
@@ -520,6 +574,12 @@ export class PerfilPage {
     readonly maxSobre = MAX_SOBRE;
 
     usuario = signal<Usuario | null>(null);
+    /** "Remover conta" (LGPD): situação do pedido; nulo enquanto carrega ou se falhar. */
+    exclusao = signal<ExclusaoContaStatus | null>(null);
+    dialogoExclusao = signal(false);
+    processandoExclusao = signal(false);
+    senhaExclusao = new FormControl('', { nonNullable: true });
+    senhaExclusaoValor = toSignal(this.senhaExclusao.valueChanges, { initialValue: '' });
     salvando = signal(false);
     trocando = signal(false);
     buscandoCep = signal(false);
@@ -631,6 +691,7 @@ export class PerfilPage {
             if (this.dados.controls.tipoAnunciante.dirty) doc.reset('');
             doc.updateValueAndValidity();
         });
+        this.conta.exclusao().subscribe({ next: (s) => this.exclusao.set(s), error: () => this.exclusao.set(null) });
         this.conta.perfil().subscribe({
             next: (u) => this.preencher(u),
             error: (e) => this.msg.add({ severity: 'error', summary: 'Meus dados', detail: mensagemErro(e) })
@@ -781,6 +842,49 @@ export class PerfilPage {
             error: (e) => {
                 this.salvando.set(false);
                 this.msg.add({ severity: 'error', summary: 'Não foi possível salvar', detail: mensagemErro(e) });
+            }
+        });
+    }
+
+    abrirExclusao() {
+        this.senhaExclusao.reset('');
+        this.dialogoExclusao.set(true);
+    }
+
+    fecharExclusao() {
+        if (!this.processandoExclusao()) this.dialogoExclusao.set(false);
+    }
+
+    pedirExclusao() {
+        const senha = this.senhaExclusao.value;
+        if (!senha || this.processandoExclusao()) return;
+        this.processandoExclusao.set(true);
+        this.conta.pedirExclusao(senha).subscribe({
+            next: (s) => {
+                this.processandoExclusao.set(false);
+                this.exclusao.set(s);
+                this.dialogoExclusao.set(false);
+                const data = s.removerEm ? formatDate(s.removerEm, "dd/MM/yyyy 'às' HH:mm", 'pt-BR') : '';
+                this.msg.add({ severity: 'warn', summary: 'Remoção agendada', detail: `Sua conta e seus dados serão apagados em ${data}. Até lá você pode desistir.`, life: 8000 });
+            },
+            error: (e) => {
+                this.processandoExclusao.set(false);
+                this.msg.add({ severity: 'error', summary: 'Não foi possível agendar', detail: mensagemErro(e) });
+            }
+        });
+    }
+
+    desistirExclusao() {
+        this.processandoExclusao.set(true);
+        this.conta.desistirExclusao().subscribe({
+            next: (s) => {
+                this.processandoExclusao.set(false);
+                this.exclusao.set(s);
+                this.msg.add({ severity: 'success', summary: 'Remoção cancelada', detail: 'Sua conta continua normalmente. Nada foi apagado.' });
+            },
+            error: (e) => {
+                this.processandoExclusao.set(false);
+                this.msg.add({ severity: 'error', summary: 'Não foi possível desistir', detail: mensagemErro(e) });
             }
         });
     }

@@ -94,5 +94,6 @@ Variáveis de produção: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `APP_FRONTEND_ORIG
 | `GET/POST /app/admin/documentos`, `GET/PUT/DELETE /app/admin/documentos/{id}` (exclusão lógica), `PATCH .../situacao`, `POST .../restaurar`, `GET .../versoes[/{versao}]` | admin |
 | `POST /app/auth/registro` aceita `aceites: [{documentoId, versao}]`; documentos com aceite no cadastro são obrigatórios | público |
 | `GET/PUT /app/conta/perfil`, `PUT /app/conta/senha`, `/app/conta/favoritos` | logado |
+| `GET/POST/DELETE /app/conta/exclusao` — "Remover conta": situação, pedido (com a senha) e desistência; a tarefa das 03:00 (`ExclusaoContaAgendamento`, `app.exclusao-conta.cron`) apaga as contas vencidas | logado |
 | `/app/conta/tokens` | corretor / admin (clientes não têm token) |
 | `POST /app/uploads` (multipart `arquivo`) | corretor / admin |

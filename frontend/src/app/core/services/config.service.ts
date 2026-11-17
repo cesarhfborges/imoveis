@@ -33,7 +33,9 @@ export const CONFIG_PADRAO: Configuracao = {
     telefoneAnunciante: 'MOSTRAR',
     simulacaoFinanciamento: true,
     alertaQuedaPreco: true,
-    impressaoAnuncio: true
+    impressaoAnuncio: true,
+    autoExclusaoConta: true,
+    diasEsperaExclusao: 7
 };
 
 /** Configuração global (nome, logos, SEO e tema) definida em /admin/configuracoes. */
