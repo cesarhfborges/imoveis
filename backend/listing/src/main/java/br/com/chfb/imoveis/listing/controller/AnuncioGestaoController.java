@@ -21,9 +21,11 @@ import br.com.chfb.imoveis.listing.dto.ImovelDetalhe;
 import br.com.chfb.imoveis.listing.dto.ImovelFiltro;
 import br.com.chfb.imoveis.listing.dto.ImovelForm;
 import br.com.chfb.imoveis.listing.dto.ImovelResumo;
+import br.com.chfb.imoveis.listing.dto.PainelAnuncios;
 import br.com.chfb.imoveis.listing.dto.StatusForm;
 import br.com.chfb.imoveis.listing.service.ContatoService;
 import br.com.chfb.imoveis.listing.service.ImovelService;
+import br.com.chfb.imoveis.listing.service.PainelService;
 import br.com.chfb.imoveis.sharedkernel.dto.PageResponse;
 import br.com.chfb.imoveis.sharedkernel.security.AuthUser;
 import jakarta.validation.Valid;
@@ -43,10 +45,12 @@ public class AnuncioGestaoController {
 
     private final ImovelService imoveis;
     private final ContatoService contatos;
+    private final PainelService painel;
 
-    public AnuncioGestaoController(ImovelService imoveis, ContatoService contatos) {
+    public AnuncioGestaoController(ImovelService imoveis, ContatoService contatos, PainelService painel) {
         this.imoveis = imoveis;
         this.contatos = contatos;
+        this.painel = painel;
     }
 
     @GetMapping("/imoveis")
@@ -86,6 +90,12 @@ public class AnuncioGestaoController {
     @GetMapping("/anuncios/estatisticas")
     public EstatisticasAnuncios estatisticas(@AuthenticationPrincipal AuthUser u) {
         return imoveis.estatisticas(u.isAdmin() ? null : u.id(), u.id());
+    }
+
+    /** Gráficos do painel: corretor vê só os próprios anúncios; administrador vê todos. {@code dias}: 7, 30 ou 90. */
+    @GetMapping("/anuncios/painel")
+    public PainelAnuncios painel(@RequestParam(defaultValue = "30") int dias, @AuthenticationPrincipal AuthUser u) {
+        return painel.painel(u.isAdmin() ? null : u.id(), dias);
     }
 
     @GetMapping("/contatos")

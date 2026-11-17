@@ -45,6 +45,9 @@ public record ImovelForm(
         boolean aceitaPermuta,
         boolean escrituraRegistrada,
         boolean quitado,
+        /** Aceita todas as financeiras ativas; quando falso, valem as de {@code financeiras}. */
+        boolean financeirasTodas,
+        @Size(max = 50) Set<Long> financeiras,
         @Size(max = 30) List<@Valid FotoDto> fotos,
         @Size(max = 40) Set<@Size(max = 60) String> caracteristicas) {
 }

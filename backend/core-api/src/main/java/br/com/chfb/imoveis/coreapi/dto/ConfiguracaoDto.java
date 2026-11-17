@@ -32,7 +32,11 @@ public record ConfiguracaoDto(
         boolean permitirCadastroCorretor,
         boolean abrirAnuncioNovaJanela,
         /** Exibição do telefone do anunciante no site (nulo mantém o valor atual). */
-        ExibicaoTelefonePolicy.Modo telefoneAnunciante) {
+        ExibicaoTelefonePolicy.Modo telefoneAnunciante,
+        /** Simulação de financiamento nos anúncios (nulo mantém o valor atual). */
+        Boolean simulacaoFinanciamento,
+        /** Aviso de queda de preço nos favoritos (nulo mantém o valor atual). */
+        Boolean alertaQuedaPreco) {
 
     public static ConfiguracaoDto of(Configuracao c) {
         return new ConfiguracaoDto(c.getNomeApp(), c.getSlogan(), c.getLogoUrl(), c.getLogoEscuroUrl(),
@@ -40,7 +44,8 @@ public record ConfiguracaoDto(
                 c.getEmailContato(), c.getTelefoneContato(), c.getWhatsapp(), c.getEndereco(), c.getInstagram(),
                 c.getFacebook(), c.getTextoRodape(), c.getTemaPreset(), c.getTemaPrimaria(), c.getTemaSurface(),
                 c.getTemaModo(), c.isModerarAnuncios(), c.isPermitirCadastroCorretor(),
-                c.isAbrirAnuncioNovaJanela(), c.getTelefoneAnunciante());
+                c.isAbrirAnuncioNovaJanela(), c.getTelefoneAnunciante(), c.isSimulacaoFinanciamento(),
+                c.isAlertaQuedaPreco());
     }
 
     public void aplicar(Configuracao c) {
@@ -69,6 +74,12 @@ public record ConfiguracaoDto(
         c.setAbrirAnuncioNovaJanela(abrirAnuncioNovaJanela);
         if (telefoneAnunciante != null) {
             c.setTelefoneAnunciante(telefoneAnunciante);
+        }
+        if (simulacaoFinanciamento != null) {
+            c.setSimulacaoFinanciamento(simulacaoFinanciamento);
+        }
+        if (alertaQuedaPreco != null) {
+            c.setAlertaQuedaPreco(alertaQuedaPreco);
         }
     }
 }

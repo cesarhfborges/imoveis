@@ -1,5 +1,7 @@
 package br.com.chfb.imoveis.coreapi.controller;
 
+import java.time.LocalDate;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,6 +20,7 @@ import br.com.chfb.imoveis.coreapi.dto.ContaDtos.UsuarioDto;
 import br.com.chfb.imoveis.coreapi.dto.DashboardDto;
 import br.com.chfb.imoveis.coreapi.service.UsuarioService;
 import br.com.chfb.imoveis.listing.service.ImovelService;
+import br.com.chfb.imoveis.listing.service.PainelService;
 import br.com.chfb.imoveis.sharedkernel.dto.PageResponse;
 import br.com.chfb.imoveis.sharedkernel.security.AuthUser;
 import br.com.chfb.imoveis.sharedkernel.security.Perfil;
@@ -37,10 +40,12 @@ public class AdminUsuarioController {
     }
 
     @GetMapping("/dashboard")
-    public DashboardDto dashboard(@AuthenticationPrincipal AuthUser u) {
+    public DashboardDto dashboard(@RequestParam(defaultValue = "30") int dias, @AuthenticationPrincipal AuthUser u) {
+        int periodo = PainelService.PERIODOS.contains(dias) ? dias : 30;
         return new DashboardDto(usuarios.contar(), usuarios.contarPorPapel(Perfil.CLIENTE),
                 usuarios.contarPorPapel(Perfil.CORRETOR), usuarios.contarPorPapel(Perfil.ADMIN),
-                imoveis.estatisticas(null, u.id()));
+                imoveis.estatisticas(null, u.id()),
+                usuarios.cadastrosPorDia(LocalDate.now(PainelService.FUSO).minusDays(periodo - 1L)));
     }
 
     @GetMapping("/usuarios")

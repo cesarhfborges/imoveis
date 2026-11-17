@@ -73,6 +73,10 @@ public class Configuracao extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "telefone_anunciante", nullable = false, length = 30)
     private ExibicaoTelefonePolicy.Modo telefoneAnunciante = ExibicaoTelefonePolicy.Modo.MOSTRAR;
+    @Column(name = "simulacao_financiamento")
+    private boolean simulacaoFinanciamento = true;
+    @Column(name = "alerta_queda_preco")
+    private boolean alertaQuedaPreco = true;
 
     public String getNomeApp() { return nomeApp; }
     public void setNomeApp(String nomeApp) { this.nomeApp = nomeApp; }
@@ -118,6 +122,10 @@ public class Configuracao extends BaseEntity {
     public void setModerarAnuncios(boolean moderarAnuncios) { this.moderarAnuncios = moderarAnuncios; }
     public ExibicaoTelefonePolicy.Modo getTelefoneAnunciante() { return telefoneAnunciante; }
     public void setTelefoneAnunciante(ExibicaoTelefonePolicy.Modo telefoneAnunciante) { this.telefoneAnunciante = telefoneAnunciante; }
+    public boolean isSimulacaoFinanciamento() { return simulacaoFinanciamento; }
+    public void setSimulacaoFinanciamento(boolean simulacaoFinanciamento) { this.simulacaoFinanciamento = simulacaoFinanciamento; }
+    public boolean isAlertaQuedaPreco() { return alertaQuedaPreco; }
+    public void setAlertaQuedaPreco(boolean alertaQuedaPreco) { this.alertaQuedaPreco = alertaQuedaPreco; }
     public boolean isAbrirAnuncioNovaJanela() { return abrirAnuncioNovaJanela; }
     public void setAbrirAnuncioNovaJanela(boolean abrirAnuncioNovaJanela) { this.abrirAnuncioNovaJanela = abrirAnuncioNovaJanela; }
     public boolean isPermitirCadastroCorretor() { return permitirCadastroCorretor; }

@@ -1,6 +1,6 @@
 import { HttpParams, HttpRequest } from '@angular/common/http';
-import { AnunciantePerfil, AnuncianteResumo, ContagemTipo, ExibicaoTelefone, FotoImovel, ImovelDetalhe, ImovelFiltro, ImovelResumo, ORIGENS_FOTO, OrigemFoto, PageResponse, Perfil, Sessao, StatusAnuncio, TIPOS, TipoImovel, TipoAnunciante, pendenciasPerfilPublico, tipoLabel } from '@/app/core/models/models';
-import { DemoDb, DemoImovel, DemoUsuario, criarDemoDb, fotosMock, perfilDemo } from './demo-data';
+import { AnunciantePerfil, AnuncianteResumo, ClientePainel, ContagemTipo, Financeira, QuedaPreco, FatiaPainel, PainelAnuncios, PeriodoPainel, PontoDia, ExibicaoTelefone, FotoImovel, ImovelDetalhe, ImovelFiltro, ImovelResumo, ORIGENS_FOTO, OrigemFoto, PageResponse, Perfil, Sessao, StatusAnuncio, TIPOS, TipoImovel, TipoAnunciante, pendenciasPerfilPublico, tipoLabel } from '@/app/core/models/models';
+import { DemoDb, DemoImovel, DemoUsuario, criarDemoDb, financeirasDemo, fotosMock, perfilDemo } from './demo-data';
 
 /**
  * "Backend de mentira" que imita as rotas /app/** do Spring Boot dentro do navegador.
@@ -32,6 +32,25 @@ function origemFotoAntiga(f: unknown): FotoImovel {
     return { url: o.url, origem: o.origem ?? (o.editadaIa ? 'IA' : 'NAO_INFORMADO') };
 }
 
+/** Data local em yyyy-MM-dd. */
+function diaIso(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function periodoValido(dias: number): PeriodoPainel {
+    return dias === 7 || dias === 90 ? dias : 30;
+}
+
+/** Série dos últimos `dias` (terminando hoje, ou `deslocamento` dias antes), um ponto por dia. */
+function serieDias(dias: number, valor: (dia: string) => number, deslocamento = 0): PontoDia[] {
+    const hoje = new Date();
+    return Array.from({ length: dias }, (_, k) => {
+        const d = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - deslocamento - (dias - 1 - k));
+        const dia = diaIso(d);
+        return { dia, total: valor(dia) };
+    });
+}
+
 export class DemoBackend {
     private db: DemoDb;
 
@@ -59,6 +78,7 @@ export class DemoBackend {
                     db.usuarios.forEach((u) => {
                         if (u.perfilPublico === undefined) Object.assign(u, perfilDemo(u.id));
                     });
+                    db.financeiras ??= financeirasDemo();
                     return db;
                 }
             }
@@ -146,6 +166,12 @@ export class DemoBackend {
             const i = this.db.imoveis.find((x) => x.id === +r![1] && x.status === 'ATIVO');
             if (!i) throw new DemoError(404, 'Imóvel não encontrado');
             i.visualizacoes++;
+            const logado = this.sessao();
+            if (logado) {
+                this.db.vistos = [{ usuarioId: logado.usuarioId, imovelId: i.id, em: new Date().toISOString() }, ...(this.db.vistos ?? []).filter((v) => !(v.usuarioId === logado.usuarioId && v.imovelId === i.id))].slice(0, 300);
+            }
+            const chave = `${i.id}|${diaIso(new Date())}`;
+            this.db.visitasDiarias = { ...this.db.visitasDiarias, [chave]: (this.db.visitasDiarias?.[chave] ?? 0) + 1 };
             this.salvarDb();
             const modo = this.db.config.telefoneAnunciante ?? 'MOSTRAR';
             // logado já recebe o número completo (como no backend)
@@ -171,6 +197,27 @@ export class DemoBackend {
             const tel = this.db.usuarios.find((u) => u.id === i?.anuncianteId)?.telefone;
             if (!tel) throw new DemoError(404, 'Telefone não disponível');
             return { telefone: tel };
+        }
+
+        // ---- financeiras
+        if (url === '/app/public/financeiras') return this.financeirasDb().filter((f) => f.ativo).sort((a, b) => a.nome.localeCompare(b.nome));
+        if (url === '/app/admin/financeiras' || url.startsWith('/app/admin/financeiras/')) {
+            this.exigir('ADMIN');
+            return this.financeirasAdmin(url, m, body);
+        }
+
+        // ---- painel do cliente
+        if (url === '/app/conta/painel') return this.painelCliente(this.exigir().u.id);
+        if (url === '/app/conta/favoritos/quedas') return this.quedas(this.exigir().u.id);
+        if (url === '/app/conta/favoritos/comparar') {
+            const { u } = this.exigir();
+            const meus = new Set(this.db.favoritos.filter((f) => f.usuarioId === u.id).map((f) => f.imovelId));
+            const ids = [...new Set((p.get('ids') ?? '').split(',').map(Number).filter((id) => meus.has(id)))].slice(0, 4);
+            const modo = this.db.config.telefoneAnunciante ?? 'MOSTRAR';
+            return ids.flatMap((id) => {
+                const i = this.db.imoveis.find((x) => x.id === id);
+                return i ? [this.detalhe(i, modo === 'MOSTRAR_APENAS_LOGADO' ? 'MOSTRAR' : modo)] : [];
+            });
         }
 
         // ---- conta
@@ -435,9 +482,14 @@ export class DemoBackend {
         const tel = a?.telefone || null;
         const telefone = !tel || modoTelefone === 'OCULTAR' ? null : modoTelefone === 'MOSTRAR_APENAS_LOGADO' ? tel.slice(0, Math.max(0, tel.length - 4)) : tel;
         const telefoneCompleto = !!tel && modoTelefone === 'MOSTRAR';
-        const { anuncianteId, ...resto } = i;
+        const { anuncianteId, financeirasTodas, financeirasIds, ...resto } = i;
+        const todas = financeirasTodas ?? i.aceitaFinanciamento;
+        const ids = todas ? [] : (financeirasIds ?? []);
         return {
             ...resto,
+            financeirasTodas: todas,
+            financeirasIds: ids,
+            financeiras: this.financeirasDoAnuncio(i),
             codigo: 'IM-' + String(i.id).padStart(6, '0'),
             tipoDescricao: tipoLabel(i.tipo),
             anunciante: a ? { id: a.id, nome: a.nome, telefone, telefoneCompleto, creci: a.creci, fotoUrl: a.fotoUrl, perfilPublico: this.temPerfilPublico(a) } : null
@@ -448,7 +500,7 @@ export class DemoBackend {
         const i = this.db.imoveis.find((x) => x.id === id && x.status === 'ATIVO');
         if (!i) throw new DemoError(404, 'Imóvel não encontrado');
         if (!b.nome || !b.email || !b.mensagem) throw new DemoError(400, 'Preencha nome, e-mail e mensagem');
-        const c = { id: this.nextId(), imovelId: id, nome: b.nome, email: b.email, telefone: b.telefone ?? null, mensagem: b.mensagem, lido: false, criadoEm: new Date().toISOString() };
+        const c = { id: this.nextId(), imovelId: id, nome: b.nome, email: b.email, telefone: b.telefone ?? null, mensagem: b.mensagem, lido: false, criadoEm: new Date().toISOString(), usuarioId: this.sessao()?.usuarioId ?? null };
         this.db.contatos.push(c);
         this.salvarDb();
         return this.contatoDto(c);
@@ -653,7 +705,9 @@ export class DemoBackend {
             const i = carregar(+r[1]);
             if (m === 'PUT') {
                 this.validar(b);
+                const anterior = i.preco;
                 Object.assign(i, this.normalizar(b), { atualizadoEm: new Date().toISOString() });
+                if (anterior !== i.preco) this.db.precos = [...(this.db.precos ?? []), { imovelId: i.id, anterior, novo: i.preco, em: new Date().toISOString() }];
                 this.salvarDb();
             }
             if (m === 'DELETE') {
@@ -690,6 +744,7 @@ export class DemoBackend {
                 contatosNaoLidos: this.db.contatos.filter((c) => ids.has(c.imovelId) && !c.lido).length
             };
         }
+        if (rota === 'anuncios/painel') return this.painel(admin ? null : ctx.u.id, Number(p.get('dias') ?? 30));
         if (rota === 'contatos') {
             const meus = new Set(this.db.imoveis.filter((i) => admin || i.anuncianteId === ctx.u.id).map((i) => i.id));
             const lista = this.db.contatos.filter((c) => meus.has(c.imovelId)).sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
@@ -707,6 +762,187 @@ export class DemoBackend {
             return this.contatoDto(c);
         }
         throw new DemoError(404, 'Recurso não encontrado');
+    }
+
+    /** Gráficos do painel (espelha PainelService do backend). Sem histórico real, simula uma base estável por anúncio. */
+    private painel(anuncianteId: number | null, diasPedidos: number): PainelAnuncios {
+        const dias = periodoValido(diasPedidos);
+        const lista = this.db.imoveis.filter((i) => anuncianteId == null || i.anuncianteId === anuncianteId);
+        const ids = new Set(lista.map((i) => i.id));
+        const contatos = this.db.contatos.filter((c) => ids.has(c.imovelId));
+        const visitasDoDia = (dia: string) => {
+            const n = Number(dia.replaceAll('-', '')) % 97;
+            return lista.reduce((s, i) => {
+                const base = i.status === 'ATIVO' ? Math.round((i.visualizacoes / 90) * (0.5 + ((i.id * 31 + n * 17) % 10) / 10)) : 0;
+                return s + base + (this.db.visitasDiarias?.[`${i.id}|${dia}`] ?? 0);
+            }, 0);
+        };
+        const contatosDoDia = (dia: string) => contatos.filter((c) => diaIso(new Date(c.criadoEm)) === dia).length;
+        const visitasPorDia = serieDias(dias, visitasDoDia);
+        const contatosPorDia = serieDias(dias, contatosDoDia);
+        const soma = (s: PontoDia[]) => s.reduce((t, x) => t + x.total, 0);
+        const agrupar = (chave: (i: DemoImovel) => string, valor: (i: DemoImovel) => number, limite = 8): FatiaPainel[] => {
+            const mapa = new Map<string, number>();
+            lista.forEach((i) => mapa.set(chave(i), (mapa.get(chave(i)) ?? 0) + valor(i)));
+            return [...mapa].map(([rotulo, total]) => ({ rotulo, total })).sort((a, b) => b.total - a.total).slice(0, limite);
+        };
+        const finalidade = (i: DemoImovel) => ({ VENDA: 'Venda', ALUGUEL: 'Aluguel', TEMPORADA: 'Temporada' })[i.finalidade] ?? i.finalidade;
+        const nome = (id: number) => this.db.usuarios.find((u) => u.id === id)?.nome ?? `Anunciante #${id}`;
+        return {
+            dias,
+            resumo: {
+                visitas: soma(visitasPorDia),
+                visitasAnterior: soma(serieDias(dias, visitasDoDia, dias)),
+                contatos: soma(contatosPorDia),
+                contatosAnterior: soma(serieDias(dias, contatosDoDia, dias)),
+                favoritos: this.db.favoritos.filter((f) => ids.has(f.imovelId)).length,
+                visitasAcumuladas: lista.reduce((s, i) => s + i.visualizacoes, 0),
+                anunciosAtivos: lista.filter((i) => i.status === 'ATIVO').length
+            },
+            visitasPorDia,
+            contatosPorDia,
+            anunciosNovosPorDia: serieDias(dias, (dia) => lista.filter((i) => diaIso(new Date(i.criadoEm)) === dia).length),
+            visitasPorCidade: agrupar((i) => `${i.cidade}/${i.uf}`, (i) => i.visualizacoes),
+            visitasPorBairro: agrupar((i) => `${i.bairro} (${i.cidade})`, (i) => i.visualizacoes),
+            visitasPorTipo: agrupar((i) => tipoLabel(i.tipo), (i) => i.visualizacoes, 20),
+            visitasPorFinalidade: agrupar(finalidade, (i) => i.visualizacoes),
+            anunciosPorFinalidade: agrupar(finalidade, () => 1),
+            visitasPorAnunciante: anuncianteId == null ? agrupar((i) => nome(i.anuncianteId), (i) => i.visualizacoes) : [],
+            maisVistos: [...lista]
+                .sort((a, b) => b.visualizacoes - a.visualizacoes)
+                .slice(0, 8)
+                .map((i) => ({
+                    id: i.id,
+                    codigo: `IM-${String(i.id).padStart(6, '0')}`,
+                    titulo: i.titulo,
+                    bairro: i.bairro,
+                    cidade: i.cidade,
+                    status: i.status,
+                    visualizacoes: i.visualizacoes,
+                    contatos: contatos.filter((c) => c.imovelId === i.id).length,
+                    favoritos: this.db.favoritos.filter((f) => f.imovelId === i.id).length
+                }))
+        };
+    }
+
+    // ------------------------------------------------------------ financeiras
+
+    private financeirasDb(): Financeira[] {
+        return (this.db.financeiras ??= financeirasDemo());
+    }
+
+    /** Espelha FinanceiraService.doAnuncio: só venda com financiamento, financeiras ativas (todas ou as escolhidas). */
+    private financeirasDoAnuncio(i: DemoImovel): Financeira[] {
+        if (!i.aceitaFinanciamento || i.finalidade !== 'VENDA' || this.db.config.simulacaoFinanciamento === false) return [];
+        const todas = i.financeirasTodas ?? true;
+        return this.financeirasDb()
+            .filter((f) => f.ativo && (todas || (i.financeirasIds ?? []).includes(f.id)))
+            .sort((a, b) => a.nome.localeCompare(b.nome));
+    }
+
+    private financeirasAdmin(url: string, m: string, b: any): unknown {
+        const lista = this.financeirasDb();
+        const r = url.match(/\/(\d+)$/);
+        if (m === 'GET') return [...lista].sort((a, c) => a.nome.localeCompare(c.nome));
+        if (m === 'POST' || m === 'PUT') {
+            if (!b.nome || b.taxaJurosAnual == null || !b.prazoMaximoMeses) throw new DemoError(400, 'Informe nome, juros e prazo');
+            if (b.valorMinimoImovel != null && b.valorMaximoImovel != null && b.valorMinimoImovel > b.valorMaximoImovel) throw new DemoError(400, 'O valor mínimo do imóvel não pode ser maior que o máximo');
+            if (m === 'POST') {
+                const f: Financeira = { ...b, id: this.nextId(), nome: String(b.nome).trim() };
+                lista.push(f);
+                this.salvarDb();
+                return f;
+            }
+            const f = lista.find((x) => x.id === +(r?.[1] ?? 0));
+            if (!f) throw new DemoError(404, 'Financeira não encontrada');
+            Object.assign(f, b, { id: f.id, nome: String(b.nome).trim() });
+            this.salvarDb();
+            return f;
+        }
+        if (m === 'DELETE' && r) {
+            this.db.financeiras = lista.filter((x) => x.id !== +r[1]);
+            this.db.imoveis.forEach((i) => (i.financeirasIds = (i.financeirasIds ?? []).filter((id) => id !== +r[1])));
+            this.salvarDb();
+            return null;
+        }
+        throw new DemoError(404, 'Recurso não encontrado');
+    }
+
+    // ------------------------------------------------------------ painel do cliente
+
+    private quedas(usuarioId: number): QuedaPreco[] {
+        if (this.db.config.alertaQuedaPreco === false) return [];
+        return this.db.favoritos
+            .filter((f) => f.usuarioId === usuarioId)
+            .flatMap((f) => {
+                const i = this.db.imoveis.find((x) => x.id === f.imovelId);
+                const hist = (this.db.precos ?? []).filter((p) => p.imovelId === f.imovelId && p.em >= f.criadoEm);
+                if (!i || !hist.length) return [];
+                const anterior = Math.max(...hist.map((h) => h.anterior));
+                if (anterior <= i.preco) return [];
+                const alteradoEm = hist.map((h) => h.em).sort().at(-1)!;
+                return [{ imovelId: i.id, titulo: i.titulo, precoAnterior: anterior, precoAtual: i.preco, percentual: Math.round(((anterior - i.preco) / anterior) * 1000) / 10, alteradoEm }];
+            })
+            .sort((a, b) => b.alteradoEm.localeCompare(a.alteradoEm));
+    }
+
+    /** Espelha ContaPainelService.painel (recomendações por cidade/bairro/tipo/preço dos favoritos e vistos). */
+    private painelCliente(usuarioId: number): ClientePainel {
+        const ativos = this.db.imoveis.filter((i) => i.status === 'ATIVO');
+        const favs = this.db.favoritos.filter((f) => f.usuarioId === usuarioId);
+        const favIds = new Set(favs.map((f) => f.imovelId));
+        const enviados = this.db.contatos.filter((c) => c.usuarioId === usuarioId);
+        const porId = (id: number) => this.db.imoveis.find((i) => i.id === id);
+        const vistos = (this.db.vistos ?? []).filter((v) => v.usuarioId === usuarioId).sort((a, b) => b.em.localeCompare(a.em));
+        const pref = [...favs.map((f) => porId(f.imovelId)), ...vistos.map((v) => porId(v.imovelId))].filter((i): i is DemoImovel => !!i);
+
+        const hoje = new Date();
+        const atividade = Array.from({ length: 12 }, (_, k) => {
+            const d = new Date(hoje.getFullYear(), hoje.getMonth() - 11 + k, 1);
+            const mes = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const doMes = (iso: string) => diaIso(new Date(iso)).startsWith(mes);
+            return { mes, favoritos: favs.filter((f) => doMes(f.criadoEm)).length, contatos: enviados.filter((c) => doMes(c.criadoEm)).length };
+        });
+
+        const precos = pref.map((i) => i.preco);
+        const [pmin, pmax] = precos.length ? [Math.min(...precos) * 0.7, Math.max(...precos) * 1.3] : [0, 0];
+        const nota = (c: DemoImovel) => pref.filter((p) => p.bairro === c.bairro && p.cidade === c.cidade).length * 3 + pref.filter((p) => p.tipo === c.tipo).length + (c.preco >= pmin && c.preco <= pmax ? 2 : 0);
+        const recomendados = ativos
+            .filter((c) => !favIds.has(c.id) && pref.some((p) => p.finalidade === c.finalidade && p.cidade === c.cidade))
+            .sort((a, b) => nota(b) - nota(a) || Number(b.destaque) - Number(a.destaque) || b.criadoEm.localeCompare(a.criadoEm))
+            .slice(0, 6);
+
+        const contagem = new Map<string, number>();
+        favs.forEach((f) => {
+            const i = porId(f.imovelId);
+            if (i) contagem.set(`${i.bairro}|${i.cidade}`, (contagem.get(`${i.bairro}|${i.cidade}`) ?? 0) + 1);
+        });
+        const bairros = [...contagem].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => k.split('|'));
+        const semana = new Date(Date.now() - 7 * 86400000).toISOString();
+        const novidades = ativos.filter((i) => !favIds.has(i.id) && i.criadoEm >= semana && bairros.some(([b, c]) => i.bairro === b && i.cidade === c)).slice(0, 6);
+
+        return {
+            contatosEnviados: enviados.length,
+            contatosVistos: enviados.filter((c) => c.lido).length,
+            atividade,
+            contatosRecentes: [...enviados]
+                .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm))
+                .slice(0, 5)
+                .flatMap((c) => {
+                    const i = porId(c.imovelId);
+                    return i ? [{ id: c.id, imovelId: i.id, imovelCodigo: 'IM-' + String(i.id).padStart(6, '0'), imovelTitulo: i.titulo, bairro: i.bairro, cidade: i.cidade, imovelStatus: i.status, mensagem: c.mensagem, visto: c.lido, criadoEm: c.criadoEm, fotoCapa: i.fotos[0]?.url ?? null }] : [];
+                }),
+            vistosRecentes: vistos.map((v) => porId(v.imovelId)).filter((i): i is DemoImovel => !!i && i.status === 'ATIVO').slice(0, 8).map((i) => this.resumo(i)),
+            recomendados: recomendados.map((i) => this.resumo(i)),
+            novidades: { bairros: bairros.map(([b, c]) => `${b} (${c})`), imoveis: novidades.map((i) => this.resumo(i)) },
+            quedasPreco: this.quedas(usuarioId),
+            financiamentos: favs
+                .map((f) => porId(f.imovelId))
+                .filter((i): i is DemoImovel => !!i && i.status === 'ATIVO')
+                .map((i) => ({ imovel: this.resumo(i), financeiras: this.financeirasDoAnuncio(i) }))
+                .filter((f) => f.financeiras.length > 0)
+                .slice(0, 6)
+        };
     }
 
     private validar(b: any) {
@@ -744,6 +980,8 @@ export class DemoBackend {
             aceitaPermuta: !!b.aceitaPermuta,
             escrituraRegistrada: !!b.escrituraRegistrada,
             quitado: !!b.quitado,
+            financeirasTodas: !!b.aceitaFinanciamento && !!b.financeirasTodas,
+            financeirasIds: b.aceitaFinanciamento && !b.financeirasTodas ? ((b.financeiras ?? []) as number[]) : [],
             fotos: (b.fotos ?? []).filter((x: { url?: string }) => !!x?.url).map((x: { url: string; origem?: OrigemFoto }) => ({ url: x.url, origem: ORIGENS_FOTO.some((o) => o.value === x.origem) ? x.origem! : 'NAO_INFORMADO' })),
             caracteristicas: (b.caracteristicas ?? []).filter((x: string) => !!x)
         };
@@ -769,7 +1007,8 @@ export class DemoBackend {
                 clientes: us.filter((u) => u.papeis.includes('CLIENTE')).length,
                 corretores: us.filter((u) => u.papeis.includes('CORRETOR')).length,
                 administradores: us.filter((u) => u.papeis.includes('ADMIN')).length,
-                anuncios: this.gestao({ u: atual, perfil: 'ADMIN' }, 'anuncios/estatisticas', 'GET', {}, p)
+                anuncios: this.gestao({ u: atual, perfil: 'ADMIN' }, 'anuncios/estatisticas', 'GET', {}, p),
+                cadastrosPorDia: serieDias(periodoValido(Number(p.get('dias') ?? 30)), (dia) => us.filter((u) => diaIso(new Date(u.criadoEm)) === dia).length)
             };
         }
         if (url === '/app/admin/usuarios' && m === 'GET') {

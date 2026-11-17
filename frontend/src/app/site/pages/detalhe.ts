@@ -17,11 +17,12 @@ import { MapaOsm, PontoMapa } from '@/app/shared/components/mapa-osm';
 import { ImovelCardMini } from '@/app/shared/components/imovel-card-mini';
 import { EmptyState } from '@/app/shared/components/empty-state';
 import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
+import { SimulacaoDialog } from '@/app/shared/components/financiamento/simulacao-dialog';
 
 /** Página do imóvel. */
 @Component({
     selector: 'app-detalhe-page',
-    imports: [RouterLink, ButtonModule, SkeletonModule, PrecoPipe, ValorM2Pipe, TempoAtrasPipe, CepPipe, TelefoneAnunciante, GaleriaFotos, ContatoForm, MapaOsm, ImovelCardMini, EmptyState, DenunciarDialog, AnuncianteFoto],
+    imports: [RouterLink, ButtonModule, SkeletonModule, PrecoPipe, ValorM2Pipe, TempoAtrasPipe, CepPipe, TelefoneAnunciante, GaleriaFotos, ContatoForm, MapaOsm, ImovelCardMini, EmptyState, DenunciarDialog, AnuncianteFoto, SimulacaoDialog],
     template: `
         @if (erro()) {
             <div class="site-container py-10">
@@ -128,6 +129,12 @@ import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
                                     <li><i class="pi pi-sync" aria-hidden="true"></i> Aceita permuta</li>
                                 }
                             </ul>
+                        }
+                        @if (i.financeiras.length) {
+                            <button type="button" class="botao-contorno justify-center mb-3" (click)="simulacaoAberta.set(true)">
+                                <i class="pi pi-calculator" aria-hidden="true"></i> Simular financiamento
+                                <span class="text-muted-color text-sm">({{ i.financeiras.length === 1 ? i.financeiras[0].nome : i.financeiras.length + ' financeiras' }})</span>
+                            </button>
                         }
                         <div class="detalhe__contato-rapido">
                             <app-telefone-anunciante class="contents" [imovelId]="i.id" [anunciante]="i.anunciante" variante="botao" />
@@ -252,6 +259,9 @@ import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
             </div>
 
             <app-denunciar-dialog [imovelId]="i.id" [codigo]="i.codigo" [(visivel)]="denunciaAberta" />
+            @if (i.financeiras.length) {
+                <app-simulacao-dialog [(visivel)]="simulacaoAberta" [titulo]="i.titulo" [preco]="i.preco" [financeiras]="i.financeiras" />
+            }
 
             @if (similares().length) {
                 <section class="site-container secao" aria-labelledby="similares-titulo">
@@ -291,6 +301,7 @@ export class DetalhePage {
     statusLabel = (s: ImovelDetalhe['status']) => statusInfo(s).label.replace(/\s*\(.*\)$/, '');
     descricaoAberta = signal(false);
     denunciaAberta = signal(false);
+    simulacaoAberta = signal(false);
     finalidadeLabel = finalidadeLabel;
     tituloAnuncio = tituloAnuncio;
     documentacao = DOCUMENTACAO;

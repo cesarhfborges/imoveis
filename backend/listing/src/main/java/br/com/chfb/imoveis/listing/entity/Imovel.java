@@ -16,6 +16,8 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 
@@ -124,6 +126,15 @@ public class Imovel extends BaseEntity {
     @Column(name = "nome", length = 60)
     private Set<String> caracteristicas = new LinkedHashSet<>();
 
+    /** Aceita todas as financeiras ativas (inclusive as cadastradas depois); senão, só as de {@link #financeiras}. */
+    @Column(name = "financeiras_todas")
+    private boolean financeirasTodas;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "imovel_financeiras", joinColumns = @JoinColumn(name = "imovel_id"),
+            inverseJoinColumns = @JoinColumn(name = "financeira_id"))
+    private Set<Financeira> financeiras = new LinkedHashSet<>();
+
     public String getCodigo() {
         return getId() == null ? null : String.format("IM-%06d", getId());
     }
@@ -195,5 +206,8 @@ public class Imovel extends BaseEntity {
     public List<FotoImovel> getFotos() { return fotos; }
     public void setFotos(List<FotoImovel> fotos) { this.fotos = fotos; }
     public Set<String> getCaracteristicas() { return caracteristicas; }
+    public boolean isFinanceirasTodas() { return financeirasTodas; }
+    public void setFinanceirasTodas(boolean financeirasTodas) { this.financeirasTodas = financeirasTodas; }
+    public Set<Financeira> getFinanceiras() { return financeiras; }
     public void setCaracteristicas(Set<String> caracteristicas) { this.caracteristicas = caracteristicas; }
 }

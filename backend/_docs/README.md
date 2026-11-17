@@ -82,8 +82,11 @@ Variáveis de produção: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `APP_FRONTEND_ORIG
 | `POST /app/public/imoveis/{id}/contato` | público |
 | `GET/POST /app/corretor/imoveis`, `GET/PUT/DELETE /app/corretor/imoveis/{id}`, `PATCH .../status` | corretor |
 | `GET /app/corretor/contatos`, `PATCH /app/corretor/contatos/{id}?lido=` | corretor |
+| `GET /app/corretor/anuncios/estatisticas`, `GET /app/corretor/anuncios/painel?dias=7\|30\|90` (gráficos: visitas/contatos por dia, por região, tipo, finalidade e mais vistos; no admin, também por anunciante) | corretor |
 | as mesmas rotas em `/app/admin/...` | admin (todos os anúncios) |
-| `GET /app/admin/dashboard`, `GET/POST/PUT/DELETE /app/admin/usuarios` | admin |
+| `GET /app/public/financeiras` (ativas), `GET/POST /app/admin/financeiras`, `PUT/DELETE /app/admin/financeiras/{id}` — bancos e regras da simulação; no `ImovelForm`, `financeirasTodas` + `financeiras` (ids) valem quando `aceitaFinanciamento`; o `ImovelDetalhe` traz `financeiras` (ativas, só venda) para o botão de simular | público / admin |
+| `GET /app/conta/painel` (painel do cliente: contatos enviados, atividade por mês, recomendados, vistos, novidades, quedas de preço, favoritos financiáveis), `GET /app/conta/favoritos/quedas`, `GET /app/conta/favoritos/comparar?ids=1,2,3` (detalhes de até 4 favoritos do próprio usuário, sem contar visita) | logado |
+| `GET /app/admin/dashboard?dias=` (inclui novos cadastros por dia), `GET/POST/PUT/DELETE /app/admin/usuarios` | admin |
 | `GET /app/public/configuracao`, `PUT /app/admin/configuracao` | público / admin |
 | `GET/PUT /app/conta/perfil`, `PUT /app/conta/senha`, `/app/conta/favoritos` | logado |
 | `/app/conta/tokens` | corretor / admin (clientes não têm token) |

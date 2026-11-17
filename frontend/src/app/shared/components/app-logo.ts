@@ -10,7 +10,7 @@ import { ThemeService } from '@/app/core/services/theme.service';
     selector: 'app-logo',
     template: `
         @if (logo()) {
-            <img [src]="logo()" [alt]="cfg().nomeApp" class="block h-10 w-auto max-w-[11rem] object-contain" />
+            <img [src]="logo()" [alt]="nomeEfetivo()" class="block h-10 w-auto max-w-[11rem] object-contain" />
         } @else {
             <span class="inline-flex items-center gap-2 select-none">
                 <svg viewBox="0 0 40 40" class="h-9 w-9 shrink-0" aria-hidden="true">
@@ -19,9 +19,9 @@ import { ThemeService } from '@/app/core/services/theme.service';
                     <path d="m26.5 26.5 8 8" stroke="#16a34a" stroke-width="4.5" stroke-linecap="round" />
                 </svg>
                 <span class="flex flex-col leading-none">
-                    <span class="font-extrabold tracking-tight text-[1.35rem] text-primary">{{ cfg().nomeApp }}</span>
-                    @if (!compacto() && cfg().slogan) {
-                        <span class="text-[0.6rem] font-semibold text-green-600 dark:text-green-400 mt-0.5">{{ cfg().slogan }}</span>
+                    <span class="font-extrabold tracking-tight text-[1.35rem] text-primary">{{ nomeEfetivo() }}</span>
+                    @if (!compacto() && sloganEfetivo()) {
+                        <span class="text-[0.6rem] font-semibold text-green-600 dark:text-green-400 mt-0.5">{{ sloganEfetivo() }}</span>
                     }
                 </span>
             </span>
@@ -34,9 +34,24 @@ export class AppLogo {
     compacto = input(false);
     cfg = this.config.config;
 
+    // Opcionais, para pré-visualizar valores ainda não salvos (ex.: /admin/configuracoes).
+    // undefined = usa a configuração do site; null = "sem valor".
+    nome = input<string | undefined>();
+    slogan = input<string | null | undefined>();
+    logoUrl = input<string | null | undefined>();
+    logoEscuroUrl = input<string | null | undefined>();
+    /** Força a variante (true = tema escuro); sem valor, segue o tema atual. */
+    escuro = input<boolean | undefined>();
+
+    nomeEfetivo = computed(() => this.nome() ?? this.cfg().nomeApp);
+    sloganEfetivo = computed(() => (this.slogan() === undefined ? this.cfg().slogan : this.slogan()));
+
     logo = computed(() => {
         const c = this.cfg();
         this.theme.choice();
-        return this.theme.isDark() && c.logoEscuroUrl ? c.logoEscuroUrl : c.logoUrl;
+        const claro = this.logoUrl() === undefined ? c.logoUrl : this.logoUrl();
+        const escuroUrl = this.logoEscuroUrl() === undefined ? c.logoEscuroUrl : this.logoEscuroUrl();
+        const escuro = this.escuro() ?? this.theme.isDark();
+        return escuro && escuroUrl ? escuroUrl : claro;
     });
 }

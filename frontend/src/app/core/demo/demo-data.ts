@@ -1,4 +1,4 @@
-import { Configuracao, Finalidade, FotoImovel, ImovelDetalhe, OrigemFoto, Perfil, StatusAnuncio, TipoImovel, tipoLabel } from '@/app/core/models/models';
+import { Configuracao, Finalidade, FotoImovel, ImovelDetalhe, OrigemFoto, Perfil, StatusAnuncio, TipoImovel, tipoLabel, Financeira } from '@/app/core/models/models';
 import { CONFIG_PADRAO } from '@/app/core/services/config.service';
 
 /** Usuário do modo demonstração (a senha fica em texto só porque é um banco de mentira no navegador). */
@@ -96,8 +96,11 @@ export function perfilDemo(id: number): Partial<DemoUsuario> {
     return {};
 }
 
-export interface DemoImovel extends Omit<ImovelDetalhe, 'anunciante' | 'tipoDescricao' | 'codigo'> {
+export interface DemoImovel extends Omit<ImovelDetalhe, 'anunciante' | 'tipoDescricao' | 'codigo' | 'financeiras' | 'financeirasIds' | 'financeirasTodas'> {
     anuncianteId: number;
+    /** Opcionais: bancos de demonstração antigos não tinham financeiras. */
+    financeirasTodas?: boolean;
+    financeirasIds?: number[];
 }
 
 export interface DemoContato {
@@ -109,6 +112,8 @@ export interface DemoContato {
     mensagem: string;
     lido: boolean;
     criadoEm: string;
+    /** Quem enviou, quando estava logado (contatos antigos não têm). */
+    usuarioId?: number | null;
 }
 
 export interface DemoToken {
@@ -132,6 +137,21 @@ export interface DemoDb {
     favoritos: { usuarioId: number; imovelId: number; criadoEm: string }[];
     tokens: DemoToken[];
     config: Configuracao;
+    /** Visitas reais feitas no modo demonstração, por `${imovelId}|yyyy-MM-dd` (somadas à base simulada do painel). */
+    visitasDiarias?: Record<string, number>;
+    /** Opcionais: bancos de demonstração antigos não tinham estes dados. */
+    financeiras?: Financeira[];
+    precos?: { imovelId: number; anterior: number; novo: number; em: string }[];
+    vistos?: { usuarioId: number; imovelId: number; em: string }[];
+}
+
+/** Financeiras fictícias do modo demonstração. */
+export function financeirasDemo(): Financeira[] {
+    const base = { descricao: null, logoUrl: null, ativo: true, idadeMaximaQuitacao: 80, valorMinimoImovel: null, aceitaFgts: true, observacoes: 'Condições ilustrativas do modo demonstração.' };
+    return [
+        { ...base, id: 9001, nome: 'Banco Horizonte', descricao: 'Linha habitacional com parcelas SAC ou Price', sistemaAmortizacao: 'AMBOS', taxaJurosAnual: 10.99, prazoMaximoMeses: 420, entradaMinimaPercentual: 20, comprometimentoRendaPercentual: 30, valorMaximoImovel: null, seguroMensalPercentual: 0.025, taxaAdministracaoMensal: 25 },
+        { ...base, id: 9002, nome: 'Crédito Cerrado', descricao: 'Entrada menor para imóveis até R$ 1,5 milhão', sistemaAmortizacao: 'PRICE', taxaJurosAnual: 11.79, prazoMaximoMeses: 360, entradaMinimaPercentual: 10, comprometimentoRendaPercentual: 35, valorMaximoImovel: 1500000, seguroMensalPercentual: 0.03, taxaAdministracaoMensal: 0, aceitaFgts: false }
+    ];
 }
 
 type Modelo = [string, TipoImovel, Finalidade, number, number, number, number, number, string, string, string, number, number, boolean];

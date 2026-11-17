@@ -1,5 +1,6 @@
 package br.com.chfb.imoveis.listing.service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -32,6 +33,7 @@ import br.com.chfb.imoveis.listing.entity.StatusAnuncio;
 import br.com.chfb.imoveis.listing.entity.TipoImovel;
 import br.com.chfb.imoveis.listing.repository.ContatoRepository;
 import br.com.chfb.imoveis.listing.repository.FavoritoRepository;
+import br.com.chfb.imoveis.listing.repository.AtividadeClienteRepository;
 import br.com.chfb.imoveis.listing.repository.ImovelRepository;
 import br.com.chfb.imoveis.sharedkernel.dto.PageResponse;
 import br.com.chfb.imoveis.sharedkernel.event.AnuncioEditadoEvent;
@@ -55,13 +57,17 @@ public class ImovelService {
     private final ModeracaoPolicy moderacao;
     private final ApplicationEventPublisher eventos;
     private final ExibicaoTelefonePolicy exibicaoTelefone;
+    private final PainelService painel;
+    private final FinanceiraService financeiras;
+    private final AtividadeClienteRepository atividade;
 
     /** Status aplicados pela moderação (só administradores tiram o anúncio deles). */
     private static final Set<StatusAnuncio> EM_MODERACAO = Set.of(StatusAnuncio.SUSPENSO, StatusAnuncio.BANIDO);
 
     public ImovelService(ImovelRepository imoveis, ContatoRepository contatos, FavoritoRepository favoritos,
             AnuncianteProvider anunciantes, ModeracaoPolicy moderacao, ApplicationEventPublisher eventos,
-            ExibicaoTelefonePolicy exibicaoTelefone) {
+            ExibicaoTelefonePolicy exibicaoTelefone, PainelService painel, FinanceiraService financeiras,
+            AtividadeClienteRepository atividade) {
         this.imoveis = imoveis;
         this.contatos = contatos;
         this.favoritos = favoritos;
@@ -69,6 +75,9 @@ public class ImovelService {
         this.moderacao = moderacao;
         this.eventos = eventos;
         this.exibicaoTelefone = exibicaoTelefone;
+        this.painel = painel;
+        this.financeiras = financeiras;
+        this.atividade = atividade;
     }
 
     // ------------------------------------------------------------------ busca
@@ -157,6 +166,10 @@ public class ImovelService {
         Imovel imovel = imoveis.findById(id).filter(i -> i.getStatus() == StatusAnuncio.ATIVO)
                 .orElseThrow(() -> new NotFoundException("Imóvel não encontrado"));
         imoveis.incrementarVisualizacoes(id);
+        painel.registrarVisita(id);
+        if (usuario != null) {
+            atividade.registrarVisto(usuario.id(), id);
+        }
         return detalhe(imovel, ExibicaoTelefonePolicy.efetivo(exibicaoTelefone.telefoneAnunciante(), usuario != null));
     }
 
@@ -201,7 +214,11 @@ public class ImovelService {
             throw new BusinessException(409, "Este anúncio foi banido pela moderação e não pode ser editado");
         }
         AlteracoesAnuncio antes = AlteracoesAnuncio.retrato(imovel);
+        BigDecimal precoAnterior = imovel.getPreco();
         aplicar(imovel, form);
+        if (precoAnterior != null && precoAnterior.compareTo(imovel.getPreco()) != 0) {
+            atividade.registrarPreco(imovel.getId(), precoAnterior, imovel.getPreco());
+        }
         ImovelDetalhe salvo = detalhe(imoveis.save(imovel));
         // a moderação registra o que mudou nas denúncias abertas (para conferir a correção pedida)
         List<AnuncioEditadoEvent.Alteracao> alteracoes = antes.comparar(AlteracoesAnuncio.retrato(imovel));
@@ -347,6 +364,11 @@ public class ImovelService {
         i.setAceitaPermuta(f.aceitaPermuta());
         i.setEscrituraRegistrada(f.escrituraRegistrada());
         i.setQuitado(f.quitado());
+        i.setFinanceirasTodas(f.aceitaFinanciamento() && f.financeirasTodas());
+        i.getFinanceiras().clear();
+        if (f.aceitaFinanciamento() && !f.financeirasTodas()) {
+            i.getFinanceiras().addAll(financeiras.porIds(f.financeiras()));
+        }
         i.getFotos().clear();
         if (f.fotos() != null) {
             f.fotos().stream().filter(Objects::nonNull).filter(x -> x.url() != null && !x.url().isBlank())
@@ -438,6 +460,11 @@ public class ImovelService {
         return resumo(i, anunciantes.buscar(i.getAnuncianteId()).orElse(null));
     }
 
+    /** Detalhe para a comparação de favoritos: mesmas regras de telefone da página pública, sem contar visita. */
+    ImovelDetalhe detalheSemVisita(Imovel i, AuthUser usuario) {
+        return detalhe(i, ExibicaoTelefonePolicy.efetivo(exibicaoTelefone.telefoneAnunciante(), usuario != null));
+    }
+
     /** Gestão (dono/admin): telefone sempre completo. */
     private ImovelDetalhe detalhe(Imovel i) {
         return detalhe(i, ExibicaoTelefonePolicy.Modo.MOSTRAR);
@@ -462,6 +489,8 @@ public class ImovelService {
                 i.getUf(), i.getCidade(), i.getBairro(), i.getEndereco(), i.getNumero(), i.getCep(), i.getLatitude(), i.getLongitude(),
                 i.isLancamento(), i.isDestaque(),
                 i.isAceitaFinanciamento(), i.isAceitaFgts(), i.isAceitaPermuta(), i.isEscrituraRegistrada(), i.isQuitado(),
+                i.isFinanceirasTodas(), i.getFinanceiras().stream().map(f -> f.getId()).sorted().toList(),
+                financeiras.doAnuncio(i),
                 i.getFotos().stream().map(FotoDto::of).toList(), Set.copyOf(i.getCaracteristicas()),
                 i.getVisualizacoes(), anunciante, i.getCriadoEm(), i.getAtualizadoEm());
     }

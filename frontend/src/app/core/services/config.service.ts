@@ -30,7 +30,9 @@ export const CONFIG_PADRAO: Configuracao = {
     moderarAnuncios: false,
     permitirCadastroCorretor: true,
     abrirAnuncioNovaJanela: false,
-    telefoneAnunciante: 'MOSTRAR'
+    telefoneAnunciante: 'MOSTRAR',
+    simulacaoFinanciamento: true,
+    alertaQuedaPreco: true
 };
 
 /** Configuração global (nome, logos, SEO e tema) definida em /admin/configuracoes. */

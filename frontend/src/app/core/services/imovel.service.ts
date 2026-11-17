@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { Contato, ContatoForm, ContagemTipo, EstatisticasAnuncios, ImovelDetalhe, ImovelFiltro, ImovelForm, ImovelResumo, OpcoesBusca, PageResponse, StatusAnuncio } from '@/app/core/models/models';
+import { Contato, ContatoForm, ContagemTipo, EstatisticasAnuncios, ImovelDetalhe, PainelAnuncios, PeriodoPainel, ImovelFiltro, ImovelForm, ImovelResumo, OpcoesBusca, PageResponse, StatusAnuncio } from '@/app/core/models/models';
 
 /** Consulta pública de anúncios (sem login). */
 @Injectable({ providedIn: 'root' })
@@ -80,6 +80,11 @@ export class GestaoAnunciosService {
 
     estatisticas(area: AreaGestao): Observable<EstatisticasAnuncios> {
         return this.api.get(`/app/${area}/anuncios/estatisticas`);
+    }
+
+    /** Séries e distribuições dos gráficos do painel. */
+    painel(area: AreaGestao, dias: PeriodoPainel): Observable<PainelAnuncios> {
+        return this.api.get(`/app/${area}/anuncios/painel`, { dias });
     }
 
     contatos(area: AreaGestao, page = 0, size = 20): Observable<PageResponse<Contato>> {

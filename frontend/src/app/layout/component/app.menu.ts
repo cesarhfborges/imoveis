@@ -87,6 +87,7 @@ export class AppMenu {
                         { label: 'Usuários e permissões', icon: 'pi pi-fw pi-users', routerLink: ['/admin/usuarios'] },
                         { label: 'Configurações do site', icon: 'pi pi-fw pi-cog', routerLink: ['/admin/configuracoes'] },
                         { label: 'Avisos e cookies', icon: 'pi pi-fw pi-megaphone', routerLink: ['/admin/avisos'] },
+                        { label: 'Financeiras', icon: 'pi pi-fw pi-calculator', routerLink: ['/admin/financeiras'] },
                         { label: 'Calendário', icon: 'pi pi-fw pi-calendar', routerLink: ['/admin/calendario'] },
                         { label: 'Tokens da API', icon: 'pi pi-fw pi-key', routerLink: ['/admin/api'] }
                     ]
@@ -106,6 +107,7 @@ export class AppMenu {
                 items: [
                     { label: 'Início', icon: 'pi pi-fw pi-home', routerLink: ['/conta'] },
                     { label: 'Favoritos', icon: 'pi pi-fw pi-heart', routerLink: ['/conta/favoritos'] },
+                    { label: 'Comparar favoritos', icon: 'pi pi-fw pi-clone', routerLink: ['/conta/comparar'] },
                     { label: 'Minhas denúncias', icon: 'pi pi-fw pi-flag', routerLink: ['/conta/denuncias'] },
                     { label: 'Meus dados', icon: 'pi pi-fw pi-user', routerLink: ['/conta/perfil'] }
                 ]

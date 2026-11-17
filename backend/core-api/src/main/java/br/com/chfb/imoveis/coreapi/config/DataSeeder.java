@@ -138,6 +138,7 @@ public class DataSeeder implements ApplicationRunner {
             i.setLancamento(m.lanc());
             i.setDestaque(n % 9 == 0);
             i.setAceitaFinanciamento(m.fin() == Finalidade.VENDA);
+            i.setFinanceirasTodas(m.fin() == Finalidade.VENDA);
             i.setAceitaFgts(m.fin() == Finalidade.VENDA && n % 2 == 0);
             i.setAceitaPermuta(n % 4 == 1);
             i.setEscrituraRegistrada(m.fin() == Finalidade.VENDA && !m.lanc());

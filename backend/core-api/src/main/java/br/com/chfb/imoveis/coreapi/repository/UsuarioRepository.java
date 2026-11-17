@@ -1,5 +1,6 @@
 package br.com.chfb.imoveis.coreapi.repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,6 +27,13 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     /** Anunciantes ativos com o perfil público ligado (diretório /imobiliarias). */
     @Query("select distinct u from Usuario u join u.papeis p where p = :papel and u.ativo = true and u.perfilPublico = true")
     List<Usuario> perfisPublicos(@Param("papel") Perfil papel);
+
+    /** Novos cadastros por dia (no fuso informado) a partir de {@code inicio}: [dia, quantidade]. */
+    @Query(value = """
+            select cast(u.criado_em at time zone :fuso as date), count(*) from usuarios u
+            where u.criado_em >= :inicio group by 1
+            """, nativeQuery = true)
+    List<Object[]> cadastrosPorDia(@Param("inicio") Instant inicio, @Param("fuso") String fuso);
 
     @Query("select count(distinct u) from Usuario u join u.papeis p where p = :papel")
     long contarPorPapel(@Param("papel") Perfil papel);

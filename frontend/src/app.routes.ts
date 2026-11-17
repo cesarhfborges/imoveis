@@ -44,6 +44,7 @@ export const appRoutes: Routes = [
             { path: '', loadComponent: () => import('./app/conta/pages/painel').then((m) => m.PainelContaPage) },
             { path: 'perfil', loadComponent: () => import('./app/conta/pages/perfil').then((m) => m.PerfilPage) },
             { path: 'favoritos', loadComponent: () => import('./app/conta/pages/favoritos').then((m) => m.FavoritosPage) },
+            { path: 'comparar', loadComponent: () => import('./app/conta/pages/comparar').then((m) => m.CompararPage) },
             { path: 'denuncias', loadComponent: () => import('./app/conta/pages/minhas-denuncias').then((m) => m.MinhasDenunciasPage) },
             { path: 'pendencias', canActivate: [corretorGuard], loadComponent: () => import('./app/shared/pages/pendencias-page').then((m) => m.PendenciasPage) },
             { path: 'pendencias/:imovelId', canActivate: [corretorGuard], loadComponent: () => import('./app/shared/pages/pendencias-imovel-page').then((m) => m.PendenciasImovelPage) },
@@ -75,6 +76,7 @@ export const appRoutes: Routes = [
             { path: 'usuarios', loadComponent: () => import('./app/admin/pages/usuarios').then((m) => m.UsuariosPage) },
             { path: 'configuracoes', loadComponent: () => import('./app/admin/pages/configuracoes').then((m) => m.ConfiguracoesPage) },
             { path: 'avisos', loadComponent: () => import('./app/admin/pages/avisos').then((m) => m.AvisosPage) },
+            { path: 'financeiras', loadComponent: () => import('./app/admin/pages/financeiras').then((m) => m.FinanceirasPage) },
             { path: 'api', loadComponent: () => import('./app/shared/pages/api-tokens-page').then((m) => m.ApiTokensPage) },
             { path: 'perfil', loadComponent: () => import('./app/conta/pages/perfil').then((m) => m.PerfilPage) }
         ]

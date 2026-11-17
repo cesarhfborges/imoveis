@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Observable, catchError, of, tap } from 'rxjs';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
-import { ApiToken, ApiTokenCriado, Dashboard, ImovelResumo, PageResponse, Perfil, PerfilForm, Usuario, UsuarioAdminForm } from '@/app/core/models/models';
+import { ApiToken, ApiTokenCriado, ClientePainel, Dashboard, ImovelDetalhe, QuedaPreco, ImovelResumo, PageResponse, PeriodoPainel, Perfil, PerfilForm, Usuario, UsuarioAdminForm } from '@/app/core/models/models';
 
 /** Dados da própria conta, favoritos e tokens de API. */
 @Injectable({ providedIn: 'root' })
@@ -26,6 +26,21 @@ export class ContaService {
 
     listarFavoritos(): Observable<ImovelResumo[]> {
         return this.api.get('/app/conta/favoritos');
+    }
+
+    /** Painel do perfil cliente: atividade, recomendações, quedas de preço e financiamentos. */
+    painelCliente(): Observable<ClientePainel> {
+        return this.api.get('/app/conta/painel');
+    }
+
+    /** Detalhes completos dos favoritos escolhidos para comparar (até 4; não conta visualização). */
+    compararFavoritos(ids: number[]): Observable<ImovelDetalhe[]> {
+        return this.api.get('/app/conta/favoritos/comparar', { ids: ids.join(',') });
+    }
+
+    /** Favoritos que baixaram de preço desde que foram salvos. */
+    quedasPreco(): Observable<QuedaPreco[]> {
+        return this.api.get('/app/conta/favoritos/quedas');
     }
 
     alternarFavorito(id: number): Observable<unknown> {
@@ -70,8 +85,8 @@ export class ContaService {
 export class AdminService {
     private api = inject(ApiService);
 
-    dashboard(): Observable<Dashboard> {
-        return this.api.get('/app/admin/dashboard');
+    dashboard(dias: PeriodoPainel = 30): Observable<Dashboard> {
+        return this.api.get('/app/admin/dashboard', { dias });
     }
 
     usuarios(q: string | null, papel: Perfil | null, page = 0, size = 20): Observable<PageResponse<Usuario>> {

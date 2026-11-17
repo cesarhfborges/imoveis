@@ -1,19 +1,27 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
+import { catchError, of, switchMap } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
-import { ChartModule } from 'primeng/chart';
 import { AdminService } from '@/app/core/services/conta.service';
 import { ConfigService } from '@/app/core/services/config.service';
-import { Dashboard } from '@/app/core/models/models';
+import { GestaoAnunciosService } from '@/app/core/services/imovel.service';
+import { PeriodoPainel } from '@/app/core/models/models';
 import { PageHeader } from '@/app/shared/components/page-header';
 import { StatCard } from '@/app/shared/components/stat-card';
+import { CoresGraficoService } from '@/app/shared/components/painel/cores-grafico.service';
+import { GraficoCard } from '@/app/shared/components/painel/grafico-card';
+import { PainelGraficos } from '@/app/shared/components/painel/painel-graficos';
+import { PeriodoSelect } from '@/app/shared/components/painel/periodo-select';
+import { dadosBarrasDia, dadosPizza, dadosRanking, numero, opcoesBarra, opcoesPizza, semDados, totalSerie } from '@/app/shared/components/painel/graficos';
 
 /** Painel geral do sistema (somente administradores, em /admin). */
 @Component({
     selector: 'app-admin-dashboard-page',
-    imports: [RouterLink, ButtonModule, ChartModule, PageHeader, StatCard],
+    imports: [RouterLink, ButtonModule, PageHeader, StatCard, GraficoCard, PainelGraficos, PeriodoSelect],
     template: `
-        <app-page-header titulo="Painel administrativo" subtitulo="Visão geral de anúncios, usuários e contatos.">
+        <app-page-header titulo="Painel administrativo" subtitulo="Visão geral de anúncios, usuários, visitas e contatos do portal.">
+            <app-periodo-select [(periodo)]="periodo" />
             <p-button label="Configurações do site" icon="pi pi-cog" [outlined]="true" routerLink="/admin/configuracoes" />
         </app-page-header>
         @if (d(); as d) {
@@ -30,42 +38,78 @@ import { StatCard } from '@/app/shared/components/stat-card';
                 <div class="col-span-12 md:col-span-6 xl:col-span-3">
                     <app-stat-card titulo="Contatos não lidos" [valor]="d.anuncios.contatosNaoLidos" icone="pi-inbox" cor="bg-cyan-100 dark:bg-cyan-400/10 text-cyan-500" detalhe="Abrir contatos" link="/admin/contatos" />
                 </div>
-                <div class="col-span-12 xl:col-span-6 card m-0">
-                    <h2 class="text-lg font-semibold mt-0">Anúncios por situação</h2>
-                    <p-chart type="doughnut" [data]="graficoStatus()" [options]="opcoes" height="260px" ariaLabel="Gráfico de anúncios por situação" />
-                </div>
-                <div class="col-span-12 xl:col-span-6 card m-0">
-                    <h2 class="text-lg font-semibold mt-0">Perfis de usuário</h2>
-                    <p-chart type="bar" [data]="graficoUsuarios()" [options]="opcoes" height="260px" ariaLabel="Gráfico de perfis de usuário" />
-                </div>
+            </div>
+        }
+
+        @if (painel(); as p) {
+            <div class="mt-6">
+                <app-painel-graficos [painel]="p" area="admin" />
+            </div>
+        }
+
+        @if (d(); as d) {
+            <div class="grid grid-cols-12 gap-6 mt-6">
+                <app-grafico-card class="col-span-12 xl:col-span-6" titulo="Crescimento do portal" [subtitulo]="fmt(cadastros()) + ' cadastros e ' + fmt(anunciosNovos()) + ' anúncios novos nos últimos ' + periodo() + ' dias'" tipo="bar" [dados]="graficoCrescimento()" [opcoes]="opcoesCrescimento()" [vazio]="semCrescimento()" mensagemVazio="Nenhum cadastro ou anúncio novo no período." />
+                <app-grafico-card class="col-span-12 md:col-span-6 xl:col-span-3" titulo="Anúncios por situação" tipo="doughnut" [dados]="graficoStatus()" [opcoes]="opcoesPizza()" />
+                <app-grafico-card class="col-span-12 md:col-span-6 xl:col-span-3" titulo="Perfis de usuário" tipo="bar" [dados]="graficoUsuarios()" [opcoes]="opcoesBarra()" />
             </div>
         }
     `
 })
 export class AdminDashboardPage {
     private admin = inject(AdminService);
-    d = signal<Dashboard | null>(null);
-    opcoes = { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } };
+    private gestao = inject(GestaoAnunciosService);
+    private cores = inject(CoresGraficoService).cores;
+
+    periodo = signal<PeriodoPainel>(30);
+    private periodo$ = toObservable(this.periodo);
+
+    d = toSignal(this.periodo$.pipe(switchMap((dias) => this.admin.dashboard(dias).pipe(catchError(() => of(null))))), { initialValue: null });
+    painel = toSignal(this.periodo$.pipe(switchMap((dias) => this.gestao.painel('admin', dias).pipe(catchError(() => of(null))))), { initialValue: null });
+
+    readonly fmt = numero;
+    opcoesPizza = computed(() => opcoesPizza(this.cores()));
+    opcoesBarra = computed(() => opcoesBarra(this.cores()));
+    opcoesCrescimento = computed(() => opcoesBarra(this.cores(), false, true));
+
+    cadastros = computed(() => totalSerie(this.d()?.cadastrosPorDia ?? []));
+    anunciosNovos = computed(() => totalSerie(this.painel()?.anunciosNovosPorDia ?? []));
+    semCrescimento = computed(() => semDados(this.d()?.cadastrosPorDia ?? []) && semDados(this.painel()?.anunciosNovosPorDia ?? []));
+
+    graficoCrescimento = computed(() =>
+        dadosBarrasDia(this.cores(), [
+            { rotulo: 'Cadastros', pontos: this.d()?.cadastrosPorDia ?? [] },
+            { rotulo: 'Anúncios', pontos: this.painel()?.anunciosNovosPorDia ?? [] }
+        ])
+    );
 
     graficoStatus = computed(() => {
         const a = this.d()?.anuncios;
         const outros = a ? Math.max(a.total - a.ativos - a.pendentes - a.pausados, 0) : 0;
-        return {
-            labels: ['Ativos', 'Pendentes', 'Pausados', 'Outros'],
-            datasets: [{ data: a ? [a.ativos, a.pendentes, a.pausados, outros] : [], backgroundColor: ['#22c55e', '#f97316', '#94a3b8', '#3b82f6'] }]
-        };
+        const fatias = a
+            ? [
+                  { rotulo: 'Ativos', total: a.ativos },
+                  { rotulo: 'Pendentes', total: a.pendentes },
+                  { rotulo: 'Pausados', total: a.pausados },
+                  { rotulo: 'Outros', total: outros }
+              ]
+            : [];
+        return dadosPizza(this.cores(), fatias);
     });
 
     graficoUsuarios = computed(() => {
         const d = this.d();
-        return {
-            labels: ['Clientes', 'Corretores', 'Administradores'],
-            datasets: [{ label: 'Usuários', data: d ? [d.clientes, d.corretores, d.administradores] : [], backgroundColor: ['#38bdf8', '#1c3c6d', '#ef4444'] }]
-        };
+        const fatias = d
+            ? [
+                  { rotulo: 'Clientes', total: d.clientes },
+                  { rotulo: 'Corretores', total: d.corretores },
+                  { rotulo: 'Administradores', total: d.administradores }
+              ]
+            : [];
+        return dadosRanking(this.cores(), fatias, 'Usuários', this.cores().serie[4]);
     });
 
     constructor() {
         inject(ConfigService).definirTitulo('Painel administrativo');
-        this.admin.dashboard().subscribe({ next: (d) => this.d.set(d), error: () => undefined });
     }
 }

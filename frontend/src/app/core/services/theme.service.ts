@@ -15,6 +15,8 @@ export interface ColorOption {
     name: string;
     label: string;
     palette: Palette;
+    /** Tom da cor principal no tema claro (padrão: 500, ou 600 no preset Nora). */
+    base?: 500 | 600 | 700;
 }
 
 export interface ThemeChoice {
@@ -47,10 +49,43 @@ export const SURFACES: ColorOption[] = [
     { name: 'stone', label: 'Stone', palette: { 0: '#ffffff', 50: '#fafaf9', 100: '#f5f5f4', 200: '#e7e5e4', 300: '#d6d3d1', 400: '#a8a29e', 500: '#78716c', 600: '#57534e', 700: '#44403c', 800: '#292524', 900: '#1c1917', 950: '#0c0a09' } },
     { name: 'soho', label: 'Soho', palette: { 0: '#ffffff', 50: '#ececec', 100: '#dedfdf', 200: '#c4c4c6', 300: '#adaeb0', 400: '#97979b', 500: '#7f8084', 600: '#6a6b70', 700: '#55565b', 800: '#3f4046', 900: '#2c2c34', 950: '#16161d' } },
     { name: 'viva', label: 'Viva', palette: { 0: '#ffffff', 50: '#f3f3f3', 100: '#e7e7e8', 200: '#cfd0d0', 300: '#b7b8b9', 400: '#9fa1a1', 500: '#87898a', 600: '#6e7173', 700: '#565a5b', 800: '#3e4244', 900: '#262b2c', 950: '#0e1315' } },
-    { name: 'ocean', label: 'Ocean', palette: { 0: '#ffffff', 50: '#fbfcfc', 100: '#F7F9F8', 200: '#EFF3F2', 300: '#DADEDD', 400: '#B1B7B6', 500: '#828787', 600: '#5F7274', 700: '#415B61', 800: '#29444E', 900: '#183240', 950: '#0c1920' } }
+    { name: 'ocean', label: 'Ocean', palette: { 0: '#ffffff', 50: '#fbfcfc', 100: '#F7F9F8', 200: '#EFF3F2', 300: '#DADEDD', 400: '#B1B7B6', 500: '#828787', 600: '#5F7274', 700: '#415B61', 800: '#29444E', 900: '#183240', 950: '#0c1920' } },
+    // surfaces próprias, com matiz perceptível (mesma claridade da Slate em cada tom, para manter o contraste),
+    { name: 'areia', label: 'Areia', palette: { 0: '#ffffff', 50: '#fef9f2', 100: '#fbf3e9', 200: '#f1e6d7', 300: '#e0d2bf', 400: '#ae9d86', 500: '#826f55', 600: '#635138', 700: '#4e3d26', 800: '#342612', 900: '#211505', 950: '#0d0600' } },
+    { name: 'salvia', label: 'Sálvia', palette: { 0: '#ffffff', 50: '#f5fcf5', 100: '#eef7ee', 200: '#dfecdf', 300: '#c9d9c8', 400: '#91a691', 500: '#637a63', 600: '#455b45', 700: '#324632', 800: '#1c2e1d', 900: '#0d1c0e', 950: '#020a03' } },
+    { name: 'rosado', label: 'Rosé', palette: { 0: '#ffffff', 50: '#fff8f9', 100: '#fff0f2', 200: '#f6e2e4', 300: '#e6cccf', 400: '#b6969a', 500: '#8b686d', 600: '#6b4a4e', 700: '#54373b', 800: '#392124', 900: '#251114', 950: '#100405' } },
+    { name: 'noturno', label: 'Noturno', palette: { 0: '#ffffff', 50: '#f8f9ff', 100: '#f1f4ff', 200: '#e1e6fc', 300: '#ccd3ee', 400: '#969ec0', 500: '#687096', 600: '#4a5276', 700: '#373e5e', 800: '#212642', 900: '#12162c', 950: '#040615' } }
 ];
 
-const PRIMARY_NAMES = ['emerald', 'green', 'lime', 'orange', 'amber', 'yellow', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose'];
+const PRIMARY_NAMES = ['emerald', 'green', 'lime', 'red', 'orange', 'amber', 'yellow', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose'];
+
+/**
+ * Cores primárias próprias do portal (além das do preset). Paletas geradas em OKLCH com a mesma escala de
+ * claridade; "base" é o tom usado nos botões no tema claro, escolhido para o texto branco ter contraste AA (>= 4,5:1).
+ */
+const CORES_PROPRIAS: ColorOption[] = [
+    { name: 'vinho', label: 'Vinho', base: 700, palette: { 50: '#fef4f5', 100: '#fee6e8', 200: '#ffccd0', 300: '#ffa6b0', 400: '#ef7c8d', 500: '#d35d71', 600: '#b8445a', 700: '#9a2e45', 800: '#7d2035', 900: '#651528', 950: '#420616' } },
+    { name: 'terracota', label: 'Terracota', base: 600, palette: { 50: '#fef4f1', 100: '#ffe7e0', 200: '#ffcebf', 300: '#feaa90', 400: '#eb8565', 500: '#cf6746', 600: '#b44e2e', 700: '#963919', 800: '#7a290d', 900: '#631e05', 950: '#400e00' } },
+    { name: 'cobre', label: 'Cobre', base: 600, palette: { 50: '#fef5f0', 100: '#fee8db', 200: '#fed0b5', 300: '#f5b189', 400: '#dd8f5f', 500: '#c1723f', 600: '#a75a25', 700: '#8b450d', 800: '#713401', 900: '#592801', 950: '#391700' } },
+    { name: 'caramelo', label: 'Caramelo', base: 600, palette: { 50: '#fff5eb', 100: '#fce9d6', 200: '#f6d4b1', 300: '#e9b884', 400: '#d09859', 500: '#b57b37', 600: '#9b641a', 700: '#804e01', 800: '#663d00', 900: '#512f00', 950: '#321c01' } },
+    { name: 'ocre', label: 'Ocre', base: 700, palette: { 50: '#fbf7e8', 100: '#f6edd0', 200: '#ecdaa5', 300: '#dbc171', 400: '#c0a23c', 500: '#a58604', 600: '#896f02', 700: '#6e5802', 800: '#574602', 900: '#453600', 950: '#2a2001' } },
+    { name: 'oliva', label: 'Oliva', base: 600, palette: { 50: '#f5f9ec', 100: '#eaf0d8', 200: '#d7e1b4', 300: '#bdcb89', 400: '#9fae5f', 500: '#83923f', 600: '#6c7a24', 700: '#56620b', 800: '#444e03', 900: '#353d01', 950: '#1f2500' } },
+    { name: 'floresta', label: 'Floresta', base: 700, palette: { 50: '#effaf1', 100: '#ddf4e2', 200: '#bee7c7', 300: '#97d3a7', 400: '#70b884', 500: '#509c67', 600: '#378450', 700: '#216b3c', 800: '#14562d', 900: '#0a4421', 950: '#002a11' } },
+    { name: 'petroleo', label: 'Petróleo', base: 700, palette: { 50: '#eef9fc', 100: '#dcf1f7', 200: '#bbe3ed', 300: '#92cedc', 400: '#69b1c2', 500: '#4996a7', 600: '#2e7d8f', 700: '#166575', 800: '#07515e', 900: '#003f4b', 950: '#00272f' } },
+    { name: 'ardosia', label: 'Ardósia', base: 600, palette: { 50: '#f3f7fb', 100: '#e6eef6', 200: '#cfdceb', 300: '#b2c5da', 400: '#91a7bf', 500: '#758ca4', 600: '#5e748b', 700: '#495d72', 800: '#38495c', 900: '#2b3949', 950: '#18232e' } },
+    { name: 'lavanda', label: 'Lavanda', base: 600, palette: { 50: '#f7f5ff', 100: '#edeafe', 200: '#dbd5fe', 300: '#c3b9f7', 400: '#a698e1', 500: '#8b7cc6', 600: '#7364ac', 700: '#5d4e90', 800: '#493d75', 900: '#392e5f', 950: '#231a3e' } },
+    { name: 'ameixa', label: 'Ameixa', base: 700, palette: { 50: '#fff2fd', 100: '#fde4fa', 200: '#f7caf2', 300: '#e9aae3', 400: '#d087c9', 500: '#b46aae', 600: '#9b5295', 700: '#803d7b', 800: '#672e63', 900: '#53224f', 950: '#351033' } }
+];
+
+/** Nomes em português das cores do preset (o identificador salvo continua o original, ex.: "blue"). */
+const ROTULOS_PRESET: Record<string, string> = {
+    emerald: 'Esmeralda', green: 'Verde', lime: 'Lima', red: 'Vermelho', orange: 'Laranja', amber: 'Âmbar', yellow: 'Amarelo',
+    teal: 'Verde-azulado', cyan: 'Ciano', sky: 'Céu', blue: 'Azul', indigo: 'Índigo', violet: 'Violeta', purple: 'Roxo',
+    fuchsia: 'Fúcsia', pink: 'Rosa', rose: 'Rubi'
+};
+
+/** Ordem das cores no seletor: próximas por matiz (vermelhos → laranjas → amarelos → verdes → azuis → roxos → rosas). */
+const ORDEM_PRIMARIAS = ['marinho', 'noir', 'vinho', 'red', 'rose', 'terracota', 'cobre', 'orange', 'caramelo', 'amber', 'ocre', 'yellow', 'oliva', 'lime', 'green', 'floresta', 'emerald', 'teal', 'petroleo', 'cyan', 'sky', 'blue', 'ardosia', 'indigo', 'lavanda', 'violet', 'purple', 'ameixa', 'fuchsia', 'pink'];
 
 /** Modo (claro/escuro/automático) escolhido pelo usuário: só nesta sessão do navegador. */
 const SESSION_KEY = 'imoveis.tema.modo';
@@ -86,14 +121,12 @@ export class ThemeService {
 
     primaryOptions(preset: PresetName): ColorOption[] {
         const primitive = (PRESETS[preset] as any).primitive ?? {};
-        const list: ColorOption[] = [
-            { name: 'marinho', label: 'Marinho', palette: MARINHO },
-            { name: 'noir', label: 'Noir', palette: {} }
-        ];
+        const list: ColorOption[] = [{ name: 'marinho', label: 'Marinho', palette: MARINHO, base: 700 }, { name: 'noir', label: 'Noir', palette: {} }, ...CORES_PROPRIAS];
         for (const name of PRIMARY_NAMES) {
-            list.push({ name, label: name.charAt(0).toUpperCase() + name.slice(1), palette: primitive[name] ?? {} });
+            if (primitive[name]) list.push({ name, label: ROTULOS_PRESET[name] ?? name, palette: primitive[name] });
         }
-        return list;
+        const pos = (n: string) => (ORDEM_PRIMARIAS.indexOf(n) + 1 || 999);
+        return list.sort((a, b) => pos(a.name) - pos(b.name));
     }
 
     /** Define o tema do sistema (vindo da configuração) e aplica, com o modo da sessão, se o usuário trocou. */
@@ -202,8 +235,9 @@ export class ThemeService {
                 }
             };
         }
-        const escuro = color.name === 'marinho';
-        const lightBase = escuro ? 700 : choice.preset === 'Nora' ? 600 : 500;
+        // cores de base 700 (marinho, vinho, floresta...) são escuras: no tema escuro usam um tom mais claro
+        const escuro = color.base === 700;
+        const lightBase = color.base ?? (choice.preset === 'Nora' ? 600 : 500);
         const nora = choice.preset === 'Nora';
         return {
             semantic: {

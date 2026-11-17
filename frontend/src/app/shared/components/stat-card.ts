@@ -11,6 +11,13 @@ import { RouterLink } from '@angular/router';
                 <div>
                     <span class="block text-muted-color font-medium mb-4">{{ titulo() }}</span>
                     <div class="text-surface-900 dark:text-surface-0 font-medium text-2xl">{{ valor() }}</div>
+                    @if (variacao() !== null) {
+                        <span class="inline-flex items-center gap-1 text-sm font-medium mt-2" [class]="variacao()! >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
+                            <i class="pi text-xs!" [class]="variacao()! >= 0 ? 'pi-arrow-up' : 'pi-arrow-down'" aria-hidden="true"></i>
+                            {{ variacao()! >= 0 ? '+' : '' }}{{ variacao() }}%
+                            <span class="text-muted-color font-normal">{{ comparacao() }}</span>
+                        </span>
+                    }
                 </div>
                 <div class="flex items-center justify-center rounded-border" [class]="cor()" style="width: 2.5rem; height: 2.5rem">
                     <i class="pi {{ icone() }} text-xl!"></i>
@@ -33,4 +40,7 @@ export class StatCard {
     cor = input('bg-blue-100 dark:bg-blue-400/10 text-blue-500');
     detalhe = input<string | null>(null);
     link = input<string | null>(null);
+    /** Variação percentual em relação ao período anterior (null esconde). */
+    variacao = input<number | null>(null);
+    comparacao = input('vs. período anterior');
 }

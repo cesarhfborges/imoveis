@@ -3,3 +3,15 @@
 @use '@/assets/layout/layout.scss';
 @use '@/assets/demo/demo.scss';
 @use './site/site';
+
+/*
+ * ToggleSwitch: o handle é posicionado dentro do slider, que tem borda (1px no Aura). A regra do PrimeNG para o
+ * estado ligado (largura − handle − gap) não desconta as duas bordas, então a bolinha ficava 2px mais perto da
+ * borda direita do que da esquerda no estado desligado (3px × 5px). Aqui as bordas são descontadas, deixando a
+ * folga igual nos dois estados.
+ */
+.p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider .p-toggleswitch-handle {
+    inset-inline-start: calc(
+        var(--p-toggleswitch-width) - var(--p-toggleswitch-handle-size) - var(--p-toggleswitch-gap) - 2 * var(--p-toggleswitch-border-width)
+    );
+}

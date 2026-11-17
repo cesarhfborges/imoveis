@@ -13,12 +13,15 @@ import { InputGroupModule } from 'primeng/inputgroup';
 import { InputMaskModule } from 'primeng/inputmask';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { HttpErrorResponse } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom, of } from 'rxjs';
 import { BrasilApiCep, BrasilApiService } from '@/app/core/services/brasil-api.service';
 import { digitos } from '@/app/core/pipes/formatos';
 import { GeocodificacaoService, PrecisaoGeo } from '@/app/core/services/geocodificacao.service';
 import { MessageService } from 'primeng/api';
 import { DOCUMENTACAO, FINALIDADES, Finalidade, ImovelDetalhe, ImovelForm as ImovelFormDto, ORIGENS_FOTO, OrigemFoto, TIPOS, TipoImovel, UFS, tituloAnuncio } from '@/app/core/models/models';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { FinanceiraService } from '@/app/core/services/financeira.service';
+import { ConfigService } from '@/app/core/services/config.service';
 import { ImageUpload } from './image-upload';
 import { MapaOsm } from './mapa-osm';
 import { ImovelFoto } from './imovel-foto';
@@ -35,7 +38,24 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
 /** Formulário do anúncio, usado pelo corretor e pelo administrador. */
 @Component({
     selector: 'app-imovel-form',
-    imports: [ReactiveFormsModule, InputTextModule, InputNumberModule, TextareaModule, SelectModule, ToggleSwitchModule, CheckboxModule, ButtonModule, AutoCompleteModule, InputGroupModule, InputGroupAddonModule, InputMaskModule, ImageUpload, MapaOsm, ImovelFoto],
+    imports: [
+        ReactiveFormsModule,
+        MultiSelectModule,
+        InputTextModule,
+        InputNumberModule,
+        TextareaModule,
+        SelectModule,
+        ToggleSwitchModule,
+        CheckboxModule,
+        ButtonModule,
+        AutoCompleteModule,
+        InputGroupModule,
+        InputGroupAddonModule,
+        InputMaskModule,
+        ImageUpload,
+        MapaOsm,
+        ImovelFoto
+    ],
     template: `
         <form [formGroup]="form" (ngSubmit)="enviar()" class="flex flex-col gap-6" novalidate>
             <section class="card m-0 flex flex-col gap-4" aria-labelledby="im-info-titulo">
@@ -64,7 +84,17 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
                     <div class="flex flex-col gap-2 col-span-2 md:col-span-3">
                         <label for="im-cep">CEP</label>
                         <p-inputgroup>
-                            <p-inputmask inputId="im-cep" formControlName="cep" mask="99.999-999" [unmask]="true" [autoClear]="false" placeholder="00.000-000" autocomplete="postal-code" inputmode="numeric" (keydown.enter)="$event.preventDefault(); buscarCep()" />
+                            <p-inputmask
+                                inputId="im-cep"
+                                formControlName="cep"
+                                mask="99.999-999"
+                                [unmask]="true"
+                                [autoClear]="false"
+                                placeholder="00.000-000"
+                                autocomplete="postal-code"
+                                inputmode="numeric"
+                                (keydown.enter)="$event.preventDefault(); buscarCep()"
+                            />
                             <p-inputgroup-addon>
                                 <p-button type="button" icon="pi pi-search" severity="secondary" ariaLabel="Buscar endereço pelo CEP" [loading]="buscandoCep()" (onClick)="buscarCep()" />
                             </p-inputgroup-addon>
@@ -134,6 +164,57 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
                         </div>
                     }
                 </div>
+                @if (valores().aceitaFinanciamento) {
+                    <div class="flex flex-col gap-3 p-4 rounded-border border border-surface" role="group" aria-labelledby="im-fin-titulo">
+                        <div>
+                            <h3 id="im-fin-titulo" class="text-base font-semibold m-0">Financeiras para simulação</h3>
+                            <p class="text-xs text-muted-color mt-1 mb-0">
+                                @if (valores().finalidade === 'VENDA') {
+                                    O visitante poderá simular o financiamento com as financeiras escolhidas (regras cadastradas pela administração).
+                                } @else {
+                                    A simulação de financiamento só aparece em anúncios de venda.
+                                }
+                            </p>
+                        </div>
+                        @if (!simulacaoLigada()) {
+                            <p class="text-sm text-muted-color m-0"><i class="pi pi-info-circle" aria-hidden="true"></i> A simulação de financiamento está desativada no site pela administração. Suas escolhas ficam salvas e passam a valer quando ela for reativada.</p>
+                        }
+                        @if (financeirasAtivas().length === 0) {
+                            <p class="text-sm text-muted-color m-0">Nenhuma financeira cadastrada ainda. O botão de simular aparece quando a administração cadastrar alguma.</p>
+                        }
+                        <div class="flex items-center gap-2">
+                            <p-checkbox formControlName="financeirasTodas" [binary]="true" inputId="im-fin-todas" />
+                            <label for="im-fin-todas" class="cursor-pointer">Aceitar todas as financeiras (inclusive as cadastradas no futuro)</label>
+                        </div>
+                        @if (!valores().financeirasTodas) {
+                            <div class="flex flex-col gap-2">
+                                <label for="im-fin-lista">Financeiras aceitas</label>
+                                <p-multiselect
+                                    inputId="im-fin-lista"
+                                    formControlName="financeiras"
+                                    [options]="financeirasAtivas()"
+                                    optionLabel="nome"
+                                    optionValue="id"
+                                    display="chip"
+                                    placeholder="Selecione uma ou mais"
+                                    [showToggleAll]="true"
+                                    [fluid]="true"
+                                    emptyMessage="Nenhuma financeira cadastrada"
+                                >
+                                    <ng-template #item let-f>
+                                        <div class="flex flex-col">
+                                            <span>{{ f.nome }}</span>
+                                            <small class="text-muted-color">{{ f.taxaJurosAnual }}% a.a. · até {{ f.prazoMaximoMeses }} meses · entrada mín. {{ f.entradaMinimaPercentual }}%</small>
+                                        </div>
+                                    </ng-template>
+                                </p-multiselect>
+                                @if (valores().financeiras?.length === 0) {
+                                    <small class="text-muted-color">Sem financeira selecionada, o botão de simular não aparece no anúncio.</small>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
             </section>
 
             <section class="card m-0 flex flex-col gap-4">
@@ -152,7 +233,6 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
                 </div>
             </section>
 
-
             <section class="card m-0 flex flex-col gap-4">
                 <div class="flex flex-wrap items-end justify-between gap-3">
                     <div>
@@ -161,6 +241,25 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
                         </h2>
                         <p class="text-sm text-muted-color m-0 mt-1">A primeira foto é a capa. Em cada foto, informe se ela é <strong>real</strong> ou <strong>criada/alterada com IA</strong>; isso aparece para o cliente no anúncio.</p>
                     </div>
+
+                    <aside class="aviso-origem-fotos" aria-labelledby="aviso-origem-titulo">
+                        <i class="pi pi-info-circle" aria-hidden="true"></i>
+                        <div>
+                            <h2 id="aviso-origem-titulo">Sobre as fotos deste anúncio</h2>
+                            <p>
+                                As indicações <strong>Foto real</strong> e <strong>Editada/gerada com IA</strong> foram declaradas pelo próprio anunciante. Exibimos essa informação por transparência com você, em linha com os princípios de
+                                transparência da LGPD (Lei nº 13.709/2018) e com o direito à informação clara previsto no Código de Defesa do Consumidor (Lei nº 8.078/1990, art. 6º, III).
+                            </p>
+                            <p>
+                                A veracidade das imagens e a correspondência com o estado real do imóvel são de responsabilidade do anunciante. Imagens criadas ou alteradas com inteligência artificial podem não representar o imóvel exatamente como
+                                ele é: confirme os detalhes na visita.
+
+                                    Fotos sem indicação não tiveram a origem informada.
+
+                            </p>
+                        </div>
+                    </aside>
+
                     @if (fotos.length > 1) {
                         <div class="flex flex-col gap-1">
                             <label for="origem-todas" class="text-sm">Aplicar a todas as fotos</label>
@@ -241,6 +340,11 @@ export class ImovelFormComponent {
     ];
 
     sugestoes = signal<string[]>([]);
+    /** Financeiras ativas para o anunciante escolher quais aceita. */
+    /** Regra "Simulação de financiamento" (aba Regras em /admin/configuracoes). */
+    private configSite = inject(ConfigService).config;
+    simulacaoLigada = computed(() => this.configSite().simulacaoFinanciamento !== false);
+    financeirasAtivas = toSignal(inject(FinanceiraService).ativas().pipe(catchError(() => of([]))), { initialValue: [] });
     centro = signal<[number, number] | null>(null);
     geocodificando = signal(false);
     buscandoCep = signal(false);
@@ -273,11 +377,13 @@ export class ImovelFormComponent {
         aceitaPermuta: [false],
         escrituraRegistrada: [false],
         quitado: [false],
+        financeirasTodas: [true],
+        financeiras: this.fb.control<number[]>([]),
         caracteristicas: this.fb.control<string[]>([]),
         fotos: this.fb.array<FotoGrupo>([])
     });
 
-    private valores = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+    protected valores = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
     /** Prévia do título público, composto pelo endereço. */
     tituloPrevia = computed(() => tituloAnuncio(this.valores()));
 
@@ -297,7 +403,7 @@ export class ImovelFormComponent {
             if (!v) return;
             this.fotos.clear();
             v.fotos.forEach((f) => this.fotos.push(this.novaFoto(f.url, f.origem)));
-            this.form.patchValue({ ...v, uf: v.uf?.toUpperCase() ?? 'DF', descricao: v.descricao ?? '', endereco: v.endereco ?? '', numero: v.numero ?? '', cep: digitos(v.cep), caracteristicas: [...v.caracteristicas] });
+            this.form.patchValue({ ...v, uf: v.uf?.toUpperCase() ?? 'DF', descricao: v.descricao ?? '', endereco: v.endereco ?? '', numero: v.numero ?? '', cep: digitos(v.cep), caracteristicas: [...v.caracteristicas], financeirasTodas: v.financeirasTodas ?? false, financeiras: [...(v.financeirasIds ?? [])] });
             this.centro.set(v.latitude != null && v.longitude != null ? [v.latitude, v.longitude] : null);
         });
     }

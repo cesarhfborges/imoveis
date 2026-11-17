@@ -154,6 +154,11 @@ export interface ImovelDetalhe {
     aceitaPermuta: boolean;
     escrituraRegistrada: boolean;
     quitado: boolean;
+    /** Aceita todas as financeiras ativas (senão, as de `financeirasIds`). */
+    financeirasTodas: boolean;
+    financeirasIds: number[];
+    /** Financeiras ativas oferecidas na simulação (vazio = sem botão de simular). */
+    financeiras: Financeira[];
     fotos: FotoImovel[];
     caracteristicas: string[];
     visualizacoes: number;
@@ -190,8 +195,83 @@ export interface ImovelForm {
     aceitaPermuta: boolean;
     escrituraRegistrada: boolean;
     quitado: boolean;
+    financeirasTodas: boolean;
+    financeiras: number[];
     fotos: FotoImovel[];
     caracteristicas: string[];
+}
+
+// ------------------------------------------------------------ financiamento
+
+export type SistemaAmortizacao = 'SAC' | 'PRICE' | 'AMBOS';
+
+export const SISTEMAS_AMORTIZACAO: { value: SistemaAmortizacao; label: string; dica: string }[] = [
+    { value: 'SAC', label: 'SAC', dica: 'Parcelas decrescentes: começa mais alta e diminui ao longo do contrato.' },
+    { value: 'PRICE', label: 'Price', dica: 'Parcelas fixas do início ao fim (sem contar seguros).' },
+    { value: 'AMBOS', label: 'SAC ou Price', dica: 'O comprador escolhe o sistema na simulação.' }
+];
+
+/** Financeira (banco) e as regras da simulação — espelha FinanceiraDto. Percentuais em % (ex.: 10.99). */
+export interface Financeira {
+    id: number;
+    nome: string;
+    descricao: string | null;
+    logoUrl: string | null;
+    ativo: boolean;
+    sistemaAmortizacao: SistemaAmortizacao;
+    taxaJurosAnual: number;
+    prazoMaximoMeses: number;
+    entradaMinimaPercentual: number;
+    comprometimentoRendaPercentual: number;
+    idadeMaximaQuitacao: number | null;
+    valorMinimoImovel: number | null;
+    valorMaximoImovel: number | null;
+    /** Seguros (MIP/DFI) sobre o saldo devedor, em % ao mês. */
+    seguroMensalPercentual: number;
+    taxaAdministracaoMensal: number;
+    aceitaFgts: boolean;
+    observacoes: string | null;
+}
+
+export type FinanceiraForm = Omit<Financeira, 'id'>;
+
+// ------------------------------------------------------------ painel do cliente
+
+export interface QuedaPreco {
+    imovelId: number;
+    titulo: string;
+    precoAnterior: number;
+    precoAtual: number;
+    percentual: number;
+    alteradoEm: string;
+}
+
+export interface ContatoEnviado {
+    id: number;
+    imovelId: number;
+    imovelCodigo: string;
+    imovelTitulo: string;
+    bairro: string;
+    cidade: string;
+    imovelStatus: StatusAnuncio;
+    mensagem: string;
+    visto: boolean;
+    criadoEm: string;
+    fotoCapa: string | null;
+}
+
+/** GET /app/conta/painel (perfil cliente). */
+export interface ClientePainel {
+    contatosEnviados: number;
+    contatosVistos: number;
+    /** mes em yyyy-MM, últimos 12 meses. */
+    atividade: { mes: string; favoritos: number; contatos: number }[];
+    contatosRecentes: ContatoEnviado[];
+    vistosRecentes: ImovelResumo[];
+    recomendados: ImovelResumo[];
+    novidades: { bairros: string[]; imoveis: ImovelResumo[] };
+    quedasPreco: QuedaPreco[];
+    financiamentos: { imovel: ImovelResumo; financeiras: Financeira[] }[];
 }
 
 /** Filtros da busca (todos opcionais). */
@@ -412,6 +492,10 @@ export interface Configuracao {
     /** Ao clicar num anúncio no site: abre em nova janela (true) ou na mesma (false). */
     abrirAnuncioNovaJanela: boolean;
     telefoneAnunciante: ExibicaoTelefone;
+    /** Regra: botão "Simular financiamento" nos anúncios e resumo no painel do cliente. */
+    simulacaoFinanciamento: boolean;
+    /** Regra: aviso de favoritos que baixaram de preço. */
+    alertaQuedaPreco: boolean;
     permitirCadastroCorretor: boolean;
 }
 
@@ -421,6 +505,60 @@ export interface Dashboard {
     corretores: number;
     administradores: number;
     anuncios: EstatisticasAnuncios;
+    /** Novos cadastros por dia no período pedido. */
+    cadastrosPorDia: PontoDia[];
+}
+
+/** Períodos aceitos pelos gráficos do painel (dias). */
+export type PeriodoPainel = 7 | 30 | 90;
+
+/** Valor de um dia numa série (dia em `yyyy-MM-dd`). */
+export interface PontoDia {
+    dia: string;
+    total: number;
+}
+
+/** Item de uma distribuição (região, tipo, anunciante…). */
+export interface FatiaPainel {
+    rotulo: string;
+    total: number;
+}
+
+export interface DesempenhoAnuncio {
+    id: number;
+    codigo: string;
+    titulo: string;
+    bairro: string;
+    cidade: string;
+    status: StatusAnuncio;
+    visualizacoes: number;
+    contatos: number;
+    favoritos: number;
+}
+
+/** Espelha `PainelAnuncios` do backend (GET /app/{corretor|admin}/anuncios/painel?dias=). */
+export interface PainelAnuncios {
+    dias: PeriodoPainel;
+    resumo: {
+        visitas: number;
+        visitasAnterior: number;
+        contatos: number;
+        contatosAnterior: number;
+        favoritos: number;
+        visitasAcumuladas: number;
+        anunciosAtivos: number;
+    };
+    visitasPorDia: PontoDia[];
+    contatosPorDia: PontoDia[];
+    anunciosNovosPorDia: PontoDia[];
+    visitasPorCidade: FatiaPainel[];
+    visitasPorBairro: FatiaPainel[];
+    visitasPorTipo: FatiaPainel[];
+    visitasPorFinalidade: FatiaPainel[];
+    anunciosPorFinalidade: FatiaPainel[];
+    /** Só na administração (no corretor vem vazio). */
+    visitasPorAnunciante: FatiaPainel[];
+    maisVistos: DesempenhoAnuncio[];
 }
 
 /** Opções de documentação e condições do anúncio (mesma ordem no formulário e na página). */

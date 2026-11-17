@@ -1,8 +1,12 @@
 package br.com.chfb.imoveis.coreapi.service;
 
+import java.sql.Date;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -22,6 +26,8 @@ import br.com.chfb.imoveis.coreapi.dto.ContaDtos.UsuarioAdminForm;
 import br.com.chfb.imoveis.coreapi.dto.ContaDtos.UsuarioDto;
 import br.com.chfb.imoveis.coreapi.entity.Usuario;
 import br.com.chfb.imoveis.coreapi.repository.UsuarioRepository;
+import br.com.chfb.imoveis.listing.dto.PainelAnuncios;
+import br.com.chfb.imoveis.listing.service.PainelService;
 import br.com.chfb.imoveis.sharedkernel.dto.PageResponse;
 import br.com.chfb.imoveis.sharedkernel.exception.BusinessException;
 import br.com.chfb.imoveis.sharedkernel.exception.NotFoundException;
@@ -300,6 +306,22 @@ public class UsuarioService implements AnuncianteProvider, UsuarioDiretorio, Con
     @Transactional(readOnly = true)
     public long contarPorPapel(Perfil papel) {
         return usuarios.contarPorPapel(papel);
+    }
+
+    /** Novos cadastros por dia de {@code inicio} até hoje (dias sem cadastro vêm com zero). */
+    @Transactional(readOnly = true)
+    public List<PainelAnuncios.PontoDia> cadastrosPorDia(LocalDate inicio) {
+        ZoneId fuso = PainelService.FUSO;
+        Map<LocalDate, Long> mapa = new HashMap<>();
+        for (Object[] l : usuarios.cadastrosPorDia(inicio.atStartOfDay(fuso).toInstant(), fuso.getId())) {
+            LocalDate dia = l[0] instanceof Date d ? d.toLocalDate() : (LocalDate) l[0];
+            mapa.put(dia, ((Number) l[1]).longValue());
+        }
+        List<PainelAnuncios.PontoDia> serie = new ArrayList<>();
+        for (LocalDate d = inicio; !d.isAfter(LocalDate.now(fuso)); d = d.plusDays(1)) {
+            serie.add(new PainelAnuncios.PontoDia(d, mapa.getOrDefault(d, 0L)));
+        }
+        return serie;
     }
 
     @Transactional(readOnly = true)

@@ -8,9 +8,10 @@ import br.com.chfb.imoveis.coreapi.entity.Configuracao;
 import br.com.chfb.imoveis.coreapi.repository.ConfiguracaoRepository;
 import br.com.chfb.imoveis.sharedkernel.port.ExibicaoTelefonePolicy;
 import br.com.chfb.imoveis.sharedkernel.port.ModeracaoPolicy;
+import br.com.chfb.imoveis.sharedkernel.port.RecursosSitePolicy;
 
 @Service
-public class ConfiguracaoService implements ModeracaoPolicy, ExibicaoTelefonePolicy {
+public class ConfiguracaoService implements ModeracaoPolicy, ExibicaoTelefonePolicy, RecursosSitePolicy {
 
     private final ConfiguracaoRepository repo;
 
@@ -49,5 +50,17 @@ public class ConfiguracaoService implements ModeracaoPolicy, ExibicaoTelefonePol
     @Transactional
     public Modo telefoneAnunciante() {
         return atual().getTelefoneAnunciante();
+    }
+
+    @Override
+    @Transactional
+    public boolean simulacaoFinanciamento() {
+        return atual().isSimulacaoFinanciamento();
+    }
+
+    @Override
+    @Transactional
+    public boolean alertaQuedaPreco() {
+        return atual().isAlertaQuedaPreco();
     }
 }

@@ -43,6 +43,11 @@ public record ImovelDetalhe(
         boolean aceitaPermuta,
         boolean escrituraRegistrada,
         boolean quitado,
+        boolean financeirasTodas,
+        /** Financeiras selecionadas no formulário (edição). */
+        List<Long> financeirasIds,
+        /** Financeiras ativas oferecidas na simulação (vazio = sem simulação). */
+        List<FinanceiraDto> financeiras,
         List<FotoDto> fotos,
         Set<String> caracteristicas,
         long visualizacoes,
