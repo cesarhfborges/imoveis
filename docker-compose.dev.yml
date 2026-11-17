@@ -1,5 +1,5 @@
 # Serviços de apoio para desenvolvimento.
-#   docker compose -f infra/docker-compose.dev.yml up -d soketi
+#   docker compose -f docker-compose.dev.yml up -d soketi
 services:
   # Servidor WebSocket (protocolo Pusher) para o tempo real: notificações, contadores e salas das denúncias.
   # As credenciais batem com backend/core-api/src/main/resources/application-dev.yml (app.realtime).

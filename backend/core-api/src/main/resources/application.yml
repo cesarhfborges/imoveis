@@ -9,13 +9,16 @@
 #   mvn -pl core-api -am spring-boot:run       (perfil Maven "dev", padrão)
 #   java -jar imoveis.war --spring.profiles.active=dev
 #   SPRING_PROFILES_ACTIVE=dev
+#
+# Em produção (Coolify) as variáveis vêm do docker-compose.yml da raiz, que liga
+# as variáveis mágicas do Coolify (SERVICE_URL_*, SERVICE_PASSWORD_*...) a estas.
 # -----------------------------------------------------------------------------
 server:
   port: ${PORT:8080}
   forward-headers-strategy: framework
   servlet:
     session:
-      timeout: 2h
+      timeout: ${SESSION_TIMEOUT:2h}
       tracking-modes: cookie
       cookie:
         name: IMOVEIS_SESSION
@@ -29,6 +32,9 @@ server:
 spring:
   application:
     name: imoveis
+  jackson:
+    # fuso usado ao formatar datas na API; o fuso da JVM vem da variável TZ do contêiner
+    time-zone: ${TZ:America/Sao_Paulo}
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/imoveis}
     username: ${DB_USER:imoveis}
@@ -42,14 +48,16 @@ spring:
     properties:
       hibernate:
         jdbc:
-          time_zone: UTC
+          # fuso em que as datas são gravadas no banco (manter UTC)
+          time_zone: ${DB_TIME_ZONE:UTC}
   flyway:
     enabled: true
     locations: classpath:db/migration
   servlet:
     multipart:
-      max-file-size: 5MB
-      max-request-size: 6MB
+      # tamanho de cada arquivo e da requisição inteira (o nginx de entrada usa o mesmo limite)
+      max-file-size: ${UPLOAD_MAX_FILE_SIZE:5MB}
+      max-request-size: ${UPLOAD_MAX_REQUEST_SIZE:6MB}
   devtools:
     restart:
       enabled: false
@@ -64,7 +72,7 @@ app:
     api-cors-origins: ${APP_API_CORS_ORIGINS:*}
   uploads:
     dir: ${APP_UPLOADS_DIR:/var/lib/imoveis/uploads}
-    max-bytes: 5242880
+    max-bytes: ${UPLOAD_MAX_FILE_SIZE:5MB}
   seed:
     demo: false
   # Tempo real (WebSocket): servidor Soketi, protocolo Pusher. Desligado, o front segue por consulta periódica.
@@ -89,5 +97,17 @@ app:
 
 logging:
   level:
-    root: INFO
-    br.com.chfb: INFO
+    root: ${LOG_LEVEL:INFO}
+    br.com.chfb: ${LOG_LEVEL_APP:INFO}
+
+# Saúde para o health check do contêiner: GET /actuator/health (só na rede interna; o nginx não expõe /actuator).
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true

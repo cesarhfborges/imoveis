@@ -22,7 +22,9 @@ app/
 ├── backend/       # Spring Boot 4.1.2 · Java 17 · Maven multi-módulo · WAR · PostgreSQL · Flyway
 ├── frontend/      # Angular 21 · PrimeNG 21 · Tailwind 4 · base Sakai NG · zoneless
 ├── docs/          # prints de referência (docs/referencias) e usuários de teste
-├── infra/         # docker-compose.dev.yml (Soketi — WebSocket/Pusher para tempo real)
+├── docker-compose.yml     # produção no Coolify: nginx (entrada) → site, backend (/app, /api), soketi (/ws), postgres
+├── docker-compose.dev.yml # dev: Soketi (WebSocket/Pusher para tempo real)
+├── infra/         # nginx/ (porta de entrada de produção)
 └── scripts/       # rotas-estaticas.mjs (gera uma página por rota pública no build)
 ```
 
@@ -57,7 +59,7 @@ cd backend && mvn -pl core-api -am spring-boot:run
 cd frontend && npm start
 
 # tempo real (opcional em dev)
-docker compose -f infra/docker-compose.dev.yml up -d soketi
+docker compose -f docker-compose.dev.yml up -d soketi
 
 # build / testes a partir da raiz
 npm run build            # front em ./dist + páginas estáticas por rota

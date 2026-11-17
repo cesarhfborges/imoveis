@@ -1,0 +1,171 @@
+# -----------------------------------------------------------------------------
+# PRODUÇÃO (Coolify, build pack "Docker Compose", arquivo /docker-compose.yml)
+# O Coolify compila tudo no deploy: npm ci + ng build (frontend/Dockerfile) e mvn package (backend/Dockerfile).
+#
+#   Internet -> proxy do Coolify (TLS) -> nginx (porta de entrada)
+#                                          ├─ /app/, /api/ -> backend  (Spring Boot)
+#                                          ├─ /ws/         -> soketi   (WebSocket/Pusher)
+#                                          └─ /            -> frontend (Angular estático, static-web-server)
+#   backend -> postgres
+#
+# Só o nginx recebe domínio (no Coolify: Domains do serviço "nginx").
+# Variáveis mágicas do Coolify usadas aqui (geradas uma vez e mantidas entre deploys):
+#   SERVICE_URL_NGINX          https://<domínio do nginx>
+#   SERVICE_USER_POSTGRES      usuário do banco
+#   SERVICE_PASSWORD_POSTGRES  senha do banco
+#   SERVICE_USER_SOKETI        chave pública do Soketi (vai para o navegador)
+#   SERVICE_PASSWORD_64_SOKETI segredo do Soketi (só backend e soketi)
+#   SERVICE_PASSWORD_ADMIN     senha do administrador inicial
+# As demais (${VAR:-padrão}) aparecem na aba "Environment Variables" do Coolify para ajuste.
+#
+# Saúde: todo serviço tem healthcheck (o Coolify mostra o estado) e "restart: unless-stopped".
+# Atenção: o Docker reinicia o contêiner quando o processo morre, não quando fica "unhealthy".
+#
+# Memória: cada serviço tem limite (*_MEM_LIMIT). Importante para o backend: a JVM dimensiona o heap
+# como % do limite do contêiner (JAVA_OPTS); sem limite, usaria % da RAM do servidor inteiro.
+# Logs: json-file com rotação (3 x 10 MB por contêiner), para não encher o disco.
+# -----------------------------------------------------------------------------
+x-logs: &logs
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  nginx:
+    build:
+      context: ./infra/nginx
+    restart: unless-stopped
+    mem_limit: ${NGINX_MEM_LIMIT:-128m}
+    logging: *logs
+    environment:
+      - SERVICE_URL_NGINX_80
+      - NGINX_CLIENT_MAX_BODY_SIZE=${NGINX_CLIENT_MAX_BODY_SIZE:-6m}
+      - TZ=${TZ:-America/Sao_Paulo}
+    depends_on:
+      - frontend
+      - backend
+      - soketi
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/nginx-health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    mem_limit: ${FRONTEND_MEM_LIMIT:-128m}
+    logging: *logs
+    environment:
+      - TZ=${TZ:-America/Sao_Paulo}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    mem_limit: ${BACKEND_MEM_LIMIT:-1g}
+    logging: *logs
+    environment:
+      - TZ=${TZ:-America/Sao_Paulo}
+      - JAVA_OPTS=${JAVA_OPTS:--XX:MaxRAMPercentage=75}
+      - PORT=8080
+      # banco
+      - DB_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-imoveis}
+      - DB_USER=${SERVICE_USER_POSTGRES}
+      - DB_PASSWORD=${SERVICE_PASSWORD_POSTGRES}
+      - DB_POOL_SIZE=${DB_POOL_SIZE:-10}
+      - DB_TIME_ZONE=${DB_TIME_ZONE:-UTC}
+      # sessão e segurança: o front está no mesmo domínio do nginx
+      - SESSION_TIMEOUT=${SESSION_TIMEOUT:-2h}
+      - APP_FRONTEND_ORIGINS=${SERVICE_URL_NGINX}
+      - APP_API_CORS_ORIGINS=${APP_API_CORS_ORIGINS:-*}
+      # uploads (o nginx usa NGINX_CLIENT_MAX_BODY_SIZE; mantenha >= UPLOAD_MAX_REQUEST_SIZE)
+      - APP_UPLOADS_DIR=/var/lib/imoveis/uploads
+      - UPLOAD_MAX_FILE_SIZE=${UPLOAD_MAX_FILE_SIZE:-5MB}
+      - UPLOAD_MAX_REQUEST_SIZE=${UPLOAD_MAX_REQUEST_SIZE:-6MB}
+      # tempo real: backend fala com o Soketi pela rede interna; o navegador entra por wss://<domínio>/ws
+      - APP_REALTIME_ATIVO=${APP_REALTIME_ATIVO:-true}
+      - APP_REALTIME_APP_ID=imoveis
+      - APP_REALTIME_KEY=${SERVICE_USER_SOKETI}
+      - APP_REALTIME_SECRET=${SERVICE_PASSWORD_64_SOKETI}
+      - APP_REALTIME_URL=http://soketi:6001
+      - APP_REALTIME_WS_HOST=
+      - APP_REALTIME_WS_PORT=80
+      - APP_REALTIME_WSS_PORT=443
+      - APP_REALTIME_WS_PATH=/ws
+      - APP_REALTIME_FORCE_TLS=${APP_REALTIME_FORCE_TLS:-true}
+      # administrador inicial (criado só se ainda não houver nenhum)
+      - APP_ADMIN_NOME=${APP_ADMIN_NOME:-Administrador}
+      - APP_ADMIN_EMAIL=${APP_ADMIN_EMAIL}
+      - APP_ADMIN_SENHA=${SERVICE_PASSWORD_ADMIN}
+      # logs
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_LEVEL_APP=${LOG_LEVEL_APP:-INFO}
+    volumes:
+      - uploads:/var/lib/imoveis/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      soketi:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+
+  soketi:
+    image: quay.io/soketi/soketi:1.6-16-debian
+    restart: unless-stopped
+    mem_limit: ${SOKETI_MEM_LIMIT:-256m}
+    logging: *logs
+    environment:
+      - TZ=${TZ:-America/Sao_Paulo}
+      - SOKETI_DEBUG=0
+      - SOKETI_DEFAULT_APP_ID=imoveis
+      - SOKETI_DEFAULT_APP_KEY=${SERVICE_USER_SOKETI}
+      - SOKETI_DEFAULT_APP_SECRET=${SERVICE_PASSWORD_64_SOKETI}
+      # o navegador não publica direto na sala: tudo passa pela API
+      - SOKETI_DEFAULT_APP_ENABLE_CLIENT_MESSAGES=false
+      - SOKETI_DEFAULT_APP_MAX_PRESENCE_MEMBERS_PER_CHANNEL=${SOKETI_MAX_PRESENCE_MEMBERS:-100}
+      - SOKETI_DEFAULT_APP_MAX_EVENT_PAYLOAD_IN_KB=${SOKETI_MAX_EVENT_PAYLOAD_KB:-200}
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:6001/',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    mem_limit: ${POSTGRES_MEM_LIMIT:-1g}
+    shm_size: 128m
+    logging: *logs
+    environment:
+      - TZ=${TZ:-America/Sao_Paulo}
+      - POSTGRES_DB=${POSTGRES_DB:-imoveis}
+      - POSTGRES_USER=${SERVICE_USER_POSTGRES}
+      - POSTGRES_PASSWORD=${SERVICE_PASSWORD_POSTGRES}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  postgres-data:
+  uploads:

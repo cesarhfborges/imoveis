@@ -3,6 +3,7 @@ package br.com.chfb.imoveis.coreapi.config;
 import java.util.List;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.util.unit.DataSize;
 
 /** Propriedades "app.*" definidas em application.yml (e sobrescritas em application-dev.yml). */
 @ConfigurationProperties(prefix = "app")
@@ -17,9 +18,9 @@ public record AppProperties(Security security, Uploads uploads, Seed seed, Boots
 
     /**
      * @param dir      pasta onde os arquivos enviados são gravados
-     * @param maxBytes tamanho máximo de cada arquivo
+     * @param maxBytes tamanho máximo de cada arquivo (aceita "5MB", "512KB" ou só o número de bytes)
      */
-    public record Uploads(String dir, long maxBytes) {
+    public record Uploads(String dir, DataSize maxBytes) {
     }
 
     /** @param demo cria usuários e anúncios de exemplo quando o banco está vazio (apenas dev) */

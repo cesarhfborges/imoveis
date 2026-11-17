@@ -33,7 +33,7 @@ app:
     dir: ./.data/uploads
   seed:
     demo: true
-  # Soketi local: docker compose -f infra/docker-compose.dev.yml up -d soketi
+  # Soketi local: docker compose -f docker-compose.dev.yml up -d soketi
   realtime:
     ativo: true
     app-id: imoveis

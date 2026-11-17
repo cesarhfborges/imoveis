@@ -48,7 +48,7 @@ public class UploadService {
         if (arquivo == null || arquivo.isEmpty()) {
             throw new BusinessException("Envie um arquivo");
         }
-        if (arquivo.getSize() > props.uploads().maxBytes()) {
+        if (arquivo.getSize() > props.uploads().maxBytes().toBytes()) {
             throw new BusinessException(413, "Arquivo maior que o permitido");
         }
         String tipo = arquivo.getContentType() == null ? "" : arquivo.getContentType().toLowerCase(Locale.ROOT);
