@@ -10,9 +10,9 @@ RUN npm run build
 
 FROM joseluisq/static-web-server:2.38.0-alpine
 COPY --from=build /src/dist /public
+# rotas do Angular (/venda, /conta/login...) caem no index.html com status 200
 ENV SERVER_PORT=80 \
     SERVER_ROOT=/public \
-    # rotas do Angular (/venda, /conta/login...) caem no index.html com status 200
     SERVER_FALLBACK_PAGE=/public/index.html \
     SERVER_HEALTH=true \
     SERVER_COMPRESSION=true \
