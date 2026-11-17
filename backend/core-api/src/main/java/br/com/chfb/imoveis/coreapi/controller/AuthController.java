@@ -60,7 +60,7 @@ public class AuthController {
     @PostMapping("/registro")
     @ResponseStatus(HttpStatus.CREATED)
     public Sessao registro(@Valid @RequestBody RegistroRequest req, HttpServletRequest http, HttpServletResponse res) {
-        AuthUser usuario = auth.registrar(req);
+        AuthUser usuario = auth.registrar(req, http.getRemoteAddr());
         sessao.entrar(usuario, http, res);
         return auth.sessao(usuario);
     }

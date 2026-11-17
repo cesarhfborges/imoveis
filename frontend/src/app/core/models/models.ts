@@ -385,6 +385,97 @@ export interface RegistroRequest {
     creci: string | null;
     documento: string | null;
     tipoAnunciante: 'CORRETOR' | 'IMOBILIARIA' | null;
+    /** Documentos aceitos no cadastro (termos de uso, privacidade…), com a versão lida. */
+    aceites?: AceiteDocumento[];
+}
+
+// ------------------------------------------------------------ documentos do site (termos, LGPD…)
+
+export type TipoDocumento = 'TERMOS_USO' | 'PRIVACIDADE' | 'CODIGO_CONDUTA' | 'COOKIES' | 'CONTRATO' | 'OUTRO';
+export type PerfilAceite = 'TODOS' | 'CLIENTE' | 'CORRETOR';
+
+export const TIPOS_DOCUMENTO: { value: TipoDocumento; label: string; icone: string; slug: string }[] = [
+    { value: 'TERMOS_USO', label: 'Termos de uso', icone: 'pi-file', slug: 'termos-de-uso' },
+    { value: 'PRIVACIDADE', label: 'Privacidade (LGPD)', icone: 'pi-shield', slug: 'politica-de-privacidade' },
+    { value: 'CODIGO_CONDUTA', label: 'Código de conduta', icone: 'pi-users', slug: 'codigo-de-conduta' },
+    { value: 'COOKIES', label: 'Política de cookies', icone: 'pi-cog', slug: 'politica-de-cookies' },
+    { value: 'CONTRATO', label: 'Contrato', icone: 'pi-pen-to-square', slug: 'contrato' },
+    { value: 'OUTRO', label: 'Outro documento', icone: 'pi-book', slug: 'documento' }
+];
+
+export const PERFIS_ACEITE: { value: PerfilAceite; label: string }[] = [
+    { value: 'TODOS', label: 'Todos (clientes e anunciantes)' },
+    { value: 'CLIENTE', label: 'Só clientes' },
+    { value: 'CORRETOR', label: 'Só anunciantes (corretores e imobiliárias)' }
+];
+
+export function tipoDocumentoInfo(t: TipoDocumento) {
+    return TIPOS_DOCUMENTO.find((x) => x.value === t) ?? TIPOS_DOCUMENTO[TIPOS_DOCUMENTO.length - 1];
+}
+
+export interface DocumentoResumo {
+    id: number;
+    tipo: TipoDocumento;
+    titulo: string;
+    slug: string;
+    resumo: string | null;
+    versao: number;
+    versaoEm: string;
+}
+
+export interface DocumentoPublico extends DocumentoResumo {
+    conteudo: string;
+}
+
+export interface DocumentoAdmin extends DocumentoPublico {
+    ativo: boolean;
+    publico: boolean;
+    aceiteCadastro: boolean;
+    aceiteContas: boolean;
+    aceitePerfil: PerfilAceite;
+    ordem: number;
+    excluidoEm: string | null;
+    aceitesVersaoAtual: number;
+    aceitesTotal: number;
+    atualizadoEm: string;
+}
+
+export interface DocumentoForm {
+    tipo: TipoDocumento;
+    titulo: string;
+    slug: string;
+    resumo: string | null;
+    conteudo: string;
+    ativo: boolean;
+    publico: boolean;
+    aceiteCadastro: boolean;
+    aceiteContas: boolean;
+    aceitePerfil: PerfilAceite;
+    ordem: number;
+    /** Publica como nova versão (pede novo aceite); falso = correção da versão atual. */
+    novaVersao: boolean;
+    notaVersao: string | null;
+}
+
+export interface VersaoDocumento {
+    versao: number;
+    titulo: string;
+    nota: string | null;
+    publicadoEm: string;
+    aceites: number;
+}
+
+export interface VersaoDocumentoDetalhe {
+    versao: number;
+    titulo: string;
+    conteudo: string;
+    nota: string | null;
+    publicadoEm: string;
+}
+
+export interface AceiteDocumento {
+    documentoId: number;
+    versao: number;
 }
 
 export interface Usuario {

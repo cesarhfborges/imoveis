@@ -1,6 +1,8 @@
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { AbstractControl, NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { AbstractControl, FormsModule, NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { CheckboxModule } from 'primeng/checkbox';
+import { DocumentoService } from '@/app/core/services/documento.service';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputMaskModule } from 'primeng/inputmask';
 import { PasswordModule } from 'primeng/password';
@@ -9,7 +11,7 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 import { MessageModule } from 'primeng/message';
 import { AuthService } from '@/app/core/services/auth.service';
 import { mensagemErro } from '@/app/core/services/api.service';
-import { Perfil, Sessao } from '@/app/core/models/models';
+import { DocumentoPublico, Perfil, Sessao } from '@/app/core/models/models';
 import { TelefoneInput } from '@/app/shared/components/telefone-input';
 import { digitos } from '@/app/core/pipes/formatos';
 import { cnpjValido, cpfValido } from '@/app/core/pipes/documentos';
@@ -26,7 +28,7 @@ type Campo = 'documento' | 'creci' | 'nome' | 'email' | 'telefone' | 'senha';
  */
 @Component({
     selector: 'app-cadastro-form',
-    imports: [ReactiveFormsModule, InputTextModule, InputMaskModule, PasswordModule, ButtonModule, RadioButtonModule, MessageModule, TelefoneInput],
+    imports: [ReactiveFormsModule, FormsModule, CheckboxModule, InputTextModule, InputMaskModule, PasswordModule, ButtonModule, RadioButtonModule, MessageModule, TelefoneInput],
     template: `
         <form [formGroup]="form" (ngSubmit)="cadastrar()" class="flex flex-col gap-5" novalidate>
             @if (modo() === 'escolha') {
@@ -120,6 +122,27 @@ type Campo = 'documento' | 'creci' | 'nome' | 'email' | 'telefone' | 'senha';
                 <p-password inputId="cd-senha" formControlName="senha" [toggleMask]="true" [fluid]="true" autocomplete="new-password" [invalid]="invalido('senha')" />
                 <small [class]="invalido('senha') ? 'text-red-600 dark:text-red-400' : 'text-muted-color'">{{ invalido('senha') ? erroCampo('senha') : 'Mínimo de 8 caracteres.' }}</small>
             </div>
+            @if (documentos().length) {
+                <fieldset class="flex flex-col gap-2 border-0 p-0 m-0 min-w-0" aria-describedby="cd-docs-dica">
+                    <legend class="sr-only">Documentos para aceitar</legend>
+                    @for (d of documentos(); track d.id) {
+                        <div class="flex items-start gap-3 p-3 rounded-border border" [class]="aceitos().has(d.id) ? 'border-primary bg-primary-50 dark:bg-primary-400/10' : faltaAceite(d.id) ? 'border-red-400' : 'border-surface'">
+                            <p-checkbox [inputId]="'cd-doc-aceite-' + d.id" [binary]="true" [ngModel]="aceitos().has(d.id)" (ngModelChange)="marcar(d.id, $event)" [ngModelOptions]="{ standalone: true }" [invalid]="faltaAceite(d.id)" class="mt-0.5" />
+                            <label [for]="'cd-doc-aceite-' + d.id" class="text-sm cursor-pointer min-w-0">
+                                Li e aceito {{ artigo(d.tipo) }}
+                                <a [href]="'/documentos/' + d.slug" target="_blank" rel="noopener" class="text-primary font-semibold hover:underline" (click)="$event.stopPropagation()">{{ d.titulo }}<span class="sr-only"> (abre em nova aba)</span></a>
+                                <span class="text-red-600 dark:text-red-400" aria-hidden="true">*</span>
+                                @if (d.resumo) {
+                                    <span class="block text-xs text-muted-color mt-0.5">{{ d.resumo }}</span>
+                                }
+                            </label>
+                        </div>
+                    }
+                    <small id="cd-docs-dica" [class]="faltaAlgumAceite() ? 'text-red-600 dark:text-red-400' : 'text-muted-color'">
+                        {{ faltaAlgumAceite() ? 'Para criar a conta, marque que leu e aceita os documentos acima.' : 'Os documentos abrem em uma nova aba.' }}
+                    </small>
+                </fieldset>
+            }
             <p class="text-sm text-muted-color m-0"><span class="text-red-600 dark:text-red-400" aria-hidden="true">*</span> Campos obrigatórios.</p>
             @if (erro()) {
                 <p-message severity="error" [text]="erro()!" role="alert" />
@@ -161,6 +184,32 @@ export class CadastroForm {
     erro = signal<string | null>(null);
     private tentou = signal(false);
 
+    /** Documentos que precisam ser aceitos para criar a conta (mudam entre cliente e anunciante). */
+    documentos = signal<DocumentoPublico[]>([]);
+    aceitos = signal(new Set<number>());
+    private docsService = inject(DocumentoService);
+
+    faltaAceite(id: number) {
+        return this.tentou() && !this.aceitos().has(id);
+    }
+
+    faltaAlgumAceite() {
+        return this.tentou() && this.documentos().some((d) => !this.aceitos().has(d.id));
+    }
+
+    marcar(id: number, sim: boolean) {
+        this.aceitos.update((s) => {
+            const n = new Set(s);
+            if (sim) n.add(id);
+            else n.delete(id);
+            return n;
+        });
+    }
+
+    artigo(tipo: DocumentoPublico['tipo']) {
+        return tipo === 'TERMOS_USO' ? 'os' : tipo === 'CODIGO_CONDUTA' || tipo === 'CONTRATO' ? 'o' : 'a';
+    }
+
     /** CPF (corretor) ou CNPJ (imobiliária) completo e com dígitos verificadores corretos. */
     private validarDocumento = (c: AbstractControl): ValidationErrors | null => {
         const d = digitos(c.value);
@@ -179,6 +228,18 @@ export class CadastroForm {
             c.creci.setValidators(anunciante ? [Validators.required, Validators.maxLength(30)] : []);
             c.telefone.setValidators(anunciante ? [Validators.required] : []);
             [c.documento, c.creci, c.telefone].forEach((x) => x.updateValueAndValidity({ emitEvent: false }));
+        });
+        // documentos exigidos no cadastro conforme o perfil (cliente x anunciante)
+        effect((onCleanup) => {
+            const perfil: Perfil = this.anunciante() ? 'CORRETOR' : 'CLIENTE';
+            const sub = this.docsService.exigidosNoCadastro(perfil).subscribe({
+                next: (l) => {
+                    this.documentos.set(l);
+                    this.aceitos.update((s) => new Set([...s].filter((id) => l.some((d) => d.id === id))));
+                },
+                error: () => this.documentos.set([])
+            });
+            onCleanup(() => sub.unsubscribe());
         });
         // CPF e CNPJ têm máscaras de tamanhos diferentes: ao trocar, começa do zero
         this.form.controls.tipoAnunciante.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
@@ -208,10 +269,12 @@ export class CadastroForm {
 
     cadastrar() {
         this.tentou.set(true);
-        if (this.form.invalid) {
+        if (this.form.invalid || this.documentos().some((d) => !this.aceitos().has(d.id))) {
             this.form.markAllAsTouched();
             this.erro.set('Confira os campos destacados.');
-            document.querySelector<HTMLElement>('app-cadastro-form .ng-invalid input, app-cadastro-form input.ng-invalid')?.focus();
+            const pendente = this.documentos().find((d) => !this.aceitos().has(d.id));
+            const campo = document.querySelector<HTMLElement>('app-cadastro-form .ng-invalid input, app-cadastro-form input.ng-invalid');
+            (campo ?? (pendente ? document.getElementById('cd-doc-aceite-' + pendente.id) : null))?.focus();
             return;
         }
         const v = this.form.getRawValue();
@@ -227,7 +290,8 @@ export class CadastroForm {
                 tipo: anunciante ? 'CORRETOR' : 'CLIENTE',
                 creci: anunciante ? v.creci.trim() : null,
                 documento: anunciante ? digitos(v.documento) : null,
-                tipoAnunciante: anunciante ? v.tipoAnunciante : null
+                tipoAnunciante: anunciante ? v.tipoAnunciante : null,
+                aceites: this.documentos().map((d) => ({ documentoId: d.id, versao: d.versao }))
             })
             .subscribe({
                 next: (s) => {

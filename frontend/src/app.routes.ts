@@ -27,6 +27,8 @@ export const appRoutes: Routes = [
             { path: 'anunciante/:id', loadComponent: () => import('./app/site/pages/anunciante-perfil').then((m) => m.AnunciantePerfilPage) },
             { path: 'anunciante/:id/:slug', loadComponent: () => import('./app/site/pages/anunciante-perfil').then((m) => m.AnunciantePerfilPage) },
             { path: 'anunciar', loadComponent: () => import('./app/site/pages/anunciar').then((m) => m.AnunciarPage) },
+            { path: 'documentos', loadComponent: () => import('./app/site/pages/documentos').then((m) => m.DocumentosPage) },
+            { path: 'documentos/:slug', loadComponent: () => import('./app/site/pages/documento').then((m) => m.DocumentoPage) },
             { path: 'acesso-negado', loadComponent: () => import('./app/site/pages/acesso-negado').then((m) => m.AcessoNegadoPage) },
             { path: 'nao-encontrado', loadComponent: () => import('./app/site/pages/nao-encontrado').then((m) => m.NaoEncontradoPage) }
         ]
@@ -77,6 +79,8 @@ export const appRoutes: Routes = [
             { path: 'configuracoes', loadComponent: () => import('./app/admin/pages/configuracoes').then((m) => m.ConfiguracoesPage) },
             { path: 'avisos', loadComponent: () => import('./app/admin/pages/avisos').then((m) => m.AvisosPage) },
             { path: 'financeiras', loadComponent: () => import('./app/admin/pages/financeiras').then((m) => m.FinanceirasPage) },
+            { path: 'documentos/novo', loadComponent: () => import('./app/admin/pages/documento-edicao').then((m) => m.DocumentoEdicaoPage) },
+            { path: 'documentos/:id', loadComponent: () => import('./app/admin/pages/documento-edicao').then((m) => m.DocumentoEdicaoPage) },
             { path: 'api', loadComponent: () => import('./app/shared/pages/api-tokens-page').then((m) => m.ApiTokensPage) },
             { path: 'perfil', loadComponent: () => import('./app/conta/pages/perfil').then((m) => m.PerfilPage) }
         ]

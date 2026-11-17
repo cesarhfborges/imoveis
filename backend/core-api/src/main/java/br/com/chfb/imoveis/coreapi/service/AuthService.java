@@ -13,6 +13,7 @@ import br.com.chfb.imoveis.coreapi.dto.AuthDtos.Sessao;
 import br.com.chfb.imoveis.coreapi.dto.AuthDtos.UsuarioSessao;
 import br.com.chfb.imoveis.coreapi.entity.Usuario;
 import br.com.chfb.imoveis.coreapi.repository.UsuarioRepository;
+import br.com.chfb.imoveis.platform.documento.DocumentoService;
 import br.com.chfb.imoveis.sharedkernel.exception.BusinessException;
 import br.com.chfb.imoveis.sharedkernel.exception.ForbiddenException;
 import br.com.chfb.imoveis.sharedkernel.security.AuthUser;
@@ -35,13 +36,15 @@ public class AuthService {
     private final UsuarioService usuarioService;
     private final ConfiguracaoService configuracao;
     private final PasswordEncoder encoder;
+    private final DocumentoService documentos;
 
     public AuthService(UsuarioRepository usuarios, UsuarioService usuarioService, ConfiguracaoService configuracao,
-            PasswordEncoder encoder) {
+            PasswordEncoder encoder, DocumentoService documentos) {
         this.usuarios = usuarios;
         this.usuarioService = usuarioService;
         this.configuracao = configuracao;
         this.encoder = encoder;
+        this.documentos = documentos;
     }
 
     @Transactional
@@ -67,14 +70,17 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthUser registrar(RegistroRequest req) {
+    public AuthUser registrar(RegistroRequest req, String ip) {
         if (req.tipo() == Perfil.ADMIN) {
             throw new ForbiddenException("Cadastro de administrador não é permitido");
         }
         if (req.tipo() == Perfil.CORRETOR && !configuracao.atual().isPermitirCadastroCorretor()) {
             throw new ForbiddenException("O cadastro de corretores está fechado no momento");
         }
+        // termos de uso, privacidade etc. marcados para aceite no cadastro precisam vir aceitos (versão atual)
+        documentos.validarAceitesDoCadastro(req.tipo(), req.aceites());
         Usuario u = usuarioService.registrar(req.nome(), req.email(), req.senha(), req.telefone(), req.creci(), req.tipo());
+        documentos.registrarAceitesDoCadastro(u.getId(), req.tipo(), req.aceites(), ip);
         if (req.tipo() == Perfil.CORRETOR) {
             if (req.creci() == null || req.creci().isBlank()) {
                 throw new BusinessException("Informe o CRECI para anunciar como corretor ou imobiliária");

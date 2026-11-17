@@ -1,3 +1,5 @@
+import { ActivatedRoute } from '@angular/router';
+import { DocumentosLista } from '@/app/admin/components/documentos-lista';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { asapScheduler, map, observeOn } from 'rxjs';
@@ -44,7 +46,8 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
         ImageUpload,
         ThemePicker,
         AppLogo,
-        TelefoneInput
+        TelefoneInput,
+        DocumentosLista
     ],
     template: `
         <app-page-header titulo="Configurações do site" subtitulo="O que for salvo aqui vale para todos os visitantes.">
@@ -52,13 +55,14 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
         </app-page-header>
 
         <form [formGroup]="form" (ngSubmit)="salvar()">
-            <p-tabs value="identidade">
+            <p-tabs [value]="abaInicial">
                 <p-tablist>
                     <p-tab value="identidade">Identidade</p-tab>
                     <p-tab value="seo">SEO</p-tab>
                     <p-tab value="contato">Contato</p-tab>
                     <p-tab value="tema">Tema</p-tab>
                     <p-tab value="regras">Regras</p-tab>
+                    <p-tab value="documentos">Documentos</p-tab>
                 </p-tablist>
                 <p-tabpanels>
                     <p-tabpanel value="identidade">
@@ -602,12 +606,17 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                             </aside>
                         </div>
                     </p-tabpanel>
+                    <p-tabpanel value="documentos">
+                        <app-documentos-lista />
+                    </p-tabpanel>
                 </p-tabpanels>
             </p-tabs>
         </form>
     `
 })
 export class ConfiguracoesPage {
+    /** Aba aberta ao entrar (?aba=documentos volta direto para a lista de documentos). */
+    readonly abaInicial = inject(ActivatedRoute).snapshot.queryParamMap.get('aba') ?? 'identidade';
     readonly recortes = RECORTES;
     private config = inject(ConfigService);
     private theme = inject(ThemeService);

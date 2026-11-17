@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { AppLogo } from '@/app/shared/components/app-logo';
 import { ConfigService } from '@/app/core/services/config.service';
 import { TelefonePipe } from '@/app/core/pipes/formatos';
+import { DocumentoService } from '@/app/core/services/documento.service';
 
 /** Rodapé em colunas: marca e redes, institucional, atalhos de busca e contato. */
 @Component({
@@ -34,6 +35,9 @@ import { TelefonePipe } from '@/app/core/pipes/formatos';
                         <li><a routerLink="/anunciar">Como anunciar</a></li>
                         <li><a routerLink="/mapa">Mapa de imóveis</a></li>
                         <li><a routerLink="/admin/login">Área administrativa</a></li>
+                        @if (documentos.publicos().length) {
+                            <li><a routerLink="/documentos">Documentos</a></li>
+                        }
                     </ul>
                 </nav>
                 <nav aria-label="Busca de imóveis">
@@ -73,5 +77,12 @@ import { TelefonePipe } from '@/app/core/pipes/formatos';
 })
 export class SiteFooter {
     cfg = inject(ConfigService).config;
+    /** Só para mostrar o link "Documentos" quando houver algum publicado (Configurações › Documentos). */
+    documentos = inject(DocumentoService);
+
+    constructor() {
+        this.documentos.carregarPublicos();
+    }
+
     ano = new Date().getFullYear();
 }

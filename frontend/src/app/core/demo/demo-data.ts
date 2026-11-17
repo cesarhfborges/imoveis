@@ -1,3 +1,4 @@
+import { DemoDocumentosDb } from './demo-documentos';
 import { Configuracao, Finalidade, FotoImovel, ImovelDetalhe, OrigemFoto, Perfil, StatusAnuncio, TipoImovel, tipoLabel, Financeira } from '@/app/core/models/models';
 import { CONFIG_PADRAO } from '@/app/core/services/config.service';
 
@@ -151,6 +152,9 @@ export interface DemoDb {
     financeiras?: Financeira[];
     precos?: { imovelId: number; anterior: number; novo: number; em: string }[];
     vistos?: { usuarioId: number; imovelId: number; em: string }[];
+    /** Documentos do site (termos, privacidade…) e aceites; opcionais em bancos antigos. */
+    documentos?: DemoDocumentosDb['documentos'];
+    documentoAceites?: DemoDocumentosDb['documentoAceites'];
 }
 
 /** Financeiras fictícias do modo demonstração. */

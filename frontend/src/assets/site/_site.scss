@@ -2948,3 +2948,135 @@ html.rolagem-travada body {
     width: 100%!important;
     max-width: 26rem!important;
 }
+
+/* ---------------------------------------------------------------- documentos (termos, LGPD…) */
+/* conteúdo do editor completo (Quill 2); usado na leitura pública, na prévia e no histórico de versões */
+.documento-conteudo {
+    color: var(--p-text-color);
+    font-size: 1.02rem;
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+
+    :is(h1, h2, h3, h4, h5, h6) {
+        color: var(--p-text-color);
+        line-height: 1.25;
+        font-weight: 700;
+        margin: 2rem 0 0.75rem;
+        scroll-margin-top: 6rem;
+    }
+    > :first-child {
+        margin-top: 0;
+    }
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.5rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--p-content-border-color); }
+    h3 { font-size: 1.25rem; }
+    h4 { font-size: 1.1rem; }
+    h5, h6 { font-size: 1rem; }
+    p {
+        margin: 0 0 1rem;
+    }
+    a {
+        color: var(--p-primary-color);
+        text-decoration: underline;
+    }
+    strong {
+        font-weight: 700;
+    }
+    blockquote {
+        margin: 1.25rem 0;
+        padding: 0.75rem 1.25rem;
+        border-left: 4px solid var(--p-primary-color);
+        background: var(--p-surface-50);
+        border-radius: 0 var(--site-raio) var(--site-raio) 0;
+    }
+    /* o Quill 2 grava todas as listas como <ol> com data-list */
+    :is(ol, ul) {
+        margin: 0 0 1rem;
+        padding-left: 1.6rem;
+    }
+    li { margin: 0.25rem 0; }
+    li[data-list='bullet'] { list-style-type: disc; }
+    li[data-list='ordered'] { list-style-type: decimal; }
+    li[data-list='checked'],
+    li[data-list='unchecked'] {
+        list-style: none;
+        margin-left: -1.6rem;
+        &::before {
+            content: '☐';
+            display: inline-block;
+            width: 1.6rem;
+            color: var(--p-text-muted-color);
+        }
+    }
+    li[data-list='checked']::before {
+        content: '☑';
+        color: var(--site-verde);
+    }
+    @for $n from 1 through 8 {
+        .ql-indent-#{$n} { padding-left: #{$n * 1.5}rem; }
+        li.ql-indent-#{$n} { margin-left: #{$n * 1.5}rem; padding-left: 0; }
+    }
+    .ql-align-center { text-align: center; }
+    .ql-align-right { text-align: right; }
+    .ql-align-justify { text-align: justify; }
+    .ql-size-small { font-size: 0.8em; }
+    .ql-size-large { font-size: 1.4em; }
+    .ql-size-huge { font-size: 2.2em; }
+    .ql-code-block-container,
+    pre {
+        margin: 1rem 0;
+        padding: 0.9rem 1.1rem;
+        border-radius: var(--site-raio);
+        background: var(--p-surface-100);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.9rem;
+        white-space: pre-wrap;
+        overflow-x: auto;
+    }
+    code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    img {
+        max-width: 100%;
+        height: auto;
+        border-radius: var(--site-raio);
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+        font-size: 0.95rem;
+        display: block;
+        overflow-x: auto;
+    }
+    :is(td, th) {
+        border: 1px solid var(--p-content-border-color);
+        padding: 0.5rem 0.75rem;
+        vertical-align: top;
+    }
+    tr:first-child td {
+        background: var(--p-surface-50);
+        font-weight: 600;
+    }
+    .ql-ui {
+        display: none;
+    }
+}
+
+.app-dark .documento-conteudo {
+    blockquote,
+    tr:first-child td {
+        background: var(--p-surface-800);
+    }
+    .ql-code-block-container,
+    pre {
+        background: var(--p-surface-800);
+    }
+}
+
+@media print {
+    .documento-conteudo {
+        font-size: 11pt;
+        color: #000;
+    }
+}

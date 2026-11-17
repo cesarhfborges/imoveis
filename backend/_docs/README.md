@@ -88,6 +88,10 @@ Variáveis de produção: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `APP_FRONTEND_ORIG
 | `GET /app/conta/painel` (painel do cliente: contatos enviados, atividade por mês, recomendados, vistos, novidades, quedas de preço, favoritos financiáveis), `GET /app/conta/favoritos/quedas`, `GET /app/conta/favoritos/comparar?ids=1,2,3` (detalhes de até 4 favoritos do próprio usuário, sem contar visita) | logado |
 | `GET /app/admin/dashboard?dias=` (inclui novos cadastros por dia), `GET/POST/PUT/DELETE /app/admin/usuarios` | admin |
 | `GET /app/public/configuracao`, `PUT /app/admin/configuracao` | público / admin |
+| `GET /app/public/documentos`, `GET /app/public/documentos/{slug}`, `GET /app/public/documentos/cadastro?perfil=` — termos de uso, privacidade (LGPD), código de conduta… | público |
+| `GET /app/conta/documentos/pendentes`, `POST /app/conta/documentos/aceites` — aceite obrigatório de quem já tem conta (registra versão, data e IP) | logado |
+| `GET/POST /app/admin/documentos`, `GET/PUT/DELETE /app/admin/documentos/{id}` (exclusão lógica), `PATCH .../situacao`, `POST .../restaurar`, `GET .../versoes[/{versao}]` | admin |
+| `POST /app/auth/registro` aceita `aceites: [{documentoId, versao}]`; documentos com aceite no cadastro são obrigatórios | público |
 | `GET/PUT /app/conta/perfil`, `PUT /app/conta/senha`, `/app/conta/favoritos` | logado |
 | `/app/conta/tokens` | corretor / admin (clientes não têm token) |
 | `POST /app/uploads` (multipart `arquivo`) | corretor / admin |

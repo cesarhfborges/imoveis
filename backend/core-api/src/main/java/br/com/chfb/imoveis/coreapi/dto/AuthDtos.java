@@ -1,6 +1,10 @@
 package br.com.chfb.imoveis.coreapi.dto;
 
+import java.util.List;
 import java.util.Set;
+
+import br.com.chfb.imoveis.platform.documento.DocumentoDtos.AceiteItem;
+import jakarta.validation.Valid;
 
 import br.com.chfb.imoveis.sharedkernel.security.Perfil;
 import jakarta.validation.constraints.Email;
@@ -33,7 +37,9 @@ public final class AuthDtos {
             @NotNull Perfil tipo,
             @Size(max = 30) String creci,
             @Pattern(regexp = "^$|^\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}$|^\\d{2}\\.?\\d{3}\\.?\\d{3}/?\\d{4}-?\\d{2}$", message = "CPF ou CNPJ inválido") String documento,
-            @Pattern(regexp = "CORRETOR|IMOBILIARIA") String tipoAnunciante) {
+            @Pattern(regexp = "CORRETOR|IMOBILIARIA") String tipoAnunciante,
+            /** Documentos aceitos no cadastro (termos de uso, privacidade…), com a versão lida. */
+            @Size(max = 20) List<@Valid AceiteItem> aceites) {
     }
 
     public record UsuarioSessao(Long id, String nome, String email, String telefone, String creci, String fotoUrl) {

@@ -1,5 +1,6 @@
 import { HttpParams, HttpRequest } from '@angular/common/http';
 import { AnunciantePerfil, AnuncianteResumo, CONDICOES, ClientePainel, CondicaoAnuncio, Finalidade, ContagemTipo, Financeira, QuedaPreco, FatiaPainel, PainelAnuncios, PeriodoPainel, PontoDia, ExibicaoTelefone, FotoImovel, ImovelDetalhe, ImovelFiltro, ImovelResumo, ORIGENS_FOTO, OrigemFoto, PageResponse, Perfil, Sessao, StatusAnuncio, TIPOS, TipoImovel, TipoAnunciante, pendenciasPerfilPublico, tipoLabel } from '@/app/core/models/models';
+import { DocumentosDemo } from './demo-documentos';
 import { DemoDb, DemoImovel, DemoUsuario, criarDemoDb, financeirasDemo, fotosMock, perfilDemo } from './demo-data';
 
 /**
@@ -199,6 +200,23 @@ export class DemoBackend {
             return { telefone: tel };
         }
 
+        // ---- documentos do site (termos, privacidade, código de conduta…)
+        if (url === '/app/public/documentos') return this.docs().publicos();
+        if (url === '/app/public/documentos/cadastro') return this.docs().exigidosNoCadastro((p.get('perfil') ?? 'CLIENTE') as Perfil);
+        if ((r = url.match(/^\/app\/public\/documentos\/([a-z0-9-]+)$/))) return this.docs().porSlug(r[1]);
+        if (url === '/app/conta/documentos/pendentes') {
+            const { u, perfil } = this.exigir();
+            return this.docs().pendentes(u.id, perfil);
+        }
+        if (url === '/app/conta/documentos/aceites' && m === 'POST') {
+            this.docs().aceitar(this.exigir().u.id, body.itens);
+            return null;
+        }
+        if (url.startsWith('/app/admin/documentos')) {
+            this.exigir('ADMIN');
+            return this.docs().rota(url, m, body, p.get('excluidos') === 'true');
+        }
+
         // ---- financeiras
         if (url === '/app/public/financeiras') return this.financeirasDb().filter((f) => f.ativo).sort((a, b) => a.nome.localeCompare(b.nome));
         if (url === '/app/admin/financeiras' || url.startsWith('/app/admin/financeiras/')) {
@@ -289,6 +307,7 @@ export class DemoBackend {
         if (b.tipo === 'CORRETOR' && !b.creci) throw new DemoError(400, 'Informe o CRECI para anunciar');
         const email = String(b.email).trim().toLowerCase();
         if (this.db.usuarios.some((x) => x.email === email)) throw new DemoError(409, 'Já existe uma conta com este e-mail');
+        this.docs().validarCadastro(b.tipo, b.aceites);
         const u: DemoUsuario = {
             id: this.nextId(),
             nome: b.nome,
@@ -305,6 +324,8 @@ export class DemoBackend {
             criadoEm: new Date().toISOString()
         };
         this.db.usuarios.push(u);
+        const exigidos = new Set(this.docs().exigidosNoCadastro(b.tipo).map((d) => d.id));
+        this.db.documentoAceites = [...(this.db.documentoAceites ?? []), ...((b.aceites ?? []) as { documentoId: number; versao: number }[]).filter((a) => exigidos.has(a.documentoId)).map((a) => ({ ...a, usuarioId: u.id, em: new Date().toISOString() }))];
         this.salvarDb();
         this.setSessao({ usuarioId: u.id, perfil: b.tipo });
         return this.sessaoDto();
@@ -830,6 +851,19 @@ export class DemoBackend {
                     favoritos: this.db.favoritos.filter((f) => f.imovelId === i.id).length
                 }))
         };
+    }
+
+    // ------------------------------------------------------------ documentos
+
+    private docs() {
+        return new DocumentosDemo(
+            this.db,
+            () => this.salvarDb(),
+            (status, mensagem) => {
+                throw new DemoError(status, mensagem);
+            },
+            () => this.nextId()
+        );
     }
 
     // ------------------------------------------------------------ financeiras
