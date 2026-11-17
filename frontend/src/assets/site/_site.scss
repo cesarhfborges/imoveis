@@ -3074,9 +3074,101 @@ html.rolagem-travada body {
     }
 }
 
+/* cabeçalho com logo e a linha "site · endereço": só aparecem no papel */
+.documento-impressao__marca,
+.documento-impressao__origem {
+    display: none;
+}
+
 @media print {
+    /* página de documento (/documentos/:slug): imprime só o <article>, como uma folha de documento */
+    body.imprimindo-documento {
+        background: #fff !important;
+        visibility: hidden;
+
+        .documento-impressao,
+        .documento-impressao * {
+            visibility: visible;
+        }
+        .documento-impressao {
+            position: absolute;
+            inset: 0 0 auto 0;
+            margin: 0;
+            padding: 0 !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            background: #fff !important;
+            color: #000;
+        }
+        .documento-impressao header {
+            border-color: #999 !important;
+        }
+        .documento-impressao__marca {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding-bottom: 0.6rem;
+            margin-bottom: 1.25rem;
+            border-bottom: 2px solid #000;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+            img {
+                height: 1.4cm;
+                max-width: 6cm;
+            }
+        }
+        .documento-impressao__nome {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+            strong {
+                font-size: 14pt;
+                color: #000;
+            }
+            small {
+                font-size: 9pt;
+                color: #555;
+            }
+        }
+        .documento-impressao__origem {
+            display: block;
+            margin-top: 0.25rem;
+            font-size: 9pt;
+            color: #555;
+        }
+        /* fora do papel de vez (não só invisíveis): senão ainda ocupam altura e geram páginas em branco */
+        .pular-link,
+        app-site-header,
+        app-site-footer,
+        app-avisos,
+        .aviso-demo,
+        .p-toast,
+        .p-dialog-mask {
+            display: none !important;
+        }
+        .site-main {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+    }
+
     .documento-conteudo {
         font-size: 11pt;
         color: #000;
+        :is(h1, h2, h3, h4) {
+            color: #000;
+            break-after: avoid;
+        }
+        :is(p, li, tr, blockquote, img) {
+            break-inside: avoid;
+        }
+        a {
+            color: #000;
+        }
     }
+}
+
+@page {
+    margin: 2cm 1.8cm;
 }

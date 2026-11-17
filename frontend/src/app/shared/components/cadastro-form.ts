@@ -2,6 +2,8 @@ import { Component, computed, effect, inject, input, output, signal } from '@ang
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormsModule, NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { CheckboxModule } from 'primeng/checkbox';
+import { DialogModule } from 'primeng/dialog';
+import { DocumentoConteudo } from './documento-conteudo';
 import { DocumentoService } from '@/app/core/services/documento.service';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputMaskModule } from 'primeng/inputmask';
@@ -28,7 +30,7 @@ type Campo = 'documento' | 'creci' | 'nome' | 'email' | 'telefone' | 'senha';
  */
 @Component({
     selector: 'app-cadastro-form',
-    imports: [ReactiveFormsModule, FormsModule, CheckboxModule, InputTextModule, InputMaskModule, PasswordModule, ButtonModule, RadioButtonModule, MessageModule, TelefoneInput],
+    imports: [ReactiveFormsModule, FormsModule, CheckboxModule, DialogModule, DocumentoConteudo, InputTextModule, InputMaskModule, PasswordModule, ButtonModule, RadioButtonModule, MessageModule, TelefoneInput],
     template: `
         <form [formGroup]="form" (ngSubmit)="cadastrar()" class="flex flex-col gap-5" novalidate>
             @if (modo() === 'escolha') {
@@ -130,7 +132,7 @@ type Campo = 'documento' | 'creci' | 'nome' | 'email' | 'telefone' | 'senha';
                             <p-checkbox [inputId]="'cd-doc-aceite-' + d.id" [binary]="true" [ngModel]="aceitos().has(d.id)" (ngModelChange)="marcar(d.id, $event)" [ngModelOptions]="{ standalone: true }" [invalid]="faltaAceite(d.id)" class="mt-0.5" />
                             <label [for]="'cd-doc-aceite-' + d.id" class="text-sm cursor-pointer min-w-0">
                                 Li e aceito {{ artigo(d.tipo) }}
-                                <a [href]="'/documentos/' + d.slug" target="_blank" rel="noopener" class="text-primary font-semibold hover:underline" (click)="$event.stopPropagation()">{{ d.titulo }}<span class="sr-only"> (abre em nova aba)</span></a>
+                                <button type="button" class="p-0 border-0 bg-transparent text-primary font-semibold hover:underline cursor-pointer text-left" (click)="$event.preventDefault(); $event.stopPropagation(); lendo.set(d)" aria-haspopup="dialog">{{ d.titulo }}</button>
                                 <span class="text-red-600 dark:text-red-400" aria-hidden="true">*</span>
                                 @if (d.resumo) {
                                     <span class="block text-xs text-muted-color mt-0.5">{{ d.resumo }}</span>
@@ -139,7 +141,7 @@ type Campo = 'documento' | 'creci' | 'nome' | 'email' | 'telefone' | 'senha';
                         </div>
                     }
                     <small id="cd-docs-dica" [class]="faltaAlgumAceite() ? 'text-red-600 dark:text-red-400' : 'text-muted-color'">
-                        {{ faltaAlgumAceite() ? 'Para criar a conta, marque que leu e aceita os documentos acima.' : 'Os documentos abrem em uma nova aba.' }}
+                        {{ faltaAlgumAceite() ? 'Para criar a conta, marque que leu e aceita os documentos acima.' : 'Clique no nome do documento para ler.' }}
                     </small>
                 </fieldset>
             }
@@ -149,6 +151,32 @@ type Campo = 'documento' | 'creci' | 'nome' | 'email' | 'telefone' | 'senha';
             }
             <p-button type="submit" [label]="anunciante() ? 'Cadastrar como anunciante' : 'Criar conta'" icon="pi pi-check" [loading]="enviando()" styleClass="w-full" />
         </form>
+
+        <p-dialog
+            [visible]="!!lendo()"
+            (visibleChange)="!$event && lendo.set(null)"
+            [modal]="true"
+            [dismissableMask]="true"
+            [draggable]="false"
+            [header]="lendo()?.titulo ?? ''"
+            [style]="{ width: '52rem' }"
+            [breakpoints]="{ '768px': '96vw' }"
+            [contentStyle]="{ 'max-height': '65vh' }"
+        >
+            @if (lendo(); as d) {
+                <p class="text-sm text-muted-color mt-0 mb-4">Versão {{ d.versao }}{{ d.resumo ? ' · ' + d.resumo : '' }}</p>
+                <app-documento-conteudo [html]="d.conteudo" />
+            }
+            <ng-template #footer>
+                <div class="flex flex-wrap items-center justify-between gap-2 w-full">
+                    <a [href]="'/documentos/' + (lendo()?.slug ?? '')" target="_blank" rel="noopener" class="text-sm text-muted-color hover:text-primary hover:underline">Abrir em nova aba</a>
+                    <div class="flex gap-2">
+                        <p-button label="Fechar" severity="secondary" [text]="true" (onClick)="lendo.set(null)" />
+                        <p-button label="Li e aceito" icon="pi pi-check" (onClick)="aceitarLido()" />
+                    </div>
+                </div>
+            </ng-template>
+        </p-dialog>
     `
 })
 export class CadastroForm {
@@ -195,6 +223,17 @@ export class CadastroForm {
 
     faltaAlgumAceite() {
         return this.tentou() && this.documentos().some((d) => !this.aceitos().has(d.id));
+    }
+
+    /** Documento aberto na janela de leitura. */
+    lendo = signal<DocumentoPublico | null>(null);
+
+    aceitarLido() {
+        const d = this.lendo();
+        if (d) this.marcar(d.id, true);
+        this.lendo.set(null);
+        // devolve o foco para a caixa do documento aceito
+        if (d) setTimeout(() => document.getElementById('cd-doc-aceite-' + d.id)?.focus());
     }
 
     marcar(id: number, sim: boolean) {

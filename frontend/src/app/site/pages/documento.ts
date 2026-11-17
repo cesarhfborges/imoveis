@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, input, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -7,11 +7,12 @@ import { DocumentoPublico, tipoDocumentoInfo } from '@/app/core/models/models';
 import { DocumentoService } from '@/app/core/services/documento.service';
 import { ConfigService } from '@/app/core/services/config.service';
 import { DocumentoConteudo, TituloDocumento } from '@/app/shared/components/documento-conteudo';
+import { AppLogo } from '@/app/shared/components/app-logo';
 
 /** Leitura de um documento (/documentos/:slug) com índice gerado pelos títulos, versão e impressão. */
 @Component({
     selector: 'app-documento-page',
-    imports: [DatePipe, RouterLink, DocumentoConteudo],
+    imports: [DatePipe, RouterLink, DocumentoConteudo, AppLogo],
     template: `
         <div class="site-container secao">
             @if (doc(); as d) {
@@ -35,12 +36,26 @@ import { DocumentoConteudo, TituloDocumento } from '@/app/shared/components/docu
                             </div>
                         </aside>
                     }
-                    <article class="min-w-0 p-6 md:p-10 rounded-border border border-surface bg-surface-0 dark:bg-surface-900" [class.lg:col-span-2]="titulos().length <= 1" aria-labelledby="doc-titulo">
+                    <article class="documento-impressao min-w-0 p-6 md:p-10 rounded-border border border-surface bg-surface-0 dark:bg-surface-900" [class.lg:col-span-2]="titulos().length <= 1" aria-labelledby="doc-titulo">
+                        <!-- só na impressão: logo e nome do site no topo da folha -->
+                        <div class="documento-impressao__marca" aria-hidden="true">
+                            <app-logo [escuro]="false" />
+                            @if (temLogoImagem()) {
+                                <span class="documento-impressao__nome">
+                                    <strong>{{ nomeSite() }}</strong>
+                                    @if (slogan()) {
+                                        <small>{{ slogan() }}</small>
+                                    }
+                                </span>
+                            }
+                        </div>
                         <header class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 mb-8 border-b border-surface">
                             <div>
                                 <span class="inline-flex items-center gap-2 text-sm font-semibold text-primary"><i class="pi {{ info().icone }}" aria-hidden="true"></i> {{ info().label }}</span>
                                 <h1 id="doc-titulo" class="text-3xl font-bold mt-2 mb-2">{{ d.titulo }}</h1>
                                 <div class="text-sm text-muted-color">Versão {{ d.versao }} · em vigor desde {{ d.versaoEm | date: 'dd/MM/yyyy' }}</div>
+                                <!-- só na impressão: de onde veio o documento -->
+                                <div class="documento-impressao__origem">{{ nomeSite() }} · {{ endereco() }}</div>
                             </div>
                             <button type="button" class="site-acao site-acao--claro shrink-0 print:hidden" (click)="imprimir()"><i class="pi pi-print" aria-hidden="true"></i> Imprimir / PDF</button>
                         </header>
@@ -89,6 +104,20 @@ export class DocumentoPage {
         e.preventDefault();
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         history.replaceState(null, '', '#' + id);
+    }
+
+    nomeSite = computed(() => this.config.config().nomeApp);
+    slogan = computed(() => this.config.config().slogan);
+    /** Com logo em imagem, o nome vai ao lado; sem imagem, o componente de logo já mostra o nome. */
+    temLogoImagem = computed(() => !!this.config.config().logoUrl);
+    endereco = computed(() => (typeof location !== 'undefined' ? `${location.origin}/documentos/${this.slug()}` : ''));
+
+    constructor() {
+        // enquanto o documento está aberto, imprimir (botão ou Ctrl+P) sai só com o documento
+        if (typeof document !== 'undefined') {
+            document.body.classList.add('imprimindo-documento');
+            inject(DestroyRef).onDestroy(() => document.body.classList.remove('imprimindo-documento'));
+        }
     }
 
     imprimir() {
