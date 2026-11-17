@@ -1,10 +1,13 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AccordionModule } from 'primeng/accordion';
 import { SkeletonModule } from 'primeng/skeleton';
 import { ImovelFiltro, ImovelResumo, OpcoesBusca } from '@/app/core/models/models';
 import { ImovelService } from '@/app/core/services/imovel.service';
 import { ConfigService } from '@/app/core/services/config.service';
+import { AuthService } from '@/app/core/services/auth.service';
+import { ContaService } from '@/app/core/services/conta.service';
+import { DadosEstruturadosService, siteJsonLd } from '@/app/core/services/dados-estruturados.service';
 import { FiltrosBusca } from '@/app/shared/components/filtros-busca';
 import { ImovelCardMini } from '@/app/shared/components/imovel-card-mini';
 import { HeroDecor } from '@/app/shared/components/hero-decor';
@@ -55,6 +58,21 @@ import { HeroDecor } from '@/app/shared/components/hero-decor';
                 }
             </div>
         </section>
+
+        <!-- para quem está logado: os últimos imóveis abertos (regra "Vistos recentemente") -->
+        @if (continuar().length) {
+            <section class="site-container secao" aria-labelledby="continuar-titulo">
+                <div class="flex items-end justify-between gap-4 mb-4">
+                    <h2 id="continuar-titulo" class="secao__titulo">Continue de onde parou</h2>
+                    <a routerLink="/conta/vistos" class="text-primary font-semibold hover:underline">Ver histórico</a>
+                </div>
+                <div class="grade-cards">
+                    @for (i of continuar(); track i.id) {
+                        <app-imovel-card-mini [imovel]="i" />
+                    }
+                </div>
+            </section>
+        }
 
         <section class="site-container secao" aria-labelledby="tipos-titulo">
             <h2 id="tipos-titulo" class="secao__titulo mb-4">Busque por tipo</h2>
@@ -154,6 +172,9 @@ export class HomePage {
     private imoveis = inject(ImovelService);
     private router = inject(Router);
     private config = inject(ConfigService);
+    private auth = inject(AuthService);
+    private conta = inject(ContaService);
+    private dadosEstruturados = inject(DadosEstruturadosService);
     cfg = this.config.config;
 
     /** Título do hero dividido para destacar o fim da frase (as duas últimas palavras). */
@@ -165,6 +186,8 @@ export class HomePage {
 
     carregando = signal(true);
     destaques = signal<ImovelResumo[]>([]);
+    /** Últimos imóveis abertos pelo usuário logado (vazio para visitantes ou com a regra desligada). */
+    continuar = signal<ImovelResumo[]>([]);
     opcoes = signal<OpcoesBusca>({ tipos: [], localidades: [] });
 
     atalhos = [
@@ -185,6 +208,20 @@ export class HomePage {
 
     constructor() {
         this.config.definirTitulo();
+        // o site e a busca para os buscadores (refaz se a configuração mudar)
+        effect(() => this.dadosEstruturados.definir('site', siteJsonLd(this.cfg(), location.origin)));
+        inject(DestroyRef).onDestroy(() => this.dadosEstruturados.remover('site'));
+        // a sessão e a configuração chegam depois: refaz a consulta quando o login ou a regra mudam
+        effect(() => {
+            const mostrar = this.auth.logado() && this.cfg().vistosRecentes !== false;
+            untracked(() => {
+                if (!mostrar) {
+                    this.continuar.set([]);
+                    return;
+                }
+                this.conta.vistos(0, 4).subscribe({ next: (p) => this.continuar.set(p.content.map((v) => v.imovel)), error: () => this.continuar.set([]) });
+            });
+        });
         this.imoveis.destaques(8).subscribe({
             next: (d) => {
                 this.destaques.set(d);

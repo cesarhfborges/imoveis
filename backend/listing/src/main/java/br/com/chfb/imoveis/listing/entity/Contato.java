@@ -2,6 +2,9 @@ package br.com.chfb.imoveis.listing.entity;
 
 import br.com.chfb.imoveis.sharedkernel.util.Digitos;
 import br.com.chfb.imoveis.sharedkernel.entity.BaseEntity;
+import java.time.Instant;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -35,6 +38,16 @@ public class Contato extends BaseEntity {
 
     private boolean lido;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private EtapaContato etapa = EtapaContato.NOVO;
+
+    @Column(name = "etapa_em")
+    private Instant etapaEm;
+
+    @Column(columnDefinition = "text")
+    private String anotacoes;
+
     public Imovel getImovel() { return imovel; }
     public void setImovel(Imovel imovel) { this.imovel = imovel; }
     public String getNome() { return nome; }
@@ -49,4 +62,10 @@ public class Contato extends BaseEntity {
     public void setUsuarioId(Long usuarioId) { this.usuarioId = usuarioId; }
     public boolean isLido() { return lido; }
     public void setLido(boolean lido) { this.lido = lido; }
+    public EtapaContato getEtapa() { return etapa; }
+    public void setEtapa(EtapaContato etapa) { this.etapa = etapa; }
+    public Instant getEtapaEm() { return etapaEm; }
+    public void setEtapaEm(Instant etapaEm) { this.etapaEm = etapaEm; }
+    public String getAnotacoes() { return anotacoes; }
+    public void setAnotacoes(String anotacoes) { this.anotacoes = anotacoes; }
 }

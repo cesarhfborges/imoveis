@@ -1,5 +1,6 @@
 package br.com.chfb.imoveis.listing.service;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -15,6 +16,8 @@ import br.com.chfb.imoveis.listing.dto.PainelAnuncios;
 import br.com.chfb.imoveis.listing.dto.PainelAnuncios.Fatia;
 import br.com.chfb.imoveis.listing.dto.PainelAnuncios.PontoDia;
 import br.com.chfb.imoveis.listing.dto.PainelAnuncios.Resumo;
+import br.com.chfb.imoveis.listing.dto.RelatorioAnuncio;
+import br.com.chfb.imoveis.listing.entity.Imovel;
 import br.com.chfb.imoveis.listing.entity.StatusAnuncio;
 import br.com.chfb.imoveis.listing.entity.TipoImovel;
 import br.com.chfb.imoveis.listing.repository.ImovelRepository;
@@ -86,6 +89,38 @@ public class PainelService {
                 fatias(porFinalidade, 2).stream().map(f -> new Fatia(rotuloFinalidade(f.rotulo()), f.total())).toList(),
                 anuncianteId == null ? porAnunciante() : List.of(),
                 painel.maisVistos(anuncianteId, LIMITE_RANKING));
+    }
+
+    /** Relatório de um anúncio (a permissão de quem pede é verificada em {@link ImovelService#relatorio}). */
+    @Transactional(readOnly = true)
+    public RelatorioAnuncio relatorio(Imovel imovel, int dias) {
+        int periodo = PERIODOS.contains(dias) ? dias : 30;
+        LocalDate hoje = LocalDate.now(FUSO);
+        LocalDate inicio = hoje.minusDays(periodo - 1L);
+        LocalDate inicioAnterior = inicio.minusDays(periodo);
+        Instant desde = inicioAnterior.atStartOfDay(FUSO).toInstant();
+        Long id = imovel.getId();
+
+        Map<LocalDate, Long> visitas = painel.visitasDoImovel(id, inicioAnterior, hoje);
+        Map<LocalDate, Long> contatos = painel.doImovelPorDia("contatos", id, desde, FUSO.getId());
+        Map<LocalDate, Long> favoritos = painel.doImovelPorDia("favoritos", id, desde, FUSO.getId());
+        LocalDate fimAnterior = inicio.minusDays(1);
+        List<PontoDia> sv = serie(visitas, inicio, hoje), sc = serie(contatos, inicio, hoje), sf = serie(favoritos, inicio, hoje);
+        RelatorioAnuncio.Resumo resumo = new RelatorioAnuncio.Resumo(soma(sv), soma(serie(visitas, inicioAnterior, fimAnterior)),
+                soma(sc), soma(serie(contatos, inicioAnterior, fimAnterior)), soma(sf),
+                soma(serie(favoritos, inicioAnterior, fimAnterior)));
+
+        long[] outros = painel.outrosDoAnunciante(imovel.getAnuncianteId(), id, inicio, hoje,
+                inicio.atStartOfDay(FUSO).toInstant(), hoje.plusDays(1).atStartOfDay(FUSO).toInstant());
+        RelatorioAnuncio.Comparacao comparacao = outros[2] == 0 ? null
+                : new RelatorioAnuncio.Comparacao(outros[0] / (double) outros[2], outros[1] / (double) outros[2], outros[2]);
+
+        Instant criado = imovel.getCriadoEm();
+        long diasNoAr = criado == null ? 0 : java.time.temporal.ChronoUnit.DAYS.between(criado.atZone(FUSO).toLocalDate(), hoje);
+        RelatorioAnuncio.Anuncio anuncio = new RelatorioAnuncio.Anuncio(id, imovel.getCodigo(), imovel.getTitulo(),
+                imovel.getStatus().name(), imovel.getPreco(), criado, diasNoAr, imovel.getVisualizacoes(),
+                painel.favoritosDoImovel(id));
+        return new RelatorioAnuncio(periodo, anuncio, resumo, comparacao, sv, sc, sf, painel.precos(id));
     }
 
     private List<Fatia> porAnunciante() {

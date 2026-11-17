@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { AppMenuitem } from './app.menuitem';
 import { AuthService } from '@/app/core/services/auth.service';
+import { ConfigService } from '@/app/core/services/config.service';
 import { ModeracaoService } from '@/app/core/services/moderacao.service';
 import { RealtimeService, canalDoUsuario } from '@/app/core/services/realtime.service';
 import { ContadorPendencias } from '@/app/core/models/models';
@@ -27,6 +28,7 @@ export class AppMenu {
     private route = inject(ActivatedRoute);
 
     private moderacao = inject(ModeracaoService);
+    private config = inject(ConfigService);
 
     private area = (this.route.snapshot.data['area'] as string) ?? this.route.parent?.snapshot.data['area'] ?? 'conta';
 
@@ -108,6 +110,10 @@ export class AppMenu {
                     { label: 'Início', icon: 'pi pi-fw pi-home', routerLink: ['/conta'] },
                     { label: 'Favoritos', icon: 'pi pi-fw pi-heart', routerLink: ['/conta/favoritos'] },
                     { label: 'Comparar favoritos', icon: 'pi pi-fw pi-clone', routerLink: ['/conta/comparar'] },
+                    // regra "Vistos recentemente" (aba Regras): desligada, o item some do menu
+                    ...(this.config.config().vistosRecentes !== false ? [{ label: 'Vistos recentemente', icon: 'pi pi-fw pi-eye', routerLink: ['/conta/vistos'] }] : []),
+                    // visitas: aparece com a regra ligada (com ela desligada a página continua acessível pelas notificações)
+                    ...(this.config.config().agendamentoVisita !== false ? [{ label: 'Visitas', icon: 'pi pi-fw pi-calendar', routerLink: ['/conta/visitas'] }] : []),
                     { label: 'Minhas denúncias', icon: 'pi pi-fw pi-flag', routerLink: ['/conta/denuncias'] },
                     { label: 'Meus dados', icon: 'pi pi-fw pi-user', routerLink: ['/conta/perfil'] }
                 ]

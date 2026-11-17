@@ -63,4 +63,28 @@ public class ConfiguracaoService implements ModeracaoPolicy, ExibicaoTelefonePol
     public boolean alertaQuedaPreco() {
         return atual().isAlertaQuedaPreco();
     }
+
+    @Override
+    @Transactional
+    public boolean vistosRecentes() {
+        return atual().isVistosRecentes();
+    }
+
+    @Override
+    @Transactional
+    public boolean relatorioAnuncio() {
+        return atual().isRelatorioAnuncio();
+    }
+
+    @Override
+    @Transactional
+    public boolean etapasContatos() {
+        return atual().isEtapasContatos();
+    }
+
+    @Override
+    @Transactional
+    public boolean agendamentoVisita() {
+        return atual().isAgendamentoVisita();
+    }
 }

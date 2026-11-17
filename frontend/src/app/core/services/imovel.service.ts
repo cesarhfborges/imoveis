@@ -1,7 +1,23 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { Contato, ContatoForm, ContagemTipo, EstatisticasAnuncios, ImovelDetalhe, PainelAnuncios, PeriodoPainel, ImovelFiltro, ImovelForm, ImovelResumo, OpcoesBusca, PageResponse, StatusAnuncio } from '@/app/core/models/models';
+import {
+    Contato,
+    ContatoForm,
+    EtapaContato,
+    ContagemTipo,
+    EstatisticasAnuncios,
+    ImovelDetalhe,
+    PainelAnuncios,
+    PeriodoPainel,
+    RelatorioAnuncio,
+    ImovelFiltro,
+    ImovelForm,
+    ImovelResumo,
+    OpcoesBusca,
+    PageResponse,
+    StatusAnuncio
+} from '@/app/core/models/models';
 
 /** Consulta pública de anúncios (sem login). */
 @Injectable({ providedIn: 'root' })
@@ -87,8 +103,22 @@ export class GestaoAnunciosService {
         return this.api.get(`/app/${area}/anuncios/painel`, { dias });
     }
 
-    contatos(area: AreaGestao, page = 0, size = 20): Observable<PageResponse<Contato>> {
-        return this.api.get(`/app/${area}/contatos`, { page, size });
+    /** Relatório de um anúncio (dono ou administrador). */
+    relatorio(area: AreaGestao, id: number, dias: PeriodoPainel): Observable<RelatorioAnuncio> {
+        return this.api.get(`/app/${area}/imoveis/${id}/relatorio`, { dias });
+    }
+
+    contatos(area: AreaGestao, page = 0, size = 20, etapa: EtapaContato | null = null): Observable<PageResponse<Contato>> {
+        return this.api.get(`/app/${area}/contatos`, etapa ? { page, size, etapa } : { page, size });
+    }
+
+    /** Quantos contatos há em cada etapa. */
+    contatosPorEtapa(area: AreaGestao): Observable<Record<EtapaContato, number>> {
+        return this.api.get(`/app/${area}/contatos/etapas`);
+    }
+
+    mudarEtapa(area: AreaGestao, id: number, etapa: EtapaContato, anotacoes: string | null): Observable<Contato> {
+        return this.api.patch(`/app/${area}/contatos/${id}/etapa`, { etapa, anotacoes });
     }
 
     marcarLido(area: AreaGestao, id: number, lido: boolean): Observable<Contato> {

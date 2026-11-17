@@ -7,7 +7,10 @@ import { TagModule } from 'primeng/tag';
 import { DialogModule } from 'primeng/dialog';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
-import { Contato, ImovelDetalhe, PageResponse } from '@/app/core/models/models';
+import { Contato, ETAPAS_CONTATO, EtapaContato, ImovelDetalhe, PageResponse, etapaContato } from '@/app/core/models/models';
+import { FormsModule } from '@angular/forms';
+import { SelectModule } from 'primeng/select';
+import { TextareaModule } from 'primeng/textarea';
 import { AreaGestao, GestaoAnunciosService } from '@/app/core/services/imovel.service';
 import { ConfigService } from '@/app/core/services/config.service';
 import { mensagemErro } from '@/app/core/services/api.service';
@@ -24,9 +27,56 @@ import { DadosResposta, respostaEmail, respostaWhatsapp } from './contato-respos
  */
 @Component({
     selector: 'app-contatos-page',
-    imports: [RouterLink, DatePipe, TableModule, ButtonModule, TagModule, DialogModule, TooltipModule, PageHeader, TelefonePipe],
+    imports: [RouterLink, DatePipe, FormsModule, TableModule, ButtonModule, TagModule, DialogModule, TooltipModule, SelectModule, TextareaModule, PageHeader, TelefonePipe],
+    styles: `
+        .etapa-filtro {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 999px;
+            border: 1px solid var(--p-content-border-color);
+            background: var(--p-content-background);
+            color: var(--p-text-color);
+            font: inherit;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition:
+                border-color 0.15s,
+                background-color 0.15s;
+        }
+        .etapa-filtro:hover {
+            border-color: var(--p-primary-color);
+        }
+        .etapa-filtro:focus-visible {
+            outline: 2px solid var(--p-primary-color);
+            outline-offset: 2px;
+        }
+        .etapa-filtro--ativa {
+            border-color: var(--p-primary-color);
+            background: var(--p-primary-color);
+            color: var(--p-primary-contrast-color);
+        }
+        .etapa-filtro__n {
+            font-weight: 600;
+            opacity: 0.85;
+        }
+    `,
     template: `
         <app-page-header titulo="Contatos recebidos" subtitulo="Pessoas interessadas que escreveram pelo site." />
+        @if (etapasLigadas()) {
+            <!-- filtro por etapa, com a quantidade de contatos em cada uma -->
+            <div class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Filtrar contatos por etapa">
+                <button type="button" class="etapa-filtro" [class.etapa-filtro--ativa]="!filtro()" [attr.aria-pressed]="!filtro()" (click)="filtrar(null)">
+                    Todas <span class="etapa-filtro__n">{{ totalEtapas() }}</span>
+                </button>
+                @for (e of etapas; track e.value) {
+                    <button type="button" class="etapa-filtro" [class.etapa-filtro--ativa]="filtro() === e.value" [attr.aria-pressed]="filtro() === e.value" (click)="filtrar(e.value)">
+                        <i class="pi {{ e.icone }}" aria-hidden="true"></i> {{ e.label }} <span class="etapa-filtro__n">{{ contagem()[e.value] ?? 0 }}</span>
+                    </button>
+                }
+            </div>
+        }
         <div class="card">
             <p-table
                 [value]="pagina().content"
@@ -47,6 +97,9 @@ import { DadosResposta, respostaEmail, respostaWhatsapp } from './contato-respos
                         <th scope="col">Interessado</th>
                         <th scope="col">Imóvel</th>
                         <th scope="col">Mensagem</th>
+                        @if (etapasLigadas()) {
+                            <th scope="col">Etapa</th>
+                        }
                         <th scope="col"><span class="sr-only">Ações</span></th>
                     </tr>
                 </ng-template>
@@ -70,6 +123,11 @@ import { DadosResposta, respostaEmail, respostaWhatsapp } from './contato-respos
                         <td class="font-normal max-w-[28rem]">
                             <span class="line-clamp-2 text-muted-color">{{ c.mensagem }}</span>
                         </td>
+                        @if (etapasLigadas()) {
+                            <td class="whitespace-nowrap font-normal">
+                                <p-tag [value]="rotuloEtapa(c.etapa).label" [severity]="rotuloEtapa(c.etapa).severity" [icon]="'pi ' + rotuloEtapa(c.etapa).icone" />
+                            </td>
+                        }
                         <td class="text-right whitespace-nowrap" (click)="$event.stopPropagation()">
                             <p-button icon="pi pi-eye" [text]="true" [rounded]="true" (onClick)="abrir(c)" ariaLabel="Ver detalhes" pTooltip="Ver detalhes" tooltipPosition="top" />
                             <p-button
@@ -87,7 +145,7 @@ import { DadosResposta, respostaEmail, respostaWhatsapp } from './contato-respos
                 </ng-template>
                 <ng-template #emptymessage>
                     <tr>
-                        <td colspan="6" class="text-center py-8 text-muted-color">Nenhum contato recebido ainda.</td>
+                        <td [attr.colspan]="etapasLigadas() ? 7 : 6" class="text-center py-8 text-muted-color">{{ filtro() ? 'Nenhum contato nesta etapa.' : 'Nenhum contato recebido ainda.' }}</td>
                     </tr>
                 </ng-template>
             </p-table>
@@ -151,6 +209,43 @@ import { DadosResposta, respostaEmail, respostaWhatsapp } from './contato-respos
                         <p class="m-0 p-4 rounded-lg border border-surface whitespace-pre-line leading-relaxed">{{ c.mensagem }}</p>
                     </section>
 
+                    @if (etapasLigadas()) {
+                        <section aria-labelledby="ct-atendimento" class="flex flex-col gap-3 p-4 rounded-lg border border-surface">
+                            <div id="ct-atendimento" class="text-xs font-semibold uppercase tracking-wide text-muted-color">Atendimento</div>
+                            <div class="flex flex-col gap-2">
+                                <label for="ct-etapa" class="font-medium">Etapa</label>
+                                <p-select inputId="ct-etapa" [options]="etapas" optionLabel="label" optionValue="value" [ngModel]="etapaEdicao()" (ngModelChange)="etapaEdicao.set($event)" appendTo="body" styleClass="w-full sm:w-72">
+                                    <ng-template #selectedItem let-e
+                                        ><span class="flex items-center gap-2"><i class="pi {{ e.icone }}" aria-hidden="true"></i>{{ e.label }}</span></ng-template
+                                    >
+                                    <ng-template #item let-e
+                                        ><span class="flex items-center gap-2"><i class="pi {{ e.icone }}" aria-hidden="true"></i>{{ e.label }}</span></ng-template
+                                    >
+                                </p-select>
+                                @if (c.etapaEm) {
+                                    <small class="text-muted-color">Na etapa atual desde {{ c.etapaEm | date: "dd/MM/yyyy 'às' HH:mm" }}</small>
+                                }
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <label for="ct-notas" class="font-medium">Anotações</label>
+                                <textarea
+                                    pTextarea
+                                    id="ct-notas"
+                                    rows="3"
+                                    maxlength="4000"
+                                    [ngModel]="notasEdicao()"
+                                    (ngModelChange)="notasEdicao.set($event)"
+                                    placeholder="Ex.: prefere visitar no sábado; pediu desconto de 5%"
+                                    aria-describedby="ct-notas-dica"
+                                ></textarea>
+                                <small id="ct-notas-dica" class="text-muted-color">Só você vê estas anotações.</small>
+                            </div>
+                            <div class="flex justify-end">
+                                <p-button label="Salvar atendimento" icon="pi pi-check" size="small" [disabled]="!atendimentoAlterado()" [loading]="salvandoEtapa()" (onClick)="salvarAtendimento(c)" />
+                            </div>
+                        </section>
+                    }
+
                     <section aria-label="Responder" class="flex flex-wrap gap-2">
                         <p-button label="Responder por e-mail" icon="pi pi-reply" [loading]="carregandoImovel()" (onClick)="responderEmail(c)" />
                         @if (numeroWhatsapp(c)) {
@@ -196,15 +291,57 @@ export class ContatosPage {
     private imoveis = signal<Record<number, ImovelDetalhe>>({});
     carregandoImovel = signal(false);
 
+    // --- etapas do atendimento (regra "Etapas dos contatos") ---
+    readonly etapas = ETAPAS_CONTATO;
+    readonly rotuloEtapa = etapaContato;
+    etapasLigadas = computed(() => this.config.config().etapasContatos !== false);
+    filtro = signal<EtapaContato | null>(null);
+    contagem = signal<Partial<Record<EtapaContato, number>>>({});
+    totalEtapas = computed(() => Object.values(this.contagem()).reduce((t, n) => t + (n ?? 0), 0));
+    etapaEdicao = signal<EtapaContato>('NOVO');
+    notasEdicao = signal('');
+    salvandoEtapa = signal(false);
+    atendimentoAlterado = computed(() => {
+        const c = this.selecionado();
+        return !!c && (c.etapa !== this.etapaEdicao() || (c.anotacoes ?? '') !== this.notasEdicao().trim());
+    });
+
     constructor() {
         this.config.definirTitulo('Contatos');
+        this.atualizarContagem();
+    }
+
+    filtrar(etapa: EtapaContato | null) {
+        this.filtro.set(etapa);
+        this.carregar({ ...this.ultimo, first: 0 });
+    }
+
+    private atualizarContagem() {
+        if (!this.etapasLigadas()) return;
+        this.gestao.contatosPorEtapa(this.area).subscribe({ next: (c) => this.contagem.set(c), error: () => undefined });
+    }
+
+    salvarAtendimento(c: Contato) {
+        this.salvandoEtapa.set(true);
+        this.gestao.mudarEtapa(this.area, c.id, this.etapaEdicao(), this.notasEdicao().trim() || null).subscribe({
+            next: (atualizado) => {
+                this.salvandoEtapa.set(false);
+                this.pagina.update((p) => ({ ...p, content: p.content.map((x) => (x.id === c.id ? atualizado : x)) }));
+                this.atualizarContagem();
+                this.msg.add({ severity: 'success', summary: 'Atendimento salvo', detail: `${c.nome}: ${etapaContato(atualizado.etapa).label}.` });
+            },
+            error: (e) => {
+                this.salvandoEtapa.set(false);
+                this.msg.add({ severity: 'error', summary: 'Não foi possível salvar', detail: mensagemErro(e) });
+            }
+        });
     }
 
     carregar(e: TableLazyLoadEvent) {
         this.ultimo = e;
         const rows = e.rows ?? 20;
         this.carregando.set(true);
-        this.gestao.contatos(this.area, Math.floor((e.first ?? 0) / rows), rows).subscribe({
+        this.gestao.contatos(this.area, Math.floor((e.first ?? 0) / rows), rows, this.etapasLigadas() ? this.filtro() : null).subscribe({
             next: (p) => {
                 this.pagina.set(p);
                 this.carregando.set(false);
@@ -218,6 +355,8 @@ export class ContatosPage {
 
     abrir(c: Contato) {
         this.selecionadoId.set(c.id);
+        this.etapaEdicao.set(c.etapa ?? 'NOVO');
+        this.notasEdicao.set(c.anotacoes ?? '');
         if (!c.lido) this.definirLido(c, true);
         this.buscarImovel(c.imovelId);
     }

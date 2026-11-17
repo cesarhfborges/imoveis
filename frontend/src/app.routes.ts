@@ -47,6 +47,8 @@ export const appRoutes: Routes = [
             { path: 'perfil', loadComponent: () => import('./app/conta/pages/perfil').then((m) => m.PerfilPage) },
             { path: 'favoritos', loadComponent: () => import('./app/conta/pages/favoritos').then((m) => m.FavoritosPage) },
             { path: 'comparar', loadComponent: () => import('./app/conta/pages/comparar').then((m) => m.CompararPage) },
+            { path: 'vistos', loadComponent: () => import('./app/conta/pages/vistos').then((m) => m.VistosPage) },
+            { path: 'visitas', loadComponent: () => import('./app/conta/pages/visitas').then((m) => m.VisitasPage) },
             { path: 'denuncias', loadComponent: () => import('./app/conta/pages/minhas-denuncias').then((m) => m.MinhasDenunciasPage) },
             { path: 'pendencias', canActivate: [corretorGuard], loadComponent: () => import('./app/shared/pages/pendencias-page').then((m) => m.PendenciasPage) },
             { path: 'pendencias/:imovelId', canActivate: [corretorGuard], loadComponent: () => import('./app/shared/pages/pendencias-imovel-page').then((m) => m.PendenciasImovelPage) },
@@ -54,6 +56,7 @@ export const appRoutes: Routes = [
             { path: 'anuncios', canActivate: [corretorGuard], loadComponent: () => import('./app/shared/pages/anuncios-lista-page').then((m) => m.AnunciosListaPage), data: { area: 'corretor' } },
             { path: 'anuncios/novo', canActivate: [corretorGuard], loadComponent: () => import('./app/shared/pages/anuncio-edicao-page').then((m) => m.AnuncioEdicaoPage), data: { area: 'corretor' } },
             { path: 'anuncios/:id', canActivate: [corretorGuard], loadComponent: () => import('./app/shared/pages/anuncio-edicao-page').then((m) => m.AnuncioEdicaoPage), data: { area: 'corretor' } },
+            { path: 'anuncios/:id/relatorio', canActivate: [corretorGuard], loadComponent: () => import('./app/shared/pages/relatorio-anuncio-page').then((m) => m.RelatorioAnuncioPage), data: { area: 'corretor' } },
             { path: 'contatos', canActivate: [corretorGuard], loadComponent: () => import('./app/shared/pages/contatos-page').then((m) => m.ContatosPage), data: { area: 'corretor' } }
         ]
     },
@@ -70,6 +73,7 @@ export const appRoutes: Routes = [
             { path: 'anuncios', loadComponent: () => import('./app/shared/pages/anuncios-lista-page').then((m) => m.AnunciosListaPage), data: { area: 'admin' } },
             { path: 'anuncios/novo', loadComponent: () => import('./app/shared/pages/anuncio-edicao-page').then((m) => m.AnuncioEdicaoPage), data: { area: 'admin' } },
             { path: 'anuncios/:id', loadComponent: () => import('./app/shared/pages/anuncio-edicao-page').then((m) => m.AnuncioEdicaoPage), data: { area: 'admin' } },
+            { path: 'anuncios/:id/relatorio', loadComponent: () => import('./app/shared/pages/relatorio-anuncio-page').then((m) => m.RelatorioAnuncioPage), data: { area: 'admin' } },
             { path: 'contatos', loadComponent: () => import('./app/shared/pages/contatos-page').then((m) => m.ContatosPage), data: { area: 'admin' } },
             { path: 'denuncias', loadComponent: () => import('./app/admin/pages/denuncias').then((m) => m.AdminDenunciasPage) },
             { path: 'denuncias/:imovelId', loadComponent: () => import('./app/admin/pages/denuncias-imovel').then((m) => m.AdminDenunciasImovelPage) },

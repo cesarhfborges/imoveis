@@ -102,7 +102,7 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                                 <section class="flex flex-col gap-4 p-4 rounded-border border border-surface" aria-labelledby="id-logos">
                                     <div>
                                         <h3 id="id-logos" class="text-base font-semibold m-0 flex items-center gap-2"><i class="pi pi-image text-primary" aria-hidden="true"></i> Logos</h3>
-                                        <p class="text-sm text-muted-color mt-1 mb-0">Sem logo, o site mostra o ícone com o nome e o slogan. Sem o logo escuro, o claro é usado também no tema escuro.</p>
+                                        <p class="text-sm text-muted-color mt-1 mb-0">Sem logo, o site mostra o nome e o slogan. Sem o logo escuro, o claro é usado também no tema escuro.</p>
                                     </div>
                                     <div class="grid gap-4 md:grid-cols-2">
                                         <app-image-upload
@@ -681,6 +681,11 @@ export class ConfiguracoesPage {
         simulacaoFinanciamento: [true],
         alertaQuedaPreco: [true],
         impressaoAnuncio: [true],
+        vistosRecentes: [true],
+        relatorioAnuncio: [true],
+        sitemapSeo: [true],
+        etapasContatos: [true],
+        agendamentoVisita: [true],
         autoExclusaoConta: [true],
         diasEsperaExclusao: [7]
     });
@@ -744,6 +749,52 @@ export class ConfiguracoesPage {
                     label: 'Ficha do imóvel para imprimir',
                     ligado: 'A página do imóvel mostra o botão de imprimir: uma folha A4 com fotos, valores e condições da finalidade, QR code do anúncio e espaço para anotações da visita.',
                     desligado: 'O botão de imprimir some da página do imóvel e a ficha deixa de abrir.'
+                },
+                {
+                    campo: 'vistosRecentes',
+                    label: 'Vistos recentemente',
+                    ligado: 'O site guarda os imóveis que o cliente logado abre e mostra o histórico no painel, na página "Vistos recentemente" e na faixa "Continue de onde parou" da página inicial.',
+                    desligado: 'O site para de registrar os imóveis vistos e esconde o histórico. O que já foi registrado fica guardado e volta a aparecer ao religar.'
+                },
+                {
+                    campo: 'agendamentoVisita',
+                    label: 'Agendamento de visita',
+                    ligado: 'O cliente logado escolhe dia e horário na página do imóvel (dentro do expediente do Calendário, em blocos de 1 hora); o anunciante confirma, recusa ou propõe outro horário, e os dois acompanham em "Visitas".',
+                    desligado: 'O botão "Agendar visita" some e não entram pedidos novos. As visitas já marcadas continuam em "Visitas" para os dois lados.'
+                }
+            ]
+        },
+        {
+            id: 'busca',
+            titulo: 'Busca no Google',
+            icone: 'pi-google',
+            descricao: 'Como os buscadores encontram e mostram os anúncios do site.',
+            regras: [
+                {
+                    campo: 'sitemapSeo',
+                    label: 'Sitemap e dados estruturados',
+                    ligado: 'O endereço /sitemap.xml lista os anúncios ativos, os perfis públicos e os documentos, e as páginas levam dados do schema.org (preço, endereço, fotos, quartos) que o Google pode mostrar nos resultados.',
+                    desligado: 'O /sitemap.xml deixa de existir e as páginas saem sem dados estruturados. O robots.txt continua bloqueando as áreas privadas.'
+                }
+            ]
+        },
+        {
+            id: 'anunciante',
+            titulo: 'Ferramentas do anunciante',
+            icone: 'pi-briefcase',
+            descricao: 'O que corretores e imobiliárias têm no painel para acompanhar os anúncios.',
+            regras: [
+                {
+                    campo: 'relatorioAnuncio',
+                    label: 'Relatório do anúncio',
+                    ligado: 'Cada anúncio tem um relatório com visitas, contatos e favoritos por dia, comparação com os outros anúncios do anunciante e histórico de preço.',
+                    desligado: 'O botão de relatório some do painel do anunciante. Os administradores continuam vendo o relatório.'
+                },
+                {
+                    campo: 'etapasContatos',
+                    label: 'Etapas dos contatos recebidos',
+                    ligado: 'Cada contato recebido tem uma etapa (novo, em atendimento, visita marcada, proposta, fechado ou perdido) e anotações, com filtro por etapa na página de contatos.',
+                    desligado: 'Os contatos voltam a ser só uma lista de lidos e não lidos. As etapas e anotações ficam guardadas e voltam ao religar.'
                 }
             ]
         },
@@ -845,6 +896,11 @@ export class ConfiguracoesPage {
             simulacaoFinanciamento: c.simulacaoFinanciamento ?? true,
             alertaQuedaPreco: c.alertaQuedaPreco ?? true,
             impressaoAnuncio: c.impressaoAnuncio ?? true,
+            vistosRecentes: c.vistosRecentes ?? true,
+            relatorioAnuncio: c.relatorioAnuncio ?? true,
+            sitemapSeo: c.sitemapSeo ?? true,
+            etapasContatos: c.etapasContatos ?? true,
+            agendamentoVisita: c.agendamentoVisita ?? true,
             autoExclusaoConta: c.autoExclusaoConta ?? true,
             diasEsperaExclusao: c.diasEsperaExclusao ?? 7
         });

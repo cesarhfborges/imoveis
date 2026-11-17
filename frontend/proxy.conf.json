@@ -1,4 +1,6 @@
 {
     "/app": { "target": "http://localhost:8080", "secure": false, "changeOrigin": false, "logLevel": "warn" },
-    "/api": { "target": "http://localhost:8080", "secure": false, "changeOrigin": false, "logLevel": "warn" }
+    "/api": { "target": "http://localhost:8080", "secure": false, "changeOrigin": false, "logLevel": "warn" },
+    "/sitemap.xml": { "target": "http://localhost:8080", "secure": false, "changeOrigin": false, "logLevel": "warn", "pathRewrite": { "^/sitemap.xml": "/app/public/sitemap.xml" } },
+    "/robots.txt": { "target": "http://localhost:8080", "secure": false, "changeOrigin": false, "logLevel": "warn", "pathRewrite": { "^/robots.txt": "/app/public/robots.txt" } }
 }

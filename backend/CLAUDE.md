@@ -45,7 +45,7 @@ Referência completa de rotas, segurança e perfis: `_docs/README.md`.
 
 - Cada módulo tem suas migrations em `src/main/resources/db/migration`, mas **a numeração é global** entre todos os
   módulos. Antes de criar uma, verifique a maior versão existente:
-  `ls backend/*/src/main/resources/db/migration` (hoje a última é **V36**; a próxima é V37).
+  `ls backend/*/src/main/resources/db/migration` (hoje a última é **V44**; a próxima é V45).
 - Nunca edite uma migration já aplicada; crie outra.
 - Nome: `V<n>__descricao_em_snake_case.sql`, colocada no módulo dono da tabela.
 - Banco de dev: `jdbc:postgresql://localhost:5432/imoveis`, usuário `admin` / `secretpassword`

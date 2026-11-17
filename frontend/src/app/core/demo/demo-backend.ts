@@ -1,5 +1,5 @@
 import { HttpParams, HttpRequest } from '@angular/common/http';
-import { AnunciantePerfil, AnuncianteResumo, CONDICOES, ClientePainel, CondicaoAnuncio, Finalidade, ContagemTipo, Financeira, QuedaPreco, FatiaPainel, PainelAnuncios, PeriodoPainel, PontoDia, ExibicaoTelefone, FotoImovel, ImovelDetalhe, ImovelFiltro, ImovelResumo, ORIGENS_FOTO, OrigemFoto, PageResponse, Perfil, Sessao, StatusAnuncio, TIPOS, TipoImovel, TipoAnunciante, pendenciasPerfilPublico, tipoLabel } from '@/app/core/models/models';
+import { AnunciantePerfil, AnuncianteResumo, CONDICOES, ClientePainel, CondicaoAnuncio, Finalidade, ContagemTipo, Financeira, QuedaPreco, FatiaPainel, PainelAnuncios, PeriodoPainel, PontoDia, ExibicaoTelefone, FotoImovel, ImovelDetalhe, ImovelFiltro, ImovelResumo, ORIGENS_FOTO, OrigemFoto, PageResponse, Perfil, RelatorioAnuncio, Sessao, StatusVisita, StatusAnuncio, TIPOS, TipoImovel, TipoAnunciante, pendenciasPerfilPublico, tipoLabel } from '@/app/core/models/models';
 import { DocumentosDemo } from './demo-documentos';
 import { documentoValido } from '@/app/core/pipes/documentos';
 
@@ -161,6 +161,9 @@ export class DemoBackend {
             return null;
         }
 
+        // ---- visitas (público, cliente e anunciante)
+        if (/^\/app\/(public\/imoveis\/\d+\/visitas|conta\/visitas|corretor\/visitas)/.test(url)) return this.visitas(url, m, body ?? {});
+
         // ---- público
         if (url === '/app/public/configuracao') return this.db.config;
         if (url === '/app/public/imoveis') return this.buscar(this.filtro(p), 'ATIVO');
@@ -178,7 +181,7 @@ export class DemoBackend {
             if (!i) throw new DemoError(404, 'Imóvel não encontrado');
             i.visualizacoes++;
             const logado = this.sessao();
-            if (logado) {
+            if (logado && this.db.config.vistosRecentes !== false) {
                 this.db.vistos = [{ usuarioId: logado.usuarioId, imovelId: i.id, em: new Date().toISOString() }, ...(this.db.vistos ?? []).filter((v) => !(v.usuarioId === logado.usuarioId && v.imovelId === i.id))].slice(0, 300);
             }
             const chave = `${i.id}|${diaIso(new Date())}`;
@@ -237,6 +240,28 @@ export class DemoBackend {
         // ---- painel do cliente
         if (url === '/app/conta/painel') return this.painelCliente(this.exigir().u.id);
         if (url === '/app/conta/favoritos/quedas') return this.quedas(this.exigir().u.id);
+        // histórico "Vistos recentemente" (espelha ContaPainelService.vistos)
+        if (url === '/app/conta/vistos' || url.startsWith('/app/conta/vistos/')) {
+            const { u } = this.exigir();
+            const todos = this.db.vistos ?? [];
+            if (m === 'DELETE') {
+                const id = url.match(/\/(\d+)$/)?.[1];
+                this.db.vistos = todos.filter((v) => v.usuarioId !== u.id || (id !== undefined && v.imovelId !== +id));
+                this.salvarDb();
+                return null;
+            }
+            const page = Number(p.get('page') ?? 0);
+            const size = Number(p.get('size') ?? 24);
+            if (this.db.config.vistosRecentes === false) return { content: [], page, size, totalElements: 0, totalPages: 0 };
+            const lista = todos
+                .filter((v) => v.usuarioId === u.id)
+                .sort((a, b) => b.em.localeCompare(a.em))
+                .flatMap((v) => {
+                    const i = this.db.imoveis.find((x) => x.id === v.imovelId && x.status === 'ATIVO');
+                    return i ? [{ imovel: this.resumo(i), vistoEm: v.em }] : [];
+                });
+            return { content: lista.slice(page * size, page * size + size), page, size, totalElements: lista.length, totalPages: Math.ceil(lista.length / size) };
+        }
         if (url === '/app/conta/favoritos/comparar') {
             const { u } = this.exigir();
             const meus = new Set(this.db.favoritos.filter((f) => f.usuarioId === u.id).map((f) => f.imovelId));
@@ -546,7 +571,7 @@ export class DemoBackend {
 
     private contatoDto(c: DemoDb['contatos'][number]) {
         const i = this.db.imoveis.find((x) => x.id === c.imovelId);
-        return { ...c, imovelCodigo: 'IM-' + String(c.imovelId).padStart(6, '0'), imovelTitulo: i?.titulo ?? '' };
+        return { ...c, etapa: c.etapa ?? (c.lido ? 'EM_ATENDIMENTO' : 'NOVO'), etapaEm: c.etapaEm ?? null, anotacoes: c.anotacoes ?? null, imovelCodigo: 'IM-' + String(c.imovelId).padStart(6, '0'), imovelTitulo: i?.titulo ?? '' };
     }
 
     // ------------------------------------------------------------------ conta
@@ -644,6 +669,106 @@ export class DemoBackend {
         const imobiliaria = novoTipo === 'IMOBILIARIA';
         if (mudou && doc && !documentoValido(doc, imobiliaria)) throw new DemoError(400, imobiliaria ? 'CNPJ inválido. Confira os números.' : 'CPF inválido. Confira os números.');
         return { tipoAnunciante: novoTipo, documento: doc, ...(imobiliaria ? {} : { razaoSocial: null }) };
+    }
+
+    /** Espelha VisitaService: horários de seg a sex 8h–18h e sáb 8h–12h (blocos de 1 h, 2 h de antecedência). */
+    private visitas(url: string, m: string, b: any): unknown {
+        const lista = (this.db.visitas ??= []);
+        const andamento = ['SOLICITADA', 'CONFIRMADA', 'NOVO_HORARIO'];
+        const imovel = (id: number) => this.db.imoveis.find((i) => i.id === id);
+        const pessoa = (id: number | undefined) => {
+            const u = this.db.usuarios.find((x) => x.id === id);
+            return u ? { id: u.id, nome: u.nome, email: u.email, telefone: u.telefone } : null;
+        };
+        const dto = (v: (typeof lista)[number], lado: 'cliente' | 'anunciante') => {
+            const i = imovel(v.imovelId);
+            return { ...v, imovelCodigo: 'IM-' + String(v.imovelId).padStart(6, '0'), imovelTitulo: i?.titulo ?? '', bairro: i?.bairro ?? '', cidade: i?.cidade ?? '', fotoCapa: i?.fotos[0]?.url ?? null, pessoa: lado === 'anunciante' ? pessoa(v.clienteId) : pessoa(i?.anuncianteId) };
+        };
+        const livres = (imovelId: number) => {
+            const ocupados = new Set(lista.filter((v) => v.imovelId === imovelId && andamento.includes(v.status)).map((v) => new Date(v.inicio).getTime()));
+            const minimo = Date.now() + 2 * 3600_000;
+            const dias: { dia: string; horarios: string[] }[] = [];
+            for (let d = 0; d <= 14; d++) {
+                const base = new Date();
+                base.setDate(base.getDate() + d);
+                const semana = base.getDay();
+                const fim = semana === 0 ? 0 : semana === 6 ? 12 : 18;
+                const horarios: string[] = [];
+                for (let h = 8; h < fim; h++) {
+                    const t = new Date(base.getFullYear(), base.getMonth(), base.getDate(), h).getTime();
+                    if (t >= minimo && !ocupados.has(t)) horarios.push(new Date(t).toISOString());
+                }
+                if (horarios.length) dias.push({ dia: diaIso(base), horarios });
+            }
+            return dias;
+        };
+        let r: RegExpMatchArray | null;
+        if ((r = url.match(/^\/app\/public\/imoveis\/(\d+)\/visitas\/horarios$/))) {
+            if (this.db.config.agendamentoVisita === false) throw new DemoError(403, 'O agendamento de visitas está desativado no momento');
+            return livres(+r[1]);
+        }
+        if (url.startsWith('/app/conta/visitas')) {
+            const { u } = this.exigir();
+            if (url === '/app/conta/visitas' && m === 'GET') return lista.filter((v) => v.clienteId === u.id).map((v) => dto(v, 'cliente'));
+            if (url === '/app/conta/visitas' && m === 'POST') {
+                if (this.db.config.agendamentoVisita === false) throw new DemoError(403, 'O agendamento de visitas está desativado no momento');
+                const i = imovel(b.imovelId);
+                if (!i || i.status !== 'ATIVO') throw new DemoError(404, 'Imóvel não encontrado');
+                if (i.anuncianteId === u.id) throw new DemoError(400, 'Você não pode agendar visita no seu próprio anúncio');
+                if (lista.some((v) => v.imovelId === i.id && v.clienteId === u.id && andamento.includes(v.status))) throw new DemoError(409, 'Você já tem uma visita em andamento para este imóvel. Veja em Minhas visitas.');
+                if (!livres(i.id).some((d) => d.horarios.includes(new Date(b.inicio).toISOString()))) throw new DemoError(409, 'Este horário não está mais disponível. Escolha outro.');
+                const v = { id: this.nextId(), imovelId: i.id, clienteId: u.id, inicio: new Date(b.inicio).toISOString(), fim: new Date(new Date(b.inicio).getTime() + 3600_000).toISOString(), status: 'SOLICITADA' as StatusVisita, mensagem: (b.mensagem ?? '').trim() || null, resposta: null, propostoInicio: null, criadoEm: new Date().toISOString() };
+                lista.push(v);
+                this.salvarDb();
+                return dto(v, 'cliente');
+            }
+            if ((r = url.match(/^\/app\/conta\/visitas\/(\d+)\/(aceitar|cancelar)$/))) {
+                const v = lista.find((x) => x.id === +r![1] && x.clienteId === u.id);
+                if (!v) throw new DemoError(404, 'Visita não encontrada');
+                if (r[2] === 'aceitar') {
+                    if (v.status !== 'NOVO_HORARIO' || !v.propostoInicio) throw new DemoError(409, 'Não há novo horário para aceitar');
+                    v.inicio = v.propostoInicio;
+                    v.fim = new Date(new Date(v.inicio).getTime() + 3600_000).toISOString();
+                    v.propostoInicio = null;
+                    v.status = 'CONFIRMADA';
+                } else {
+                    if (!andamento.includes(v.status)) throw new DemoError(409, 'Esta visita já foi encerrada');
+                    v.status = 'CANCELADA';
+                }
+                this.salvarDb();
+                return dto(v, 'cliente');
+            }
+        }
+        if (url.startsWith('/app/corretor/visitas')) {
+            const { u } = this.exigir('CORRETOR');
+            const minhas = (v: (typeof lista)[number]) => imovel(v.imovelId)?.anuncianteId === u.id;
+            if (url === '/app/corretor/visitas') return lista.filter(minhas).map((v) => dto(v, 'anunciante'));
+            if ((r = url.match(/^\/app\/corretor\/visitas\/(\d+)\/(confirmar|recusar|propor|cancelar)$/))) {
+                const v = lista.find((x) => x.id === +r![1] && minhas(x));
+                if (!v) throw new DemoError(404, 'Visita não encontrada');
+                const acao = r[2];
+                if (acao === 'confirmar') {
+                    if (v.status !== 'SOLICITADA') throw new DemoError(409, 'Só um pedido aguardando resposta pode ser confirmado');
+                    v.status = 'CONFIRMADA';
+                } else if (acao === 'recusar') {
+                    if (v.status !== 'SOLICITADA') throw new DemoError(409, 'Só um pedido aguardando resposta pode ser recusado');
+                    v.status = 'RECUSADA';
+                    v.resposta = (b.mensagem ?? '').trim() || null;
+                } else if (acao === 'propor') {
+                    if (v.status !== 'SOLICITADA' && v.status !== 'CONFIRMADA') throw new DemoError(409, 'Esta visita não aceita outro horário');
+                    v.propostoInicio = new Date(b.inicio).toISOString();
+                    v.resposta = (b.mensagem ?? '').trim() || null;
+                    v.status = 'NOVO_HORARIO';
+                } else {
+                    if (!andamento.includes(v.status)) throw new DemoError(409, 'Esta visita já foi encerrada');
+                    v.status = 'CANCELADA';
+                    v.resposta = (b.mensagem ?? '').trim() || null;
+                }
+                this.salvarDb();
+                return dto(v, 'anunciante');
+            }
+        }
+        throw new DemoError(404, 'Recurso não encontrado');
     }
 
     private conta(url: string, m: string, b: any): unknown {
@@ -775,6 +900,11 @@ export class DemoBackend {
             this.salvarDb();
             return this.detalhe(i);
         }
+        if ((r = rota.match(/^imoveis\/(\d+)\/relatorio$/))) {
+            const i = carregar(+r[1]);
+            if (!admin && this.db.config.relatorioAnuncio === false) throw new DemoError(403, 'O relatório de anúncios está desativado no momento');
+            return this.relatorio(i, Number(p.get('dias') ?? 30));
+        }
         if ((r = rota.match(/^imoveis\/(\d+)$/))) {
             const i = carregar(+r[1]);
             if (m === 'PUT') {
@@ -821,10 +951,32 @@ export class DemoBackend {
         if (rota === 'anuncios/painel') return this.painel(admin ? null : ctx.u.id, Number(p.get('dias') ?? 30));
         if (rota === 'contatos') {
             const meus = new Set(this.db.imoveis.filter((i) => admin || i.anuncianteId === ctx.u.id).map((i) => i.id));
-            const lista = this.db.contatos.filter((c) => meus.has(c.imovelId)).sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
+            const etapa = this.db.config.etapasContatos === false ? null : p.get('etapa');
+            const lista = this.db.contatos
+                .filter((c) => meus.has(c.imovelId) && (!etapa || this.contatoDto(c).etapa === etapa))
+                .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
             const page = Number(p.get('page') ?? 0);
             const size = Number(p.get('size') ?? 20);
             return { content: lista.slice(page * size, page * size + size).map((c) => this.contatoDto(c)), page, size, totalElements: lista.length, totalPages: Math.ceil(lista.length / size) };
+        }
+        if (rota === 'contatos/etapas') {
+            const meus = new Set(this.db.imoveis.filter((i) => admin || i.anuncianteId === ctx.u.id).map((i) => i.id));
+            const total = Object.fromEntries(['NOVO', 'EM_ATENDIMENTO', 'VISITA_MARCADA', 'PROPOSTA', 'FECHADO', 'PERDIDO'].map((e) => [e, 0]));
+            this.db.contatos.filter((c) => meus.has(c.imovelId)).forEach((c) => total[this.contatoDto(c).etapa]++);
+            return total;
+        }
+        if ((r = rota.match(/^contatos\/(\d+)\/etapa$/)) && m === 'PATCH') {
+            if (this.db.config.etapasContatos === false) throw new DemoError(403, 'As etapas dos contatos estão desativadas no momento');
+            const c = this.db.contatos.find((x) => x.id === +r![1]);
+            if (!c) throw new DemoError(404, 'Contato não encontrado');
+            const i = this.db.imoveis.find((x) => x.id === c.imovelId);
+            if (!admin && i?.anuncianteId !== ctx.u.id) throw new DemoError(403, 'Contato de outro anunciante');
+            if (this.contatoDto(c).etapa !== b.etapa) c.etapaEm = new Date().toISOString();
+            c.etapa = b.etapa;
+            c.anotacoes = (b.anotacoes ?? '').trim() || null;
+            if (b.etapa !== 'NOVO') c.lido = true;
+            this.salvarDb();
+            return this.contatoDto(c);
         }
         if ((r = rota.match(/^contatos\/(\d+)$/))) {
             const c = this.db.contatos.find((x) => x.id === +r![1]);
@@ -839,6 +991,42 @@ export class DemoBackend {
     }
 
     /** Gráficos do painel (espelha PainelService do backend). Sem histórico real, simula uma base estável por anúncio. */
+    /** Espelha PainelService.relatorio: um anúncio no período, comparado com os outros ativos do anunciante. */
+    private relatorio(imovel: DemoImovel, diasPedidos: number): RelatorioAnuncio {
+        const dias = periodoValido(diasPedidos);
+        const visitasDe = (i: DemoImovel) => (dia: string) => {
+            const n = Number(dia.replaceAll('-', '')) % 97;
+            const base = i.status === 'ATIVO' ? Math.round((i.visualizacoes / 90) * (0.5 + ((i.id * 31 + n * 17) % 10) / 10)) : 0;
+            return base + (this.db.visitasDiarias?.[`${i.id}|${dia}`] ?? 0);
+        };
+        const contatosDe = (i: DemoImovel) => (dia: string) => this.db.contatos.filter((c) => c.imovelId === i.id && diaIso(new Date(c.criadoEm)) === dia).length;
+        const favoritosDe = (dia: string) => this.db.favoritos.filter((f) => f.imovelId === imovel.id && diaIso(new Date(f.criadoEm)) === dia).length;
+        const soma = (s: PontoDia[]) => s.reduce((t, p) => t + p.total, 0);
+        const visitasPorDia = serieDias(dias, visitasDe(imovel));
+        const contatosPorDia = serieDias(dias, contatosDe(imovel));
+        const favoritosPorDia = serieDias(dias, favoritosDe);
+        const outros = this.db.imoveis.filter((i) => i.anuncianteId === imovel.anuncianteId && i.id !== imovel.id && i.status === 'ATIVO');
+        const media = (f: (i: DemoImovel) => (dia: string) => number) => outros.reduce((t, i) => t + soma(serieDias(dias, f(i))), 0) / outros.length;
+        const criado = new Date(imovel.criadoEm);
+        return {
+            periodo: dias,
+            anuncio: { id: imovel.id, codigo: 'IM-' + String(imovel.id).padStart(6, '0'), titulo: imovel.titulo, status: imovel.status, preco: imovel.preco, criadoEm: imovel.criadoEm, diasNoAr: Math.max(0, Math.floor((Date.now() - criado.getTime()) / 86400000)), visualizacoesTotal: imovel.visualizacoes, favoritosAtuais: this.db.favoritos.filter((f) => f.imovelId === imovel.id).length },
+            resumo: {
+                visitas: soma(visitasPorDia),
+                visitasAnterior: soma(serieDias(dias, visitasDe(imovel), dias)),
+                contatos: soma(contatosPorDia),
+                contatosAnterior: soma(serieDias(dias, contatosDe(imovel), dias)),
+                favoritos: soma(favoritosPorDia),
+                favoritosAnterior: soma(serieDias(dias, favoritosDe, dias))
+            },
+            comparacao: outros.length ? { mediaVisitas: media(visitasDe), mediaContatos: media(contatosDe), anuncios: outros.length } : null,
+            visitasPorDia,
+            contatosPorDia,
+            favoritosPorDia,
+            precos: (this.db.precos ?? []).filter((x) => x.imovelId === imovel.id).sort((a, b) => b.em.localeCompare(a.em)).map((x) => ({ em: x.em, anterior: x.anterior, novo: x.novo }))
+        };
+    }
+
     private painel(anuncianteId: number | null, diasPedidos: number): PainelAnuncios {
         const dias = periodoValido(diasPedidos);
         const lista = this.db.imoveis.filter((i) => anuncianteId == null || i.anuncianteId === anuncianteId);
@@ -1019,7 +1207,7 @@ export class DemoBackend {
                     const i = porId(c.imovelId);
                     return i ? [{ id: c.id, imovelId: i.id, imovelCodigo: 'IM-' + String(i.id).padStart(6, '0'), imovelTitulo: i.titulo, bairro: i.bairro, cidade: i.cidade, imovelStatus: i.status, mensagem: c.mensagem, visto: c.lido, criadoEm: c.criadoEm, fotoCapa: i.fotos[0]?.url ?? null }] : [];
                 }),
-            vistosRecentes: vistos.map((v) => porId(v.imovelId)).filter((i): i is DemoImovel => !!i && i.status === 'ATIVO').slice(0, 8).map((i) => this.resumo(i)),
+            vistosRecentes: this.db.config.vistosRecentes === false ? [] : vistos.map((v) => porId(v.imovelId)).filter((i): i is DemoImovel => !!i && i.status === 'ATIVO').slice(0, 8).map((i) => this.resumo(i)),
             recomendados: recomendados.map((i) => this.resumo(i)),
             novidades: { bairros: bairros.map(([b, c]) => `${b} (${c})`), imoveis: novidades.map((i) => this.resumo(i)) },
             quedasPreco: this.quedas(usuarioId),
@@ -1165,6 +1353,7 @@ export class DemoBackend {
             this.db.precos = (this.db.precos ?? []).filter((p) => !anuncios.has(p.imovelId));
             this.db.documentoAceites = (this.db.documentoAceites ?? []).filter((a) => a.usuarioId !== id);
             this.db.exclusoes = (this.db.exclusoes ?? []).filter((e) => e.usuarioId !== id);
+            this.db.visitas = (this.db.visitas ?? []).filter((v) => v.clienteId !== id && !anuncios.has(v.imovelId));
             this.db.usuarios = this.db.usuarios.filter((u) => u.id !== id);
             this.salvarDb();
             return null;

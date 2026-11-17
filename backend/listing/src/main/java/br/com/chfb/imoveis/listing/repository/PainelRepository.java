@@ -9,6 +9,7 @@ import java.util.Map;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
+import br.com.chfb.imoveis.listing.dto.RelatorioAnuncio;
 import br.com.chfb.imoveis.listing.dto.PainelAnuncios.Desempenho;
 
 /**
@@ -86,6 +87,52 @@ public class PainelRepository {
                 .query((rs, n) -> new Desempenho(rs.getLong(1), String.format("IM-%06d", rs.getLong(1)),
                         rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getLong(6),
                         rs.getLong(7), rs.getLong(8)))
+                .list();
+    }
+
+    // ------------------------------------------------------------------ relatório de um anúncio
+
+    public Map<LocalDate, Long> visitasDoImovel(Long imovelId, LocalDate inicio, LocalDate fim) {
+        return porDia(jdbc.sql("select dia, total from imovel_visitas_diarias where imovel_id = :i and dia between :inicio and :fim")
+                .param("i", imovelId).param("inicio", inicio).param("fim", fim));
+    }
+
+    /** Contatos ou favoritos ({@code tabela}) do imóvel por dia, a partir de {@code inicio}. */
+    public Map<LocalDate, Long> doImovelPorDia(String tabela, Long imovelId, Instant inicio, String fuso) {
+        if (!tabela.equals("contatos") && !tabela.equals("favoritos")) {
+            throw new IllegalArgumentException(tabela);
+        }
+        return porDia(jdbc.sql("select cast(criado_em at time zone :fuso as date), count(*) from " + tabela
+                        + " where imovel_id = :i and criado_em >= :inicio group by 1")
+                .param("fuso", fuso).param("i", imovelId).param("inicio", java.sql.Timestamp.from(inicio)));
+    }
+
+    public long favoritosDoImovel(Long imovelId) {
+        return jdbc.sql("select count(*) from favoritos where imovel_id = :i").param("i", imovelId).query(Long.class).single();
+    }
+
+    /**
+     * Soma de visitas e de contatos dos <b>outros</b> anúncios ativos do anunciante no período, e quantos são:
+     * [visitas, contatos, anúncios].
+     */
+    public long[] outrosDoAnunciante(Long anuncianteId, Long imovelId, LocalDate inicio, LocalDate fim, Instant inicioInstante,
+            Instant fimInstante) {
+        return jdbc.sql("""
+                select coalesce((select sum(v.total) from imovel_visitas_diarias v join imoveis i on i.id = v.imovel_id
+                                  where i.anunciante_id = :a and i.id <> :i and i.status = 'ATIVO' and v.dia between :inicio and :fim), 0),
+                       (select count(*) from contatos c join imoveis i on i.id = c.imovel_id
+                         where i.anunciante_id = :a and i.id <> :i and i.status = 'ATIVO'
+                           and c.criado_em >= :ini and c.criado_em < :fimi),
+                       (select count(*) from imoveis i where i.anunciante_id = :a and i.id <> :i and i.status = 'ATIVO')
+                """).param("a", anuncianteId).param("i", imovelId).param("inicio", inicio).param("fim", fim)
+                .param("ini", java.sql.Timestamp.from(inicioInstante)).param("fimi", java.sql.Timestamp.from(fimInstante))
+                .query((rs, n) -> new long[] {rs.getLong(1), rs.getLong(2), rs.getLong(3)}).single();
+    }
+
+    public List<RelatorioAnuncio.MudancaPreco> precos(Long imovelId) {
+        return jdbc.sql("select alterado_em, preco_anterior, preco_novo from imovel_precos where imovel_id = :i order by alterado_em desc")
+                .param("i", imovelId)
+                .query((rs, n) -> new RelatorioAnuncio.MudancaPreco(rs.getTimestamp(1).toInstant(), rs.getBigDecimal(2), rs.getBigDecimal(3)))
                 .list();
     }
 

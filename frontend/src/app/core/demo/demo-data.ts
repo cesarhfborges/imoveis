@@ -1,5 +1,5 @@
 import { DemoDocumentosDb } from './demo-documentos';
-import { Configuracao, Finalidade, FotoImovel, ImovelDetalhe, OrigemFoto, Perfil, StatusAnuncio, TipoImovel, tipoLabel, Financeira } from '@/app/core/models/models';
+import { Configuracao, Finalidade, FotoImovel, ImovelDetalhe, OrigemFoto, Perfil, StatusAnuncio, TipoImovel, tipoLabel, Financeira, EtapaContato, StatusVisita } from '@/app/core/models/models';
 import { CONFIG_PADRAO } from '@/app/core/services/config.service';
 
 /** Usuário do modo demonstração (a senha fica em texto só porque é um banco de mentira no navegador). */
@@ -114,6 +114,10 @@ export interface DemoImovel extends Omit<ImovelDetalhe, 'anunciante' | 'tipoDesc
 
 export interface DemoContato {
     id: number;
+    /** Etapas dos contatos (opcionais em bancos antigos: sem valor = "Novo", ou "Em atendimento" se lido). */
+    etapa?: EtapaContato;
+    etapaEm?: string | null;
+    anotacoes?: string | null;
     imovelId: number;
     nome: string;
     email: string;
@@ -155,6 +159,8 @@ export interface DemoDb {
     /** Documentos do site (termos, privacidade…) e aceites; opcionais em bancos antigos. */
     documentos?: DemoDocumentosDb['documentos'];
     documentoAceites?: DemoDocumentosDb['documentoAceites'];
+    /** Visitas agendadas (opcional em bancos antigos). */
+    visitas?: { id: number; imovelId: number; clienteId: number; inicio: string; fim: string; status: StatusVisita; mensagem: string | null; resposta: string | null; propostoInicio: string | null; criadoEm: string }[];
     /** Pedidos de remoção de conta ("Remover conta" em Meus dados); opcional em bancos antigos. */
     exclusoes?: { usuarioId: number; solicitadaEm: string; removerEm: string; canceladaEm: string | null }[];
 }

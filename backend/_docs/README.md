@@ -94,6 +94,13 @@ Variáveis de produção: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `APP_FRONTEND_ORIG
 | `GET/POST /app/admin/documentos`, `GET/PUT/DELETE /app/admin/documentos/{id}` (exclusão lógica), `PATCH .../situacao`, `POST .../restaurar`, `GET .../versoes[/{versao}]` | admin |
 | `POST /app/auth/registro` aceita `aceites: [{documentoId, versao}]`; documentos com aceite no cadastro são obrigatórios | público |
 | `GET/PUT /app/conta/perfil`, `PUT /app/conta/senha`, `/app/conta/favoritos` | logado |
+| `GET /app/conta/vistos`, `DELETE /app/conta/vistos[/{imovelId}]` — histórico "Vistos recentemente" (regra `vistosRecentes`) | logado |
+| `GET/POST /app/conta/visitas`, `POST /app/conta/visitas/{id}/aceitar\|cancelar` — visitas pedidas pelo cliente | logado |
+| `GET /app/corretor/visitas`, `POST /app/corretor/visitas/{id}/confirmar\|recusar\|propor\|cancelar` — visitas aos anúncios | corretor |
+| `GET /app/public/imoveis/{id}/visitas/horarios` — horários livres (expediente do calendário, blocos de 1 h; regra `agendamentoVisita`) | público |
+| `GET /app/{corretor\|admin}/imoveis/{id}/relatorio?dias=` — relatório do anúncio (regra `relatorioAnuncio`; admin sempre) | dono ou admin |
+| `GET /app/{corretor\|admin}/contatos?etapa=`, `GET .../contatos/etapas`, `PATCH .../contatos/{id}/etapa` — etapas e anotações dos contatos (regra `etapasContatos`) | dono |
+| `GET /sitemap.xml`, `GET /robots.txt` (nginx → `/app/public/sitemap.xml` e `/app/public/robots.txt`; regra `sitemapSeo`) | público |
 | `GET/POST/DELETE /app/conta/exclusao` — "Remover conta": situação, pedido (com a senha) e desistência; a tarefa das 03:00 (`ExclusaoContaAgendamento`, `app.exclusao-conta.cron`) apaga as contas vencidas | logado |
 | `/app/conta/tokens` | corretor / admin (clientes não têm token) |
 | `POST /app/uploads` (multipart `arquivo`) | corretor / admin |

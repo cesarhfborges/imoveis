@@ -4,7 +4,7 @@ import { ThemeService } from '@/app/core/services/theme.service';
 
 /**
  * Logo do site: a imagem enviada em /admin/configuracoes (versão clara/escura)
- * ou, sem imagem, um ícone de casa com lupa + o nome do app.
+ * ou, sem imagem, o nome do app (e o slogan).
  */
 @Component({
     selector: 'app-logo',
@@ -12,12 +12,7 @@ import { ThemeService } from '@/app/core/services/theme.service';
         @if (logo()) {
             <img [src]="logo()" [alt]="nomeEfetivo()" class="block h-10 w-auto max-w-[11rem] object-contain" />
         } @else {
-            <span class="inline-flex items-center gap-2 select-none">
-                <svg viewBox="0 0 40 40" class="h-9 w-9 shrink-0" aria-hidden="true">
-                    <circle cx="17" cy="17" r="13" fill="none" stroke="var(--primary-color)" stroke-width="3.5" />
-                    <path d="M10 18.5 17 12l7 6.5V25h-4.5v-4h-5v4H10z" fill="var(--primary-color)" />
-                    <path d="m26.5 26.5 8 8" stroke="#16a34a" stroke-width="4.5" stroke-linecap="round" />
-                </svg>
+            <span class="inline-flex items-center select-none">
                 <span class="flex flex-col leading-none">
                     <span class="font-extrabold tracking-tight text-[1.35rem] text-primary">{{ nomeEfetivo() }}</span>
                     @if (!compacto() && sloganEfetivo()) {

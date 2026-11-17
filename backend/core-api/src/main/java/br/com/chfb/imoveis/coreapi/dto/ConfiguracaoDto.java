@@ -44,7 +44,17 @@ public record ConfiguracaoDto(
         /** "Remover conta" em Meus dados (nulo mantém o valor atual). */
         Boolean autoExclusaoConta,
         /** Dias entre o pedido de remoção da conta e a remoção definitiva (nulo mantém o valor atual). */
-        @Min(1) @Max(90) Integer diasEsperaExclusao) {
+        @Min(1) @Max(90) Integer diasEsperaExclusao,
+        /** Histórico de imóveis vistos (nulo mantém o valor atual). */
+        Boolean vistosRecentes,
+        /** Relatório de cada anúncio para o anunciante (nulo mantém o valor atual). */
+        Boolean relatorioAnuncio,
+        /** Sitemap e dados estruturados (nulo mantém o valor atual). */
+        Boolean sitemapSeo,
+        /** Etapas e anotações nos contatos recebidos (nulo mantém o valor atual). */
+        Boolean etapasContatos,
+        /** Agendamento de visitas (nulo mantém o valor atual). */
+        Boolean agendamentoVisita) {
 
     public static ConfiguracaoDto of(Configuracao c) {
         return new ConfiguracaoDto(c.getNomeApp(), c.getSlogan(), c.getLogoUrl(), c.getLogoEscuroUrl(),
@@ -53,7 +63,9 @@ public record ConfiguracaoDto(
                 c.getFacebook(), c.getTextoRodape(), c.getTemaPreset(), c.getTemaPrimaria(), c.getTemaSurface(),
                 c.getTemaModo(), c.isModerarAnuncios(), c.isPermitirCadastroCorretor(),
                 c.isAbrirAnuncioNovaJanela(), c.getTelefoneAnunciante(), c.isSimulacaoFinanciamento(),
-                c.isAlertaQuedaPreco(), c.isImpressaoAnuncio(), c.isAutoExclusaoConta(), c.getDiasEsperaExclusao());
+                c.isAlertaQuedaPreco(), c.isImpressaoAnuncio(), c.isAutoExclusaoConta(), c.getDiasEsperaExclusao(),
+                c.isVistosRecentes(), c.isRelatorioAnuncio(), c.isSitemapSeo(), c.isEtapasContatos(),
+                c.isAgendamentoVisita());
     }
 
     public void aplicar(Configuracao c) {
@@ -97,6 +109,21 @@ public record ConfiguracaoDto(
         }
         if (diasEsperaExclusao != null) {
             c.setDiasEsperaExclusao(diasEsperaExclusao);
+        }
+        if (vistosRecentes != null) {
+            c.setVistosRecentes(vistosRecentes);
+        }
+        if (relatorioAnuncio != null) {
+            c.setRelatorioAnuncio(relatorioAnuncio);
+        }
+        if (sitemapSeo != null) {
+            c.setSitemapSeo(sitemapSeo);
+        }
+        if (etapasContatos != null) {
+            c.setEtapasContatos(etapasContatos);
+        }
+        if (agendamentoVisita != null) {
+            c.setAgendamentoVisita(agendamentoVisita);
         }
     }
 }

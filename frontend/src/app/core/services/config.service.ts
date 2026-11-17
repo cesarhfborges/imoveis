@@ -9,8 +9,8 @@ import { Configuracao } from '@/app/core/models/models';
 export const CONFIG_PADRAO: Configuracao = {
     nomeApp: 'Imóveis',
     slogan: 'Buscou, encontrou!',
-    logoUrl: null,
-    logoEscuroUrl: null,
+    logoUrl: '/marca/logo.png',
+    logoEscuroUrl: '/marca/logo-branco.png',
     faviconUrl: null,
     seoTitulo: 'Imóveis - compra, venda e aluguel',
     seoDescricao: 'Portal de imóveis para comprar, vender e alugar.',
@@ -34,6 +34,11 @@ export const CONFIG_PADRAO: Configuracao = {
     simulacaoFinanciamento: true,
     alertaQuedaPreco: true,
     impressaoAnuncio: true,
+    vistosRecentes: true,
+    relatorioAnuncio: true,
+    sitemapSeo: true,
+    etapasContatos: true,
+    agendamentoVisita: true,
     autoExclusaoConta: true,
     diasEsperaExclusao: 7
 };

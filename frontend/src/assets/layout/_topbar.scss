@@ -17,6 +17,8 @@
         width: 20rem;
         display: flex;
         align-items: center;
+        /* espaço entre o logo (ou o nome do site, quando não há logo) e a etiqueta "Admin" */
+        gap: 0.75rem;
     }
 
     .layout-topbar-logo {
@@ -72,7 +74,8 @@
     }
 
     .layout-menu-button {
-        margin-right: 0.5rem;
+        /* somado ao gap do container: o logo não fica colado no botão do menu */
+        margin-right: 0.25rem;
     }
 
     .layout-topbar-menu-button {
@@ -106,7 +109,7 @@
 
         .layout-menu-button {
             margin-left: 0;
-            margin-right: 0.5rem;
+            margin-right: 0.25rem;
         }
 
         .layout-topbar-menu-button {
@@ -142,7 +145,7 @@
 
                 i {
                     font-size: 1rem;
-                    margin-right: 0.5rem;
+                    margin-right: 0.25rem;
                 }
 
                 span {

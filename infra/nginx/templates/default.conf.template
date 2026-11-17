@@ -90,6 +90,19 @@ server {
         proxy_buffering off;
     }
 
+    # Sitemap e robots.txt para os buscadores: gerados pelo backend (anúncios ativos, perfis e documentos públicos)
+    location = /sitemap.xml {
+        include /etc/nginx/snippets/proxy.conf;
+        rewrite ^ /app/public/sitemap.xml break;
+        proxy_pass $backend;
+    }
+
+    location = /robots.txt {
+        include /etc/nginx/snippets/proxy.conf;
+        rewrite ^ /app/public/robots.txt break;
+        proxy_pass $backend;
+    }
+
     # Página do imóvel: robôs de prévia de link vão para a prévia do backend (ver map $robo_previa);
     # visitantes recebem o site normal, como em "location /".
     location ~ ^/imovel/[0-9]+(/|$) {

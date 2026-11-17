@@ -22,6 +22,8 @@ import br.com.chfb.imoveis.listing.dto.ClientePainel.Novidades;
 import br.com.chfb.imoveis.listing.dto.ClientePainel.QuedaPreco;
 import br.com.chfb.imoveis.listing.dto.ImovelDetalhe;
 import br.com.chfb.imoveis.listing.dto.ImovelResumo;
+import br.com.chfb.imoveis.listing.dto.VistoRecente;
+import br.com.chfb.imoveis.sharedkernel.dto.PageResponse;
 import br.com.chfb.imoveis.listing.entity.Imovel;
 import br.com.chfb.imoveis.listing.repository.AtividadeClienteRepository;
 import br.com.chfb.imoveis.listing.repository.FavoritoRepository;
@@ -93,7 +95,7 @@ public class ContaPainelService {
         }
 
         return new ClientePainel(contatos[0], contatos[1], atividadePorMes(id), atividade.contatosRecentes(id, 5),
-                resumos(atividade.vistosRecentes(id, 8)), resumos(atividade.recomendados(id, 6)), novidades,
+                recursos.vistosRecentes() ? resumos(atividade.vistosRecentes(id, 8)) : List.of(), resumos(atividade.recomendados(id, 6)), novidades,
                 quedas(u), financiaveis);
     }
 
@@ -125,6 +127,33 @@ public class ContaPainelService {
         }
         Map<Long, Imovel> porId = imoveis.findAllById(ids).stream().collect(Collectors.toMap(Imovel::getId, Function.identity()));
         return ids.stream().map(porId::get).filter(Objects::nonNull).toList();
+    }
+
+    /** Página "Vistos recentemente": histórico completo (só anúncios ainda no ar); vazio com a regra desligada. */
+    @Transactional(readOnly = true)
+    public PageResponse<VistoRecente> vistos(AuthUser u, int page, int size) {
+        int tamanho = Math.min(Math.max(size, 1), 60);
+        int pagina = Math.max(page, 0);
+        if (!recursos.vistosRecentes()) {
+            return new PageResponse<>(List.of(), pagina, tamanho, 0, 0);
+        }
+        List<Map.Entry<Long, Instant>> linhas = atividade.vistos(u.id(), pagina * tamanho, tamanho);
+        Map<Long, ImovelResumo> porId = resumos(linhas.stream().map(Map.Entry::getKey).toList()).stream()
+                .collect(Collectors.toMap(ImovelResumo::id, Function.identity()));
+        List<VistoRecente> conteudo = linhas.stream().filter(l -> porId.containsKey(l.getKey()))
+                .map(l -> new VistoRecente(porId.get(l.getKey()), l.getValue())).toList();
+        long total = atividade.contarVistos(u.id());
+        return new PageResponse<>(conteudo, pagina, tamanho, total, (int) Math.ceil(total / (double) tamanho));
+    }
+
+    @Transactional
+    public void removerVisto(AuthUser u, Long imovelId) {
+        atividade.removerVisto(u.id(), imovelId);
+    }
+
+    @Transactional
+    public void limparVistos(AuthUser u) {
+        atividade.limparVistos(u.id());
     }
 
     private List<ImovelResumo> resumos(List<Long> ids) {

@@ -72,6 +72,32 @@ public class AtividadeClienteRepository {
         return mapa;
     }
 
+    /** Histórico paginado dos imóveis vistos ainda no ar: [id do imóvel, quando foi visto], do mais recente. */
+    public List<Map.Entry<Long, Instant>> vistos(Long usuarioId, int offset, int limite) {
+        return jdbc.sql("""
+                select v.imovel_id, v.visto_em from imovel_vistos v join imoveis i on i.id = v.imovel_id
+                where v.usuario_id = :u and i.status = 'ATIVO' order by v.visto_em desc offset :offset limit :limite
+                """).param("u", usuarioId).param("offset", offset).param("limite", limite)
+                .query((rs, n) -> Map.entry(rs.getLong(1), rs.getTimestamp(2).toInstant())).list();
+    }
+
+    public long contarVistos(Long usuarioId) {
+        return jdbc.sql("""
+                select count(*) from imovel_vistos v join imoveis i on i.id = v.imovel_id
+                where v.usuario_id = :u and i.status = 'ATIVO'
+                """).param("u", usuarioId).query(Long.class).single();
+    }
+
+    public void removerVisto(Long usuarioId, Long imovelId) {
+        jdbc.sql("delete from imovel_vistos where usuario_id = :u and imovel_id = :i")
+                .param("u", usuarioId).param("i", imovelId).update();
+    }
+
+    /** Apaga todo o histórico do usuário (inclusive de anúncios que saíram do ar). */
+    public int limparVistos(Long usuarioId) {
+        return jdbc.sql("delete from imovel_vistos where usuario_id = :u").param("u", usuarioId).update();
+    }
+
     public List<Long> vistosRecentes(Long usuarioId, int limite) {
         return jdbc.sql("""
                 select v.imovel_id from imovel_vistos v join imoveis i on i.id = v.imovel_id

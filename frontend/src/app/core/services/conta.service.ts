@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Observable, catchError, of, tap } from 'rxjs';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
-import { ApiToken, ApiTokenCriado, ClientePainel, ExclusaoContaStatus, Dashboard, ImovelDetalhe, QuedaPreco, ImovelResumo, PageResponse, PeriodoPainel, Perfil, PerfilForm, Usuario, UsuarioAdminForm } from '@/app/core/models/models';
+import { ApiToken, ApiTokenCriado, ClientePainel, ExclusaoContaStatus, Dashboard, ImovelDetalhe, QuedaPreco, ImovelResumo, PageResponse, PeriodoPainel, Perfil, PerfilForm, Usuario, UsuarioAdminForm, VistoRecente } from '@/app/core/models/models';
 
 /** Dados da própria conta, favoritos e tokens de API. */
 @Injectable({ providedIn: 'root' })
@@ -41,6 +41,19 @@ export class ContaService {
     /** Favoritos que baixaram de preço desde que foram salvos. */
     quedasPreco(): Observable<QuedaPreco[]> {
         return this.api.get('/app/conta/favoritos/quedas');
+    }
+
+    /** Histórico "Vistos recentemente" (do mais recente). */
+    vistos(page = 0, size = 24): Observable<PageResponse<VistoRecente>> {
+        return this.api.get('/app/conta/vistos', { page, size });
+    }
+
+    removerVisto(imovelId: number): Observable<void> {
+        return this.api.delete(`/app/conta/vistos/${imovelId}`);
+    }
+
+    limparVistos(): Observable<void> {
+        return this.api.delete('/app/conta/vistos');
     }
 
     alternarFavorito(id: number): Observable<unknown> {

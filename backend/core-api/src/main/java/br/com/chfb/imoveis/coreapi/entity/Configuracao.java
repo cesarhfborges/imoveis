@@ -20,9 +20,9 @@ public class Configuracao extends BaseEntity {
     @Column(length = 160)
     private String slogan;
     @Column(name = "logo_url", length = 500)
-    private String logoUrl;
+    private String logoUrl = "/marca/logo.png";
     @Column(name = "logo_escuro_url", length = 500)
-    private String logoEscuroUrl;
+    private String logoEscuroUrl = "/marca/logo-branco.png";
     @Column(name = "favicon_url", length = 500)
     private String faviconUrl;
 
@@ -79,6 +79,26 @@ public class Configuracao extends BaseEntity {
     private boolean alertaQuedaPreco = true;
     @Column(name = "impressao_anuncio")
     private boolean impressaoAnuncio = true;
+
+    /** Registra e mostra os imóveis vistos pelo usuário logado. */
+    @Column(name = "vistos_recentes")
+    private boolean vistosRecentes = true;
+
+    /** Relatório de cada anúncio para o anunciante. */
+    @Column(name = "relatorio_anuncio")
+    private boolean relatorioAnuncio = true;
+
+    /** /sitemap.xml e dados estruturados (schema.org) para os buscadores. */
+    @Column(name = "sitemap_seo")
+    private boolean sitemapSeo = true;
+
+    /** Etapas e anotações nos contatos recebidos pelo anunciante. */
+    @Column(name = "etapas_contatos")
+    private boolean etapasContatos = true;
+
+    /** Agendamento de visitas pela página do imóvel. */
+    @Column(name = "agendamento_visita")
+    private boolean agendamentoVisita = true;
 
     /** Mostra "Remover conta" em Meus dados (o próprio usuário pede a remoção definitiva). */
     @Column(name = "auto_exclusao_conta")
@@ -138,6 +158,16 @@ public class Configuracao extends BaseEntity {
     public void setAlertaQuedaPreco(boolean alertaQuedaPreco) { this.alertaQuedaPreco = alertaQuedaPreco; }
     public boolean isImpressaoAnuncio() { return impressaoAnuncio; }
     public void setImpressaoAnuncio(boolean impressaoAnuncio) { this.impressaoAnuncio = impressaoAnuncio; }
+    public boolean isRelatorioAnuncio() { return relatorioAnuncio; }
+    public void setRelatorioAnuncio(boolean relatorioAnuncio) { this.relatorioAnuncio = relatorioAnuncio; }
+    public boolean isSitemapSeo() { return sitemapSeo; }
+    public void setSitemapSeo(boolean sitemapSeo) { this.sitemapSeo = sitemapSeo; }
+    public boolean isEtapasContatos() { return etapasContatos; }
+    public void setEtapasContatos(boolean etapasContatos) { this.etapasContatos = etapasContatos; }
+    public boolean isAgendamentoVisita() { return agendamentoVisita; }
+    public void setAgendamentoVisita(boolean agendamentoVisita) { this.agendamentoVisita = agendamentoVisita; }
+    public boolean isVistosRecentes() { return vistosRecentes; }
+    public void setVistosRecentes(boolean vistosRecentes) { this.vistosRecentes = vistosRecentes; }
     public boolean isAutoExclusaoConta() { return autoExclusaoConta; }
     public void setAutoExclusaoConta(boolean autoExclusaoConta) { this.autoExclusaoConta = autoExclusaoConta; }
     public int getDiasEsperaExclusao() { return diasEsperaExclusao; }

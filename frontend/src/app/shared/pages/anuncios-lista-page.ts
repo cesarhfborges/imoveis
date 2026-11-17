@@ -88,6 +88,9 @@ import { ImovelFoto } from '@/app/shared/components/imovel-foto';
                         <td><app-status-tag [status]="i.status" /></td>
                         <td>{{ i.visualizacoes }}</td>
                         <td class="text-right whitespace-nowrap">
+                            @if (relatorioLigado()) {
+                                <p-button icon="pi pi-chart-line" [text]="true" [rounded]="true" [routerLink]="base + '/' + i.id + '/relatorio'" [ariaLabel]="'Relatório de ' + i.titulo" pTooltip="Relatório: visitas, contatos e favoritos" />
+                            }
                             <p-button icon="pi pi-pencil" [text]="true" [rounded]="true" [routerLink]="base + '/' + i.id" [ariaLabel]="'Editar ' + i.titulo" pTooltip="Editar" />
                             <p-button icon="pi pi-ellipsis-v" [text]="true" [rounded]="true" (onClick)="abrirMenu($event, i)" [ariaLabel]="'Mais ações para ' + i.titulo" />
                         </td>
@@ -112,6 +115,9 @@ export class AnunciosListaPage {
     area: AreaGestao = this.route.snapshot.data['area'];
     admin = this.area === 'admin';
     base = this.admin ? '/admin/anuncios' : '/conta/anuncios';
+    private config = inject(ConfigService);
+    /** Regra "Relatório do anúncio": o administrador sempre vê. */
+    relatorioLigado = computed(() => this.admin || this.config.config().relatorioAnuncio !== false);
 
     statusOpcoes = STATUS;
     busca = new FormControl('');

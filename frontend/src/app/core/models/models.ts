@@ -342,6 +342,26 @@ export interface Contato {
     mensagem: string;
     lido: boolean;
     criadoEm: string;
+    /** Em que pé está o atendimento (regra "Etapas dos contatos"). */
+    etapa: EtapaContato;
+    etapaEm: string | null;
+    anotacoes: string | null;
+}
+
+export type EtapaContato = 'NOVO' | 'EM_ATENDIMENTO' | 'VISITA_MARCADA' | 'PROPOSTA' | 'FECHADO' | 'PERDIDO';
+
+/** Etapas na ordem do atendimento, com rótulo, ícone e cor da etiqueta. */
+export const ETAPAS_CONTATO: { value: EtapaContato; label: string; icone: string; severity: 'info' | 'warn' | 'success' | 'danger' | 'secondary' | 'contrast' }[] = [
+    { value: 'NOVO', label: 'Novo', icone: 'pi-inbox', severity: 'info' },
+    { value: 'EM_ATENDIMENTO', label: 'Em atendimento', icone: 'pi-comments', severity: 'secondary' },
+    { value: 'VISITA_MARCADA', label: 'Visita marcada', icone: 'pi-calendar', severity: 'warn' },
+    { value: 'PROPOSTA', label: 'Proposta', icone: 'pi-file-edit', severity: 'contrast' },
+    { value: 'FECHADO', label: 'Fechado', icone: 'pi-check-circle', severity: 'success' },
+    { value: 'PERDIDO', label: 'Perdido', icone: 'pi-times-circle', severity: 'danger' }
+];
+
+export function etapaContato(e: EtapaContato) {
+    return ETAPAS_CONTATO.find((x) => x.value === e) ?? ETAPAS_CONTATO[0];
 }
 
 export interface EstatisticasAnuncios {
@@ -610,11 +630,66 @@ export interface Configuracao {
     alertaQuedaPreco: boolean;
     /** Regra: botão "Imprimir ficha" na página do imóvel (PDF gerado no navegador). */
     impressaoAnuncio: boolean;
+    /** Regra: histórico de imóveis vistos (painel, página "Vistos recentemente" e faixa na página inicial). */
+    vistosRecentes: boolean;
+    /** Regra: relatório de cada anúncio para o anunciante (o administrador sempre vê). */
+    relatorioAnuncio: boolean;
+    /** Regra: /sitemap.xml e dados estruturados (schema.org) para os buscadores. */
+    sitemapSeo: boolean;
+    /** Regra: etapas e anotações nos contatos recebidos pelo anunciante. */
+    etapasContatos: boolean;
+    /** Regra: agendamento de visitas pela página do imóvel. */
+    agendamentoVisita: boolean;
     /** Regra: "Remover conta" em Meus dados (o próprio usuário pede a remoção definitiva). */
     autoExclusaoConta: boolean;
     /** Dias entre o pedido de remoção da conta e a remoção definitiva (1 a 90). */
     diasEsperaExclusao: number;
     permitirCadastroCorretor: boolean;
+}
+
+/** Situação de uma visita: pedida, confirmada, com novo horário proposto pelo anunciante, recusada ou cancelada. */
+export type StatusVisita = 'SOLICITADA' | 'CONFIRMADA' | 'NOVO_HORARIO' | 'RECUSADA' | 'CANCELADA';
+
+export const STATUS_VISITA: Record<StatusVisita, { label: string; severity: 'info' | 'warn' | 'success' | 'danger' | 'secondary' }> = {
+    SOLICITADA: { label: 'Aguardando resposta', severity: 'info' },
+    CONFIRMADA: { label: 'Confirmada', severity: 'success' },
+    NOVO_HORARIO: { label: 'Novo horário proposto', severity: 'warn' },
+    RECUSADA: { label: 'Recusada', severity: 'danger' },
+    CANCELADA: { label: 'Cancelada', severity: 'secondary' }
+};
+
+export interface Visita {
+    id: number;
+    imovelId: number;
+    imovelCodigo: string;
+    imovelTitulo: string;
+    bairro: string;
+    cidade: string;
+    fotoCapa: string | null;
+    inicio: string;
+    fim: string;
+    status: StatusVisita;
+    /** Recado do cliente ao pedir. */
+    mensagem: string | null;
+    /** Último recado do anunciante (motivo da recusa, do novo horário ou do cancelamento). */
+    resposta: string | null;
+    /** Horário sugerido pelo anunciante (status NOVO_HORARIO). */
+    propostoInicio: string | null;
+    /** Quem está do outro lado: o cliente (para o anunciante) ou o anunciante (para o cliente). */
+    pessoa: { id: number; nome: string; email: string; telefone: string | null } | null;
+    criadoEm: string;
+}
+
+/** Horários livres de um dia para agendar visita. */
+export interface DiaHorarios {
+    dia: string;
+    horarios: string[];
+}
+
+/** Imóvel do histórico "Vistos recentemente". */
+export interface VistoRecente {
+    imovel: ImovelResumo;
+    vistoEm: string;
 }
 
 /** Situação do "Remover conta" em Meus dados. */
@@ -642,6 +717,20 @@ export interface Dashboard {
 
 /** Períodos aceitos pelos gráficos do painel (dias). */
 export type PeriodoPainel = 7 | 30 | 90;
+
+/** Relatório de um anúncio no período, comparado com o período anterior e com os outros anúncios do anunciante. */
+export interface RelatorioAnuncio {
+    periodo: PeriodoPainel;
+    anuncio: { id: number; codigo: string; titulo: string; status: StatusAnuncio; preco: number; criadoEm: string; diasNoAr: number; visualizacoesTotal: number; favoritosAtuais: number };
+    resumo: { visitas: number; visitasAnterior: number; contatos: number; contatosAnterior: number; favoritos: number; favoritosAnterior: number };
+    /** Média dos outros anúncios ativos do anunciante no mesmo período (nula se não houver outros). */
+    comparacao: { mediaVisitas: number; mediaContatos: number; anuncios: number } | null;
+    visitasPorDia: PontoDia[];
+    contatosPorDia: PontoDia[];
+    favoritosPorDia: PontoDia[];
+    /** Mudanças de preço, da mais recente para a mais antiga. */
+    precos: { em: string; anterior: number; novo: number }[];
+}
 
 /** Valor de um dia numa série (dia em `yyyy-MM-dd`). */
 export interface PontoDia {

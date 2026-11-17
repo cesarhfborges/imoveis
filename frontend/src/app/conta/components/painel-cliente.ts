@@ -156,7 +156,10 @@ const ITENS_PERFIL: { rotulo: string; ok: (u: Usuario) => boolean }[] = [
 
             @if (p.vistosRecentes.length) {
                 <section class="col-span-12 card m-0" aria-labelledby="vistos-titulo">
-                    <h2 id="vistos-titulo" class="text-lg font-semibold mt-0">Vistos recentemente</h2>
+                    <div class="flex items-center justify-between gap-4 mb-3">
+                        <h2 id="vistos-titulo" class="text-lg font-semibold m-0">Vistos recentemente</h2>
+                        <a routerLink="/conta/vistos" class="text-primary font-semibold hover:underline">Ver todos</a>
+                    </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         @for (i of p.vistosRecentes; track i.id) {
                             <app-imovel-card-mini [imovel]="i" />

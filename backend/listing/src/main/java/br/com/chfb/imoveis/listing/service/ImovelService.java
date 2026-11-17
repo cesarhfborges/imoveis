@@ -24,6 +24,7 @@ import br.com.chfb.imoveis.listing.dto.FotoDto;
 import br.com.chfb.imoveis.listing.dto.ImovelDetalhe;
 import br.com.chfb.imoveis.listing.dto.ImovelFiltro;
 import br.com.chfb.imoveis.listing.dto.ImovelForm;
+import br.com.chfb.imoveis.listing.dto.RelatorioAnuncio;
 import br.com.chfb.imoveis.listing.dto.ImovelResumo;
 import br.com.chfb.imoveis.listing.dto.OpcoesBusca;
 import br.com.chfb.imoveis.listing.dto.StatusForm;
@@ -47,6 +48,7 @@ import br.com.chfb.imoveis.sharedkernel.port.AnuncianteProvider;
 import br.com.chfb.imoveis.sharedkernel.port.AnuncianteProvider.AnuncianteInfo;
 import br.com.chfb.imoveis.sharedkernel.port.ExibicaoTelefonePolicy;
 import br.com.chfb.imoveis.sharedkernel.port.ModeracaoPolicy;
+import br.com.chfb.imoveis.sharedkernel.port.RecursosSitePolicy;
 import br.com.chfb.imoveis.sharedkernel.security.AuthUser;
 
 @Service
@@ -62,6 +64,7 @@ public class ImovelService {
     private final PainelService painel;
     private final FinanceiraService financeiras;
     private final AtividadeClienteRepository atividade;
+    private final RecursosSitePolicy recursos;
 
     /** Status aplicados pela moderação (só administradores tiram o anúncio deles). */
     private static final Set<StatusAnuncio> EM_MODERACAO = Set.of(StatusAnuncio.SUSPENSO, StatusAnuncio.BANIDO);
@@ -69,7 +72,7 @@ public class ImovelService {
     public ImovelService(ImovelRepository imoveis, ContatoRepository contatos, FavoritoRepository favoritos,
             AnuncianteProvider anunciantes, ModeracaoPolicy moderacao, ApplicationEventPublisher eventos,
             ExibicaoTelefonePolicy exibicaoTelefone, PainelService painel, FinanceiraService financeiras,
-            AtividadeClienteRepository atividade) {
+            AtividadeClienteRepository atividade, RecursosSitePolicy recursos) {
         this.imoveis = imoveis;
         this.contatos = contatos;
         this.favoritos = favoritos;
@@ -80,6 +83,7 @@ public class ImovelService {
         this.painel = painel;
         this.financeiras = financeiras;
         this.atividade = atividade;
+        this.recursos = recursos;
     }
 
     // ------------------------------------------------------------------ busca
@@ -169,7 +173,7 @@ public class ImovelService {
                 .orElseThrow(() -> new NotFoundException("Imóvel não encontrado"));
         imoveis.incrementarVisualizacoes(id);
         painel.registrarVisita(id);
-        if (usuario != null) {
+        if (usuario != null && recursos.vistosRecentes()) {
             atividade.registrarVisto(usuario.id(), id);
         }
         return detalhe(imovel, ExibicaoTelefonePolicy.efetivo(exibicaoTelefone.telefoneAnunciante(), usuario != null));
@@ -209,6 +213,16 @@ public class ImovelService {
     }
 
     // ------------------------------------------------------------------ escrita
+
+    /** Relatório do anúncio: só o dono ou um administrador; para o anunciante, depende da regra do site. */
+    @Transactional(readOnly = true)
+    public RelatorioAnuncio relatorio(Long id, int dias, AuthUser usuario) {
+        Imovel imovel = carregarComPermissao(id, usuario);
+        if (!usuario.isAdmin() && !recursos.relatorioAnuncio()) {
+            throw new ForbiddenException("O relatório de anúncios está desativado no momento");
+        }
+        return painel.relatorio(imovel, dias);
+    }
 
     @Transactional
     public ImovelDetalhe criar(ImovelForm form, AuthUser usuario) {

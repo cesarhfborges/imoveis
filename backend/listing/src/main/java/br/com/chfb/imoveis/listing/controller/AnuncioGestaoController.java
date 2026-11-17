@@ -1,5 +1,6 @@
 package br.com.chfb.imoveis.listing.controller;
 
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,12 +17,15 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.chfb.imoveis.listing.dto.ContatoDto;
+import br.com.chfb.imoveis.listing.dto.EtapaContatoForm;
+import br.com.chfb.imoveis.listing.entity.EtapaContato;
 import br.com.chfb.imoveis.listing.dto.EstatisticasAnuncios;
 import br.com.chfb.imoveis.listing.dto.ImovelDetalhe;
 import br.com.chfb.imoveis.listing.dto.ImovelFiltro;
 import br.com.chfb.imoveis.listing.dto.ImovelForm;
 import br.com.chfb.imoveis.listing.dto.ImovelResumo;
 import br.com.chfb.imoveis.listing.dto.PainelAnuncios;
+import br.com.chfb.imoveis.listing.dto.RelatorioAnuncio;
 import br.com.chfb.imoveis.listing.dto.StatusForm;
 import br.com.chfb.imoveis.listing.service.ContatoService;
 import br.com.chfb.imoveis.listing.service.ImovelService;
@@ -87,6 +91,13 @@ public class AnuncioGestaoController {
         imoveis.excluir(id, u);
     }
 
+    /** Relatório de um anúncio (dono ou administrador). {@code dias}: 7, 30 ou 90. */
+    @GetMapping("/imoveis/{id}/relatorio")
+    public RelatorioAnuncio relatorio(@PathVariable Long id, @RequestParam(defaultValue = "30") int dias,
+            @AuthenticationPrincipal AuthUser u) {
+        return imoveis.relatorio(id, dias, u);
+    }
+
     @GetMapping("/anuncios/estatisticas")
     public EstatisticasAnuncios estatisticas(@AuthenticationPrincipal AuthUser u) {
         return imoveis.estatisticas(u.isAdmin() ? null : u.id(), u.id());
@@ -100,8 +111,22 @@ public class AnuncioGestaoController {
 
     @GetMapping("/contatos")
     public PageResponse<ContatoDto> contatos(@RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size, @AuthenticationPrincipal AuthUser u) {
-        return contatos.listar(u, page, size);
+            @RequestParam(defaultValue = "20") int size, @RequestParam(required = false) EtapaContato etapa,
+            @AuthenticationPrincipal AuthUser u) {
+        return contatos.listar(u, etapa, page, size);
+    }
+
+    /** Quantos contatos há em cada etapa (para o filtro da página de contatos). */
+    @GetMapping("/contatos/etapas")
+    public Map<EtapaContato, Long> contatosPorEtapa(@AuthenticationPrincipal AuthUser u) {
+        return contatos.contarPorEtapa(u);
+    }
+
+    /** Muda a etapa e as anotações de um contato recebido. */
+    @PatchMapping("/contatos/{id}/etapa")
+    public ContatoDto mudarEtapa(@PathVariable Long id, @Valid @RequestBody EtapaContatoForm form,
+            @AuthenticationPrincipal AuthUser u) {
+        return contatos.mudarEtapa(id, form, u);
     }
 
     @PatchMapping("/contatos/{id}")

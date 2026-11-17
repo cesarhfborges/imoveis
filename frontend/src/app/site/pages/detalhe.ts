@@ -20,11 +20,31 @@ import { EmptyState } from '@/app/shared/components/empty-state';
 import { DenunciarDialog } from '@/app/shared/components/denunciar-dialog';
 import { SimulacaoDialog } from '@/app/shared/components/financiamento/simulacao-dialog';
 import { compartilharWhatsapp } from '@/app/shared/pages/contato-resposta';
+import { DadosEstruturadosService, imovelJsonLd } from '@/app/core/services/dados-estruturados.service';
+import { AgendarVisita } from '@/app/shared/components/agendar-visita';
 
 /** Página do imóvel. */
 @Component({
     selector: 'app-detalhe-page',
-    imports: [RouterLink, ButtonModule, SkeletonModule, PrecoPipe, ValorM2Pipe, TempoAtrasPipe, CepPipe, TelefoneAnunciante, GaleriaFotos, ContatoForm, MapaOsm, ImovelCardMini, EmptyState, DenunciarDialog, AnuncianteFoto, SimulacaoDialog],
+    imports: [
+        RouterLink,
+        ButtonModule,
+        SkeletonModule,
+        PrecoPipe,
+        ValorM2Pipe,
+        TempoAtrasPipe,
+        CepPipe,
+        TelefoneAnunciante,
+        GaleriaFotos,
+        ContatoForm,
+        MapaOsm,
+        ImovelCardMini,
+        EmptyState,
+        DenunciarDialog,
+        AgendarVisita,
+        AnuncianteFoto,
+        SimulacaoDialog
+    ],
     template: `
         @if (erro()) {
             <div class="site-container py-10">
@@ -261,6 +281,10 @@ import { compartilharWhatsapp } from '@/app/shared/pages/contato-resposta';
                         <button type="button" class="botao-contorno justify-center" (click)="favoritar()" [attr.aria-pressed]="favorito()">
                             <i class="pi" [class.pi-heart-fill]="favorito()" [class.pi-heart]="!favorito()" aria-hidden="true"></i> {{ favorito() ? 'Favoritado' : 'Favoritar' }}
                         </button>
+                        <!-- regra "Agendamento de visita"; não aparece na prévia nem para o próprio anunciante -->
+                        @if (podeAgendar()) {
+                            <button type="button" class="botao-contorno justify-center" (click)="agendarAberto.set(true)"><i class="pi pi-calendar-plus" aria-hidden="true"></i> Agendar visita</button>
+                        }
                     </div>
                     @if (i.aceitaFinanciamento) {
                         <div class="selo-lateral-financiamento"><i class="pi pi-wallet" aria-hidden="true"></i> Aceita financiamento{{ i.aceitaFgts ? ' e FGTS' : '' }}</div>
@@ -297,6 +321,9 @@ import { compartilharWhatsapp } from '@/app/shared/pages/contato-resposta';
             </div>
 
             <app-denunciar-dialog [imovelId]="i.id" [codigo]="i.codigo" [(visivel)]="denunciaAberta" />
+            @if (podeAgendar()) {
+                <app-agendar-visita [imovelId]="i.id" [(visivel)]="agendarAberto" />
+            }
             @if (i.financeiras.length) {
                 <app-simulacao-dialog [(visivel)]="simulacaoAberta" [titulo]="i.titulo" [preco]="i.preco" [financeiras]="i.financeiras" />
             }
@@ -323,6 +350,12 @@ export class DetalhePage {
     private router = inject(Router);
     private msg = inject(MessageService);
     private config = inject(ConfigService);
+    private dadosEstruturados = inject(DadosEstruturadosService);
+    agendarAberto = signal(false);
+    podeAgendar = computed(() => {
+        const i = this.imovel();
+        return !!i && !this.previa() && this.config.config().agendamentoVisita !== false && i.anunciante?.id !== this.auth.usuario()?.id;
+    });
     private fichaPdf = inject(FichaPdfService);
 
     /** :id da rota (ligado pelo router). */
@@ -406,16 +439,23 @@ export class DetalhePage {
             const id = Number(this.id());
             this.imovel.set(null);
             this.erro.set(false);
+            this.dadosEstruturados.remover('imovel');
             this.imoveis.detalhe(id).subscribe({
                 next: (i) => {
                     this.imovel.set(i);
                     this.config.definirTitulo(tituloAnuncio(i));
+                    // só o anúncio público (no ar) vai para os buscadores; a prévia da gestão não
+                    this.dadosEstruturados.definir('imovel', imovelJsonLd(i, location.origin));
                 },
                 // fora do ar a consulta pública não acha: a moderação e o dono veem a prévia pela área de gestão
                 error: () => this.carregarPrevia(id)
             });
             this.imoveis.similares(id).subscribe({ next: (s) => this.similares.set(s), error: () => this.similares.set([]) });
         });
+    }
+
+    ngOnDestroy() {
+        this.dadosEstruturados.remover('imovel');
     }
 
     private carregarPrevia(id: number) {
