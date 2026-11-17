@@ -18,5 +18,4 @@ RUN useradd --system --create-home imoveis && mkdir -p /var/lib/imoveis/uploads 
 COPY --from=build /src/core-api/target/imoveis.war /app/imoveis.war
 USER imoveis
 EXPOSE 8080
-ENV SPRING_PROFILES_ACTIVE=prod
 ENTRYPOINT ["java", "-jar", "/app/imoveis.war"]

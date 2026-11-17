@@ -16,15 +16,15 @@ Cada módulo segue a mesma organização: `config`, `controller`, `dto`, `entity
 
 ## Perfis de configuração (YAML)
 
-- `application.yml` — base; o perfil ativo vem do **perfil Maven**.
-- `application-prod.yml` — configuração completa de produção (valores sensíveis por variáveis de ambiente).
-- `application-dev.yml` — **estende o prod**: é ativado como `prod,dev`, então o Spring carrega o prod e depois o dev, que só sobrescreve o necessário (banco local, cookie sem `secure`, hot reload, dados de exemplo).
+- `application.yml` — configuração completa (é a de produção; valores sensíveis por variáveis de ambiente). Sempre carregado.
+- `application-dev.yml` — **estende a base**: com o perfil `dev` ativo, o Spring carrega `application.yml` e depois este arquivo, que só sobrescreve o necessário (banco local, cookie sem `secure`, hot reload, dados de exemplo).
 
 | Comando | Perfis Spring |
 |---|---|
-| `mvn ...` (padrão, perfil Maven `dev`) | `prod,dev` |
-| `mvn -Pprod ...` | `prod` |
-| variável `SPRING_PROFILES_ACTIVE` | sobrescreve em tempo de execução |
+| `mvn -pl core-api -am spring-boot:run` (padrão, perfil Maven `dev`) | `dev` |
+| `mvn -Pprod ... spring-boot:run` | nenhum (só `application.yml`) |
+| `java -jar imoveis.war` | nenhum (só `application.yml`) |
+| `--spring.profiles.active=dev` ou `SPRING_PROFILES_ACTIVE=dev` | `dev` em tempo de execução |
 
 ## Rodar em desenvolvimento (hot reload)
 

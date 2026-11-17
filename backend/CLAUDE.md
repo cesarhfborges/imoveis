@@ -53,9 +53,9 @@ Referência completa de rotas, segurança e perfis: `_docs/README.md`.
 
 ## Perfis de configuração
 
-- `application.yml` (base) → `application-prod.yml` (completo, segredos por env) → `application-dev.yml`
-  (estende o prod; ativado como `prod,dev`).
-- Configuração nova: valor de produção em `application-prod.yml` com `${VAR:padrão}`; em `application-dev.yml` só o que
+- `application.yml` (completo = produção, segredos por env; sempre carregado) → `application-dev.yml` (estende a
+  base; só com o perfil `dev`, que o `spring-boot:run` ativa por padrão via perfil Maven `dev`).
+- Configuração nova: valor de produção em `application.yml` com `${VAR:padrão}`; em `application-dev.yml` só o que
   muda em dev.
 
 ## Comandos

@@ -30,8 +30,6 @@
         <java.version>17</java.version>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <!-- Perfil Spring ativo; sobrescrito pelos perfis Maven "dev" e "prod" abaixo -->
-        <spring.profiles.active>prod</spring.profiles.active>
         <!-- spring-boot:run só no core-api (permite "mvn -pl core-api -am spring-boot:run") -->
         <spring-boot.run.skip>true</spring-boot.run.skip>
     </properties>
@@ -63,9 +61,9 @@
 
     <profiles>
         <!--
-            dev: estende o prod. O Spring carrega application-prod.yml e em seguida
-            application-dev.yml (o último perfil da lista vence), então o dev só
-            sobrescreve o que precisa. Ativo por padrão para desenvolvimento local.
+            dev: o spring-boot:run sobe com o perfil Spring "dev" (application.yml e,
+            por cima, application-dev.yml). Ativo por padrão para desenvolvimento local.
+            Não afeta o WAR: o empacotado só usa o dev se for ativado na execução.
         -->
         <profile>
             <id>dev</id>
@@ -73,14 +71,12 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <spring.profiles.active>prod,dev</spring.profiles.active>
+                <spring-boot.run.profiles>dev</spring-boot.run.profiles>
             </properties>
         </profile>
+        <!-- prod: só desliga o dev (apenas application.yml). Mantido para "mvn -Pprod ..." -->
         <profile>
             <id>prod</id>
-            <properties>
-                <spring.profiles.active>prod</spring.profiles.active>
-            </properties>
         </profile>
     </profiles>
 </project>

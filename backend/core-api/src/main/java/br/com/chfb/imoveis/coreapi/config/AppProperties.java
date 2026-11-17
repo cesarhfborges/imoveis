@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/** Propriedades "app.*" definidas em application-prod.yml (e sobrescritas em application-dev.yml). */
+/** Propriedades "app.*" definidas em application.yml (e sobrescritas em application-dev.yml). */
 @ConfigurationProperties(prefix = "app")
 public record AppProperties(Security security, Uploads uploads, Seed seed, Bootstrap bootstrap) {
 

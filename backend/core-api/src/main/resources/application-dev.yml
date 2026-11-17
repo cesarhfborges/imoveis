@@ -1,6 +1,7 @@
 # -----------------------------------------------------------------------------
-# DESENVOLVIMENTO - estende application-prod.yml.
-# Ativado como "prod,dev": tudo que não estiver aqui vem do prod.
+# DESENVOLVIMENTO - estende application.yml.
+# Ativado com o perfil "dev": o Spring carrega application.yml e depois este
+# arquivo; tudo que não estiver aqui vem da base.
 # -----------------------------------------------------------------------------
 server:
   servlet:

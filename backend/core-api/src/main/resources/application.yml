@@ -1,17 +1,93 @@
 # -----------------------------------------------------------------------------
-# Configuração base.
+# Configuração base = PRODUÇÃO. Sempre carregada.
+# Valores sensíveis vêm de variáveis de ambiente.
 #
-# Perfis:
-#   prod -> application-prod.yml (configuração completa de produção)
-#   dev  -> application-dev.yml  (ESTENDE o prod: só sobrescreve o necessário)
+# Perfil "dev" (application-dev.yml): carregado DEPOIS deste arquivo e só
+# sobrescreve o necessário. Sem o perfil dev, vale apenas este arquivo.
 #
-# O perfil ativo vem do perfil Maven usado no build/execução:
-#   mvn ... -Pdev  (padrão)  => "prod,dev"  (carrega prod e depois dev, o dev vence)
-#   mvn ... -Pprod           => "prod"
-# Também pode ser trocado em tempo de execução: SPRING_PROFILES_ACTIVE=prod,dev
+# Como ativar o dev:
+#   mvn -pl core-api -am spring-boot:run       (perfil Maven "dev", padrão)
+#   java -jar imoveis.war --spring.profiles.active=dev
+#   SPRING_PROFILES_ACTIVE=dev
 # -----------------------------------------------------------------------------
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      timeout: 2h
+      tracking-modes: cookie
+      cookie:
+        name: IMOVEIS_SESSION
+        http-only: true
+        secure: true
+        same-site: strict
+        path: /
+  compression:
+    enabled: true
+
 spring:
   application:
     name: imoveis
-  profiles:
-    active: "@spring.profiles.active@"
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/imoveis}
+    username: ${DB_USER:imoveis}
+    password: ${DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+  devtools:
+    restart:
+      enabled: false
+    livereload:
+      enabled: false
+
+app:
+  security:
+    # Origens do front que podem usar a API de sessão (/app/**). Separe por vírgula.
+    frontend-origins: ${APP_FRONTEND_ORIGINS:https://imoveis.chfb.com.br}
+    # Origens liberadas no CORS da API aberta (/api/v1/**).
+    api-cors-origins: ${APP_API_CORS_ORIGINS:*}
+  uploads:
+    dir: ${APP_UPLOADS_DIR:/var/lib/imoveis/uploads}
+    max-bytes: 5242880
+  seed:
+    demo: false
+  # Tempo real (WebSocket): servidor Soketi, protocolo Pusher. Desligado, o front segue por consulta periódica.
+  realtime:
+    ativo: ${APP_REALTIME_ATIVO:false}
+    app-id: ${APP_REALTIME_APP_ID:imoveis}
+    key: ${APP_REALTIME_KEY:}
+    secret: ${APP_REALTIME_SECRET:}
+    # API HTTP do Soketi vista pelo backend (rede interna)
+    url: ${APP_REALTIME_URL:http://localhost:6001}
+    # como o navegador conecta: host vazio = o mesmo domínio do site (ex.: proxy reverso em /ws)
+    cliente:
+      ws-host: ${APP_REALTIME_WS_HOST:}
+      ws-port: ${APP_REALTIME_WS_PORT:80}
+      wss-port: ${APP_REALTIME_WSS_PORT:443}
+      ws-path: ${APP_REALTIME_WS_PATH:}
+      force-tls: ${APP_REALTIME_FORCE_TLS:true}
+  bootstrap:
+    admin-nome: ${APP_ADMIN_NOME:Administrador}
+    admin-email: ${APP_ADMIN_EMAIL:}
+    admin-senha: ${APP_ADMIN_SENHA:}
+
+logging:
+  level:
+    root: INFO
+    br.com.chfb: INFO
