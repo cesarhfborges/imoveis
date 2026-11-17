@@ -1,5 +1,5 @@
 import { HttpParams, HttpRequest } from '@angular/common/http';
-import { AnunciantePerfil, AnuncianteResumo, ClientePainel, ContagemTipo, Financeira, QuedaPreco, FatiaPainel, PainelAnuncios, PeriodoPainel, PontoDia, ExibicaoTelefone, FotoImovel, ImovelDetalhe, ImovelFiltro, ImovelResumo, ORIGENS_FOTO, OrigemFoto, PageResponse, Perfil, Sessao, StatusAnuncio, TIPOS, TipoImovel, TipoAnunciante, pendenciasPerfilPublico, tipoLabel } from '@/app/core/models/models';
+import { AnunciantePerfil, AnuncianteResumo, CONDICOES, ClientePainel, CondicaoAnuncio, Finalidade, ContagemTipo, Financeira, QuedaPreco, FatiaPainel, PainelAnuncios, PeriodoPainel, PontoDia, ExibicaoTelefone, FotoImovel, ImovelDetalhe, ImovelFiltro, ImovelResumo, ORIGENS_FOTO, OrigemFoto, PageResponse, Perfil, Sessao, StatusAnuncio, TIPOS, TipoImovel, TipoAnunciante, pendenciasPerfilPublico, tipoLabel } from '@/app/core/models/models';
 import { DemoDb, DemoImovel, DemoUsuario, criarDemoDb, financeirasDemo, fotosMock, perfilDemo } from './demo-data';
 
 /**
@@ -487,6 +487,13 @@ export class DemoBackend {
         const ids = todas ? [] : (financeirasIds ?? []);
         return {
             ...resto,
+            condicoes: i.condicoes ?? [],
+            contratoMinimoMeses: i.contratoMinimoMeses ?? null,
+            noitesMinimas: i.noitesMinimas ?? null,
+            hospedesMaximo: i.hospedesMaximo ?? null,
+            taxaLimpeza: i.taxaLimpeza ?? null,
+            horarioCheckin: i.horarioCheckin ?? null,
+            horarioCheckout: i.horarioCheckout ?? null,
             financeirasTodas: todas,
             financeirasIds: ids,
             financeiras: this.financeirasDoAnuncio(i),
@@ -945,6 +952,30 @@ export class DemoBackend {
         };
     }
 
+    private condicoesDaFinalidade(b: any) {
+        const venda = b.finalidade === 'VENDA';
+        const aluguel = b.finalidade === 'ALUGUEL';
+        const temporada = b.finalidade === 'TEMPORADA';
+        const permitidas = new Set((CONDICOES[b.finalidade as Finalidade] ?? []).flatMap((g) => g.itens.map((i) => i.codigo)));
+        const financia = venda && !!b.aceitaFinanciamento;
+        return {
+            aceitaFinanciamento: financia,
+            aceitaFgts: venda && !!b.aceitaFgts,
+            aceitaPermuta: venda && !!b.aceitaPermuta,
+            escrituraRegistrada: venda && !!b.escrituraRegistrada,
+            quitado: venda && !!b.quitado,
+            condicoes: ((b.condicoes ?? []) as CondicaoAnuncio[]).filter((c) => permitidas.has(c)),
+            contratoMinimoMeses: aluguel ? (b.contratoMinimoMeses ?? null) : null,
+            noitesMinimas: temporada ? (b.noitesMinimas ?? null) : null,
+            hospedesMaximo: temporada ? (b.hospedesMaximo ?? null) : null,
+            taxaLimpeza: temporada ? (b.taxaLimpeza ?? null) : null,
+            horarioCheckin: temporada ? b.horarioCheckin || null : null,
+            horarioCheckout: temporada ? b.horarioCheckout || null : null,
+            financeirasTodas: financia && !!b.financeirasTodas,
+            financeirasIds: financia && !b.financeirasTodas ? ((b.financeiras ?? []) as number[]) : []
+        };
+    }
+
     private validar(b: any) {
         if (!b.titulo || !b.finalidade || !b.tipo || b.preco == null || !b.uf || !b.cidade || !b.bairro) {
             throw new DemoError(400, 'Preencha título, finalidade, tipo, preço, UF, cidade e bairro');
@@ -975,13 +1006,8 @@ export class DemoBackend {
             latitude: b.latitude ?? null,
             longitude: b.longitude ?? null,
             lancamento: !!b.lancamento,
-            aceitaFinanciamento: !!b.aceitaFinanciamento,
-            aceitaFgts: !!b.aceitaFgts,
-            aceitaPermuta: !!b.aceitaPermuta,
-            escrituraRegistrada: !!b.escrituraRegistrada,
-            quitado: !!b.quitado,
-            financeirasTodas: !!b.aceitaFinanciamento && !!b.financeirasTodas,
-            financeirasIds: b.aceitaFinanciamento && !b.financeirasTodas ? ((b.financeiras ?? []) as number[]) : [],
+            // como no backend: itens de venda só em venda; condições e campos só da finalidade escolhida
+            ...this.condicoesDaFinalidade(b),
             fotos: (b.fotos ?? []).filter((x: { url?: string }) => !!x?.url).map((x: { url: string; origem?: OrigemFoto }) => ({ url: x.url, origem: ORIGENS_FOTO.some((o) => o.value === x.origem) ? x.origem! : 'NAO_INFORMADO' })),
             caracteristicas: (b.caracteristicas ?? []).filter((x: string) => !!x)
         };

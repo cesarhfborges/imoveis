@@ -10,7 +10,7 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
-import { ImovelDetalhe, ImovelResumo, finalidadeLabel, tituloAnuncio } from '@/app/core/models/models';
+import { CONDICOES, ImovelDetalhe, ImovelResumo, finalidadeLabel, tituloAnuncio } from '@/app/core/models/models';
 import { ContaService } from '@/app/core/services/conta.service';
 import { ConfigService } from '@/app/core/services/config.service';
 import { slug } from '@/app/core/pipes/formatos';
@@ -361,14 +361,7 @@ export class CompararPage {
             id: 'condicoes',
             titulo: 'Condições e documentação',
             icone: 'pi-file-check',
-            linhas: [
-                { id: 'financiamento', rotulo: 'Aceita financiamento', tipo: 'sim-nao', valor: (i) => i.aceitaFinanciamento },
-                { id: 'fgts', rotulo: 'Aceita FGTS', tipo: 'sim-nao', valor: (i) => i.aceitaFgts },
-                { id: 'permuta', rotulo: 'Aceita permuta', tipo: 'sim-nao', valor: (i) => i.aceitaPermuta },
-                { id: 'escritura', rotulo: 'Escritura registrada', tipo: 'sim-nao', valor: (i) => i.escrituraRegistrada },
-                { id: 'quitado', rotulo: 'Imóvel quitado', tipo: 'sim-nao', valor: (i) => i.quitado },
-                { id: 'lancamento', rotulo: 'Imóvel novo / lançamento', tipo: 'sim-nao', valor: (i) => i.lancamento }
-            ]
+            linhas: this.linhasCondicoes()
         },
         {
             id: 'anuncio',
@@ -382,6 +375,45 @@ export class CompararPage {
             ]
         }
     ]);
+
+    /**
+     * Condições conforme as finalidades dos imóveis escolhidos: itens de venda só se houver venda,
+     * garantias/inclusos do aluguel só se houver aluguel, e assim por diante.
+     */
+    private linhasCondicoes(): Linha[] {
+        const finalidades = new Set(this.detalhes().map((i) => i.finalidade));
+        const linhas: Linha[] = [];
+        if (finalidades.has('VENDA')) {
+            linhas.push(
+                { id: 'financiamento', rotulo: 'Aceita financiamento', tipo: 'sim-nao', valor: (i) => i.aceitaFinanciamento },
+                { id: 'fgts', rotulo: 'Aceita FGTS', tipo: 'sim-nao', valor: (i) => i.aceitaFgts },
+                { id: 'permuta', rotulo: 'Aceita permuta', tipo: 'sim-nao', valor: (i) => i.aceitaPermuta },
+                { id: 'escritura', rotulo: 'Escritura registrada', tipo: 'sim-nao', valor: (i) => i.escrituraRegistrada },
+                { id: 'quitado', rotulo: 'Imóvel quitado', tipo: 'sim-nao', valor: (i) => i.quitado }
+            );
+        }
+        if (finalidades.has('ALUGUEL')) {
+            linhas.push({ id: 'contrato', rotulo: 'Contrato mínimo', tipo: 'numero', valor: (i) => i.contratoMinimoMeses, melhor: 'menor', sufixo: ' meses' });
+        }
+        if (finalidades.has('TEMPORADA')) {
+            linhas.push(
+                { id: 'noites', rotulo: 'Mínimo de noites', tipo: 'numero', valor: (i) => i.noitesMinimas, melhor: 'menor' },
+                { id: 'hospedes', rotulo: 'Hóspedes (máx.)', tipo: 'numero', valor: (i) => i.hospedesMaximo, melhor: 'maior' },
+                { id: 'limpeza', rotulo: 'Taxa de limpeza', tipo: 'moeda', valor: (i) => i.taxaLimpeza, melhor: 'menor' },
+                { id: 'checkin', rotulo: 'Check-in', tipo: 'texto', valor: (i) => i.horarioCheckin },
+                { id: 'checkout', rotulo: 'Check-out', tipo: 'texto', valor: (i) => i.horarioCheckout }
+            );
+        }
+        for (const f of finalidades) {
+            for (const g of CONDICOES[f]) {
+                for (const c of g.itens) {
+                    linhas.push({ id: 'cond-' + c.codigo, rotulo: c.label, dica: c.dica, tipo: 'sim-nao', valor: (i) => i.finalidade === f && (i.condicoes ?? []).includes(c.codigo) });
+                }
+            }
+        }
+        linhas.push({ id: 'lancamento', rotulo: 'Imóvel novo / lançamento', tipo: 'sim-nao', valor: (i) => i.lancamento });
+        return linhas;
+    }
 
     /** Grupos/linhas exibidos (com "Só o que muda", esconde as linhas iguais em todos). */
     gruposVisiveis = computed(() => {

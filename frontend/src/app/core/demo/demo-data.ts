@@ -96,8 +96,16 @@ export function perfilDemo(id: number): Partial<DemoUsuario> {
     return {};
 }
 
-export interface DemoImovel extends Omit<ImovelDetalhe, 'anunciante' | 'tipoDescricao' | 'codigo' | 'financeiras' | 'financeirasIds' | 'financeirasTodas'> {
+export interface DemoImovel extends Omit<ImovelDetalhe, 'anunciante' | 'tipoDescricao' | 'codigo' | 'financeiras' | 'financeirasIds' | 'financeirasTodas' | 'condicoes' | 'contratoMinimoMeses' | 'noitesMinimas' | 'hospedesMaximo' | 'taxaLimpeza' | 'horarioCheckin' | 'horarioCheckout'> {
     anuncianteId: number;
+    /** Opcionais: bancos de demonstração antigos não tinham as condições por finalidade. */
+    condicoes?: ImovelDetalhe['condicoes'];
+    contratoMinimoMeses?: number | null;
+    noitesMinimas?: number | null;
+    hospedesMaximo?: number | null;
+    taxaLimpeza?: number | null;
+    horarioCheckin?: string | null;
+    horarioCheckout?: string | null;
     /** Opcionais: bancos de demonstração antigos não tinham financeiras. */
     financeirasTodas?: boolean;
     financeirasIds?: number[];

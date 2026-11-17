@@ -154,6 +154,14 @@ export interface ImovelDetalhe {
     aceitaPermuta: boolean;
     escrituraRegistrada: boolean;
     quitado: boolean;
+    /** Condições específicas da finalidade (ver CONDICOES). */
+    condicoes: CondicaoAnuncio[];
+    contratoMinimoMeses: number | null;
+    noitesMinimas: number | null;
+    hospedesMaximo: number | null;
+    taxaLimpeza: number | null;
+    horarioCheckin: string | null;
+    horarioCheckout: string | null;
     /** Aceita todas as financeiras ativas (senão, as de `financeirasIds`). */
     financeirasTodas: boolean;
     financeirasIds: number[];
@@ -195,6 +203,13 @@ export interface ImovelForm {
     aceitaPermuta: boolean;
     escrituraRegistrada: boolean;
     quitado: boolean;
+    condicoes: CondicaoAnuncio[];
+    contratoMinimoMeses: number | null;
+    noitesMinimas: number | null;
+    hospedesMaximo: number | null;
+    taxaLimpeza: number | null;
+    horarioCheckin: string | null;
+    horarioCheckout: string | null;
     financeirasTodas: boolean;
     financeiras: number[];
     fotos: FotoImovel[];
@@ -561,7 +576,130 @@ export interface PainelAnuncios {
     maisVistos: DesempenhoAnuncio[];
 }
 
-/** Opções de documentação e condições do anúncio (mesma ordem no formulário e na página). */
+// ------------------------------------------------------------ condições por finalidade
+
+/** Espelha o enum CondicaoAnuncio do backend. */
+export type CondicaoAnuncio =
+    | 'ACEITA_CONSORCIO'
+    | 'POSSUI_HABITESE'
+    | 'CONSTRUCAO_AVERBADA'
+    | 'ACEITA_PROPOSTA'
+    | 'GARANTIA_FIADOR'
+    | 'GARANTIA_CAUCAO'
+    | 'GARANTIA_SEGURO_FIANCA'
+    | 'GARANTIA_TITULO_CAPITALIZACAO'
+    | 'SEM_GARANTIA'
+    | 'ALUGUEL_CONDOMINIO_INCLUSO'
+    | 'ALUGUEL_IPTU_INCLUSO'
+    | 'ALUGUEL_AGUA_INCLUSA'
+    | 'ALUGUEL_INTERNET_INCLUSA'
+    | 'ALUGUEL_ACEITA_PET'
+    | 'ALUGUEL_MOBILIADO'
+    | 'DISPONIVEL_IMEDIATO'
+    | 'TEMPORADA_ROUPA_CAMA_BANHO'
+    | 'TEMPORADA_WIFI'
+    | 'TEMPORADA_COZINHA_EQUIPADA'
+    | 'TEMPORADA_LIMPEZA_INCLUSA'
+    | 'TEMPORADA_ACEITA_PET'
+    | 'TEMPORADA_PERMITE_EVENTOS'
+    | 'TEMPORADA_PERMITE_FUMAR'
+    | 'TEMPORADA_CANCELAMENTO_GRATIS';
+
+export interface ItemCondicao {
+    codigo: CondicaoAnuncio;
+    label: string;
+    dica: string;
+    icone: string;
+}
+
+/** Grupos de condições de cada finalidade, na ordem do formulário e da página do imóvel. */
+export const CONDICOES: Record<Finalidade, { id: string; titulo: string; descricao: string; itens: ItemCondicao[] }[]> = {
+    VENDA: [
+        {
+            id: 'venda-extra',
+            titulo: 'Negociação e regularização',
+            descricao: 'Outras formas de pagamento e documentos da construção.',
+            itens: [
+                { codigo: 'ACEITA_CONSORCIO', label: 'Aceita carta de consórcio', dica: 'Pagamento com carta de crédito contemplada', icone: 'pi-credit-card' },
+                { codigo: 'ACEITA_PROPOSTA', label: 'Aceita proposta', dica: 'O valor anunciado é negociável', icone: 'pi-comments' },
+                { codigo: 'POSSUI_HABITESE', label: 'Possui habite-se', dica: 'Construção liberada pela prefeitura para moradia', icone: 'pi-verified' },
+                { codigo: 'CONSTRUCAO_AVERBADA', label: 'Construção averbada', dica: 'A área construída consta na matrícula do imóvel', icone: 'pi-file-edit' }
+            ]
+        }
+    ],
+    ALUGUEL: [
+        {
+            id: 'garantias',
+            titulo: 'Garantias aceitas',
+            descricao: 'O que o inquilino pode apresentar para fechar o contrato.',
+            itens: [
+                { codigo: 'GARANTIA_FIADOR', label: 'Fiador', dica: 'Pessoa com imóvel ou renda que garante o contrato', icone: 'pi-user' },
+                { codigo: 'GARANTIA_CAUCAO', label: 'Caução', dica: 'Depósito de até 3 aluguéis, devolvido ao fim do contrato', icone: 'pi-wallet' },
+                { codigo: 'GARANTIA_SEGURO_FIANCA', label: 'Seguro-fiança', dica: 'Seguro contratado pelo inquilino que cobre o aluguel', icone: 'pi-shield' },
+                { codigo: 'GARANTIA_TITULO_CAPITALIZACAO', label: 'Título de capitalização', dica: 'Título resgatável ao fim do contrato', icone: 'pi-ticket' },
+                { codigo: 'SEM_GARANTIA', label: 'Sem garantia', dica: 'Dispensa garantia (ex.: pagamento antecipado)', icone: 'pi-check' }
+            ]
+        },
+        {
+            id: 'incluso-aluguel',
+            titulo: 'Incluso no aluguel',
+            descricao: 'Despesas que já estão no valor anunciado.',
+            itens: [
+                { codigo: 'ALUGUEL_CONDOMINIO_INCLUSO', label: 'Condomínio incluso', dica: 'O condomínio já está no valor do aluguel', icone: 'pi-building' },
+                { codigo: 'ALUGUEL_IPTU_INCLUSO', label: 'IPTU incluso', dica: 'O IPTU já está no valor do aluguel', icone: 'pi-receipt' },
+                { codigo: 'ALUGUEL_AGUA_INCLUSA', label: 'Água inclusa', dica: 'Conta de água inclusa', icone: 'pi-filter' },
+                { codigo: 'ALUGUEL_INTERNET_INCLUSA', label: 'Internet inclusa', dica: 'Internet já instalada e inclusa', icone: 'pi-wifi' }
+            ]
+        },
+        {
+            id: 'regras-aluguel',
+            titulo: 'Regras e disponibilidade',
+            descricao: 'Condições de uso do imóvel.',
+            itens: [
+                { codigo: 'ALUGUEL_ACEITA_PET', label: 'Aceita pets', dica: 'Animais de estimação são permitidos', icone: 'pi-heart' },
+                { codigo: 'ALUGUEL_MOBILIADO', label: 'Mobiliado', dica: 'Entregue com móveis', icone: 'pi-box' },
+                { codigo: 'DISPONIVEL_IMEDIATO', label: 'Disponível para mudança imediata', dica: 'Imóvel desocupado e pronto', icone: 'pi-calendar-plus' }
+            ]
+        }
+    ],
+    TEMPORADA: [
+        {
+            id: 'incluso-temporada',
+            titulo: 'Incluso na estadia',
+            descricao: 'O que o hóspede encontra no imóvel.',
+            itens: [
+                { codigo: 'TEMPORADA_ROUPA_CAMA_BANHO', label: 'Roupa de cama e banho', dica: 'Lençóis e toalhas fornecidos', icone: 'pi-star' },
+                { codigo: 'TEMPORADA_WIFI', label: 'Wi-Fi', dica: 'Internet sem fio disponível', icone: 'pi-wifi' },
+                { codigo: 'TEMPORADA_COZINHA_EQUIPADA', label: 'Cozinha equipada', dica: 'Panelas, louças e eletrodomésticos', icone: 'pi-shop' },
+                { codigo: 'TEMPORADA_LIMPEZA_INCLUSA', label: 'Limpeza inclusa', dica: 'Limpeza final já está no valor', icone: 'pi-sparkles' }
+            ]
+        },
+        {
+            id: 'regras-temporada',
+            titulo: 'Regras da casa',
+            descricao: 'O que é permitido durante a estadia.',
+            itens: [
+                { codigo: 'TEMPORADA_ACEITA_PET', label: 'Aceita pets', dica: 'Animais de estimação são bem-vindos', icone: 'pi-heart' },
+                { codigo: 'TEMPORADA_PERMITE_EVENTOS', label: 'Permite festas e eventos', dica: 'Reuniões e comemorações permitidas', icone: 'pi-gift' },
+                { codigo: 'TEMPORADA_PERMITE_FUMAR', label: 'Permite fumar', dica: 'Fumar é permitido no imóvel', icone: 'pi-cloud' },
+                { codigo: 'TEMPORADA_CANCELAMENTO_GRATIS', label: 'Cancelamento gratuito', dica: 'Cancelamento sem custo com antecedência combinada', icone: 'pi-undo' }
+            ]
+        }
+    ]
+};
+
+/** Rótulo de uma condição (para listas e comparação). */
+export function condicaoInfo(codigo: CondicaoAnuncio): ItemCondicao | undefined {
+    for (const grupos of Object.values(CONDICOES)) {
+        for (const g of grupos) {
+            const item = g.itens.find((i) => i.codigo === codigo);
+            if (item) return item;
+        }
+    }
+    return undefined;
+}
+
+/** Opções de documentação e condições de VENDA (colunas próprias; mesma ordem no formulário e na página). */
 export const DOCUMENTACAO: { campo: 'aceitaFinanciamento' | 'aceitaFgts' | 'aceitaPermuta' | 'escrituraRegistrada' | 'quitado'; label: string; dica: string }[] = [
     { campo: 'aceitaFinanciamento', label: 'Aceita financiamento', dica: 'Pode ser comprado com financiamento bancário' },
     { campo: 'aceitaFgts', label: 'Aceita FGTS', dica: 'O comprador pode usar o saldo do FGTS' },

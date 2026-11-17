@@ -4,7 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { SkeletonModule } from 'primeng/skeleton';
 import { MessageService } from 'primeng/api';
-import { DOCUMENTACAO, ImovelDetalhe, ImovelResumo, finalidadeLabel, statusInfo, tituloAnuncio } from '@/app/core/models/models';
+import { CONDICOES, DOCUMENTACAO, ImovelDetalhe, ImovelResumo, finalidadeLabel, statusInfo, tituloAnuncio } from '@/app/core/models/models';
 import { GestaoAnunciosService, ImovelService } from '@/app/core/services/imovel.service';
 import { ContaService } from '@/app/core/services/conta.service';
 import { AuthService } from '@/app/core/services/auth.service';
@@ -183,20 +183,51 @@ import { SimulacaoDialog } from '@/app/shared/components/financiamento/simulacao
                     }
 
                     <section class="bloco" aria-labelledby="doc-titulo">
-                        <h2 id="doc-titulo">Documentação e condições</h2>
-                        <ul class="lista-doc">
-                            @for (d of documentacao; track d.campo) {
-                                @let sim = !!i[d.campo];
-                                <li [class.sim]="sim">
-                                    <i class="pi" [class.pi-check-circle]="sim" [class.pi-minus-circle]="!sim" aria-hidden="true"></i>
-                                    <span>
-                                        <strong>{{ d.label }}</strong>
-                                        <span class="lista-doc__status">{{ sim ? 'Sim' : 'Não' }}</span>
-                                        <span class="block text-xs text-muted-color">{{ d.dica }}</span>
-                                    </span>
-                                </li>
-                            }
-                        </ul>
+                        <h2 id="doc-titulo">{{ tituloCondicoes() }}</h2>
+                        @if (resumoCondicoes().length) {
+                            <dl class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                                @for (r of resumoCondicoes(); track r.rotulo) {
+                                    <div class="flex items-center gap-3 p-3 rounded-border border border-surface">
+                                        <i class="pi {{ r.icone }} text-primary" aria-hidden="true"></i>
+                                        <div>
+                                            <dt class="text-xs text-muted-color">{{ r.rotulo }}</dt>
+                                            <dd class="m-0 font-semibold">{{ r.valor }}</dd>
+                                        </div>
+                                    </div>
+                                }
+                            </dl>
+                        }
+                        @if (i.finalidade === 'VENDA') {
+                            <ul class="lista-doc">
+                                @for (d of documentacao; track d.campo) {
+                                    @let sim = !!i[d.campo];
+                                    <li [class.sim]="sim">
+                                        <i class="pi" [class.pi-check-circle]="sim" [class.pi-minus-circle]="!sim" aria-hidden="true"></i>
+                                        <span>
+                                            <strong>{{ d.label }}</strong>
+                                            <span class="lista-doc__status">{{ sim ? 'Sim' : 'Não' }}</span>
+                                            <span class="block text-xs text-muted-color">{{ d.dica }}</span>
+                                        </span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        @for (g of gruposCondicoes(); track g.id) {
+                            <h3 class="text-base font-semibold mt-4 mb-2">{{ g.titulo }}</h3>
+                            <ul class="lista-doc">
+                                @for (c of g.itens; track c.codigo) {
+                                    @let sim = i.condicoes.includes(c.codigo);
+                                    <li [class.sim]="sim">
+                                        <i class="pi" [class.pi-check-circle]="sim" [class.pi-minus-circle]="!sim" aria-hidden="true"></i>
+                                        <span>
+                                            <strong>{{ c.label }}</strong>
+                                            <span class="lista-doc__status">{{ sim ? 'Sim' : 'Não' }}</span>
+                                            <span class="block text-xs text-muted-color">{{ c.dica }}</span>
+                                        </span>
+                                    </li>
+                                }
+                            </ul>
+                        }
                     </section>
 
                     <section class="bloco" aria-labelledby="local-titulo">
@@ -305,6 +336,24 @@ export class DetalhePage {
     finalidadeLabel = finalidadeLabel;
     tituloAnuncio = tituloAnuncio;
     documentacao = DOCUMENTACAO;
+    gruposCondicoes = computed(() => CONDICOES[this.imovel()?.finalidade ?? 'VENDA']);
+    tituloCondicoes = computed(() => ({ VENDA: 'Documentação e condições', ALUGUEL: 'Condições do aluguel', TEMPORADA: 'Condições da estadia' })[this.imovel()?.finalidade ?? 'VENDA']);
+    /** Números da finalidade (contrato mínimo no aluguel; noites, hóspedes, limpeza e horários na temporada). */
+    resumoCondicoes = computed(() => {
+        const i = this.imovel();
+        if (!i) return [];
+        const moeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const itens: { rotulo: string; valor: string; icone: string }[] = [];
+        if (i.finalidade === 'ALUGUEL' && i.contratoMinimoMeses) itens.push({ rotulo: 'Contrato mínimo', valor: `${i.contratoMinimoMeses} meses`, icone: 'pi-file' });
+        if (i.finalidade === 'TEMPORADA') {
+            if (i.noitesMinimas) itens.push({ rotulo: 'Mínimo de noites', valor: `${i.noitesMinimas}`, icone: 'pi-moon' });
+            if (i.hospedesMaximo) itens.push({ rotulo: 'Hóspedes', valor: `até ${i.hospedesMaximo}`, icone: 'pi-users' });
+            if (i.taxaLimpeza != null) itens.push({ rotulo: 'Taxa de limpeza', valor: i.taxaLimpeza ? moeda(i.taxaLimpeza) : 'Sem taxa', icone: 'pi-sparkles' });
+            if (i.horarioCheckin) itens.push({ rotulo: 'Check-in', valor: `a partir das ${i.horarioCheckin}`, icone: 'pi-sign-in' });
+            if (i.horarioCheckout) itens.push({ rotulo: 'Check-out', valor: `até as ${i.horarioCheckout}`, icone: 'pi-sign-out' });
+        }
+        return itens;
+    });
 
     favorito = computed(() => this.conta.favoritos().has(Number(this.id())));
     rotuloPreco = computed(() => {
