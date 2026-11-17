@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -24,15 +23,15 @@ type Lado = 'cliente' | 'anunciante';
 type Acao = 'recusar' | 'cancelar' | 'propor';
 
 /**
- * Visitas agendadas: as que o usuário pediu e, para corretor, as pedidas aos anúncios dele. Cada lado responde
- * pelo que lhe cabe (o anunciante confirma, recusa ou propõe outro horário; o cliente aceita o novo horário ou
+ * Visitas agendadas, conforme o perfil da sessão: o cliente vê as que pediu; o corretor, as pedidas aos anúncios
+ * dele (para pedir visitas, ele entra como cliente). Cada lado responde pelo que lhe cabe (o anunciante confirma, recusa ou propõe outro horário; o cliente aceita o novo horário ou
  * cancela).
  */
 @Component({
     selector: 'app-visitas-page',
-    imports: [DatePipe, NgTemplateOutlet, FormsModule, RouterLink, ButtonModule, DialogModule, TabsModule, TagModule, TextareaModule, SkeletonModule, TelefonePipe, PageHeader, EmptyState, SeletorHorario],
+    imports: [DatePipe, NgTemplateOutlet, FormsModule, RouterLink, ButtonModule, DialogModule, TagModule, TextareaModule, SkeletonModule, TelefonePipe, PageHeader, EmptyState, SeletorHorario],
     template: `
-        <app-page-header titulo="Visitas" subtitulo="Visitas agendadas pelo site e o que falta responder." />
+        <app-page-header [titulo]="corretor() ? 'Visitas aos meus anúncios' : 'Minhas visitas'" [subtitulo]="corretor() ? 'Pedidos de visita dos interessados: confirme, recuse ou proponha outro horário.' : 'Visitas que você pediu pelo site e a resposta de cada anunciante.'" />
 
         <ng-template #lista let-itens let-lado="lado">
             @if (carregando()) {
@@ -126,25 +125,8 @@ type Acao = 'recusar' | 'cancelar' | 'propor';
             }
         </ng-template>
 
-        @if (corretor()) {
-            <p-tabs [(value)]="aba">
-                <p-tablist>
-                    <p-tab value="anunciante"
-                        >Visitas aos meus anúncios
-                        @if (pendentesAnunciante()) {
-                            <span class="ml-1 font-bold">({{ pendentesAnunciante() }})</span>
-                        }
-                    </p-tab>
-                    <p-tab value="cliente">Visitas que pedi</p-tab>
-                </p-tablist>
-                <p-tabpanels>
-                    <p-tabpanel value="anunciante"><ng-container *ngTemplateOutlet="lista; context: { $implicit: doAnunciante(), lado: 'anunciante' }" /></p-tabpanel>
-                    <p-tabpanel value="cliente"><ng-container *ngTemplateOutlet="lista; context: { $implicit: minhas(), lado: 'cliente' }" /></p-tabpanel>
-                </p-tabpanels>
-            </p-tabs>
-        } @else {
-            <ng-container *ngTemplateOutlet="lista; context: { $implicit: minhas(), lado: 'cliente' }" />
-        }
+        <!-- um lado por perfil: o corretor atende as visitas aos anúncios; o cliente acompanha as que pediu -->
+        <ng-container *ngTemplateOutlet="lista; context: { $implicit: corretor() ? doAnunciante() : minhas(), lado: corretor() ? 'anunciante' : 'cliente' }" />
 
         <p-dialog [blockScroll]="true" [visible]="!!acao()" (visibleChange)="!$event && fecharAcao()" [modal]="true" [header]="tituloAcao()" [style]="{ width: '36rem' }" [breakpoints]="{ '640px': '96vw' }">
             @if (acao(); as a) {
@@ -174,13 +156,11 @@ export class VisitasPage {
     readonly slug = slug;
     readonly digitos = digitos;
     corretor = computed(() => this.auth.perfil() === 'CORRETOR');
-    aba: Lado = this.auth.perfil() === 'CORRETOR' ? 'anunciante' : 'cliente';
 
     minhas = signal<Visita[]>([]);
     doAnunciante = signal<Visita[]>([]);
     carregando = signal(true);
     processando = signal<number | null>(null);
-    pendentesAnunciante = computed(() => this.doAnunciante().filter((v) => v.status === 'SOLICITADA').length);
 
     acao = signal<{ visita: Visita; lado: Lado; tipo: Acao } | null>(null);
     novoHorario = signal<string | null>(null);
@@ -189,28 +169,21 @@ export class VisitasPage {
     botaoAcao = computed(() => ({ recusar: 'Recusar pedido', cancelar: 'Cancelar visita', propor: 'Enviar proposta' })[this.acao()?.tipo ?? 'cancelar']);
 
     constructor() {
-        inject(ConfigService).definirTitulo('Visitas');
+        inject(ConfigService).definirTitulo(this.corretor() ? 'Visitas aos meus anúncios' : 'Minhas visitas');
         this.carregar();
     }
 
+    /** Só o lado do perfil atual. */
     private carregar() {
         this.carregando.set(true);
-        this.visitas.minhas().subscribe({
+        const corretor = this.corretor();
+        (corretor ? this.visitas.doAnunciante() : this.visitas.minhas()).subscribe({
             next: (l) => {
-                this.minhas.set(VisitasPage.ordenar(l));
-                if (!this.corretor()) this.carregando.set(false);
+                (corretor ? this.doAnunciante : this.minhas).set(VisitasPage.ordenar(l));
+                this.carregando.set(false);
             },
             error: (e) => this.falhou(e)
         });
-        if (this.corretor()) {
-            this.visitas.doAnunciante().subscribe({
-                next: (l) => {
-                    this.doAnunciante.set(VisitasPage.ordenar(l));
-                    this.carregando.set(false);
-                },
-                error: (e) => this.falhou(e)
-            });
-        }
     }
 
     private falhou(e: unknown) {

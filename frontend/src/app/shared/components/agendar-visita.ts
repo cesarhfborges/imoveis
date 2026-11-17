@@ -24,6 +24,17 @@ import { SeletorHorario } from './seletor-horario';
                     <p class="m-0">Entre na sua conta para escolher um horário. O anunciante confirma pelo site e você acompanha em <strong>Minhas visitas</strong>.</p>
                     <p-button label="Entrar ou criar conta" icon="pi pi-sign-in" (onClick)="entrar()" />
                 </div>
+            } @else if (auth.perfil() !== 'CLIENTE') {
+                <!-- cada perfil vê só o que é dele: a visita pedida como corretor não apareceria em lugar nenhum -->
+                <div class="flex flex-col items-center text-center gap-3 py-4">
+                    <i class="pi pi-sync text-4xl text-primary" aria-hidden="true"></i>
+                    <p class="m-0">
+                        Você está como <strong>{{ auth.perfil() === 'ADMIN' ? 'administrador' : 'corretor' }}</strong>. Visitas são pedidas como cliente, e ficam em <strong>Minhas visitas</strong>.
+                    </p>
+                    @if (auth.sessao().perfisDisponiveis.includes('CLIENTE') && auth.perfil() === 'CORRETOR') {
+                        <p-button label="Entrar como cliente" icon="pi pi-sync" [loading]="trocando()" (onClick)="entrarComoCliente()" />
+                    }
+                </div>
             } @else if (pedido(); as v) {
                 <div class="flex flex-col items-center text-center gap-3 py-4" role="status">
                     <i class="pi pi-check-circle text-4xl text-green-600" aria-hidden="true"></i>
@@ -42,7 +53,7 @@ import { SeletorHorario } from './seletor-horario';
                 </div>
             }
             <ng-template #footer>
-                @if (auth.logado() && !pedido()) {
+                @if (auth.logado() && auth.perfil() === 'CLIENTE' && !pedido()) {
                     <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="fechar()" />
                     <p-button label="Pedir visita" icon="pi pi-calendar-plus" [disabled]="!horario()" [loading]="enviando()" (onClick)="enviar()" />
                 }
@@ -69,6 +80,20 @@ export class AgendarVisita {
         this.horario.set(null);
         this.mensagem = '';
         this.pedido.set(null);
+    }
+
+    trocando = signal(false);
+
+    /** Troca a sessão para o perfil cliente e continua na mesma página, com o diálogo aberto. */
+    entrarComoCliente() {
+        this.trocando.set(true);
+        this.auth.trocarPerfil('CLIENTE').subscribe({
+            next: () => this.trocando.set(false),
+            error: (e) => {
+                this.trocando.set(false);
+                this.msg.add({ severity: 'error', summary: 'Não foi possível trocar', detail: mensagemErro(e) });
+            }
+        });
     }
 
     entrar() {
