@@ -1,64 +1,94 @@
-You are an expert in TypeScript, Angular, and scalable web application development. You write functional, maintainable, performant, and accessible code following Angular and TypeScript best practices.
+# Frontend — regras do Angular
 
-## TypeScript Best Practices
+Você é especialista em TypeScript, Angular e aplicações web escaláveis. Escreva código funcional, de fácil
+manutenção, performático e acessível, seguindo as boas práticas de Angular e TypeScript.
 
-- Use strict type checking
-- Prefer type inference when the type is obvious
-- Avoid the `any` type; use `unknown` when type is uncertain
+Stack: **Angular 21** (zoneless, standalone) · **PrimeNG 21** (tema Aura via `@primeuix/themes`) · Tailwind 4 +
+`tailwindcss-primeui` · base Sakai NG · Leaflet (mapa) · pusher-js (tempo real) · Quill (editor) · date-fns.
 
-## Angular Best Practices
+## Estrutura
 
-- Always use standalone components over NgModules
-- Must NOT set `standalone: true` inside Angular decorators. It's the default in Angular v20+.
-- Do NOT set `changeDetection: ChangeDetectionStrategy.OnPush` explicitly. `OnPush` is the default in Angular v22+.
-- Use signals for state management
-- Implement lazy loading for feature routes
-- Do NOT use the `@HostBinding` and `@HostListener` decorators. Put host bindings inside the `host` object of the `@Component` or `@Directive` decorator instead
-- Use `NgOptimizedImage` for all static images.
-- `NgOptimizedImage` does not work for inline base64 images.
+```
+src/
+├── app.config.ts / app.routes.ts   # providers globais e rotas (lazy com loadComponent)
+├── environments/                   # apiUrl, demoFallback
+└── app/
+    ├── site/      # área pública
+    ├── conta/     # área logada (cliente/corretor)
+    ├── admin/     # administração
+    ├── layout/    # shell, topo, menu, tema (Sakai)
+    ├── shared/    # componentes, diretivas e páginas reutilizáveis
+    └── core/
+        ├── services/      # um service por domínio (imovel, auth, conta, moderacao…) sobre ApiService
+        ├── models/        # models.ts — tipos espelhando os DTOs do backend
+        ├── guards/        # perfil.guard.ts
+        ├── interceptors/  # demo.interceptor.ts
+        ├── demo/          # backend falso do modo demonstração
+        └── pipes/
+```
 
-## PrimeNG
-- Always reference @llms.txt, @llms-full.txt, and @button.md for context and project conventions.
-- Use the Prime MCP server to ensure PrimeNG components are implemented according to best practices and official specifications.
-- This project uses PrimeNG v21; adhere strictly to the APIs, styling architecture, and patterns of this version.
+- Imports com alias `@/` (ex.: `@/app/core/services/api.service`).
+- Chamadas HTTP sempre via `ApiService` (já usa `environment.apiUrl` e `withCredentials`). CSRF é tratado pelo
+  `withXsrfConfiguration` — não envie o token manualmente.
+- Endpoint novo: atualize `core/models/models.ts`, o service do domínio **e** `core/demo` (o modo demonstração precisa
+  responder a ele).
+- Textos da interface em português do Brasil; `LOCALE_ID` é `pt-BR`.
 
-## Accessibility Requirements
+## TypeScript
 
-- It MUST pass all AXE checks.
-- It MUST follow all WCAG AA minimums, including focus management, color contrast, and ARIA attributes.
+- Tipagem estrita; prefira inferência quando o tipo for óbvio.
+- Evite `any`; use `unknown` quando o tipo for incerto.
 
-### Components
+## Angular (versão 21 — não usar APIs exclusivas da v22+)
 
-- Keep components small and focused on a single responsibility
-- Use `input()` and `output()` functions instead of decorators
-- Use `model()` for two-way bound properties with `[(prop)]` syntax instead of pairing `input()` with `output()`
-- Use `computed()` for derived state
-- Use `linkedSignal()` for state derived from multiple reactive sources that must stay synchronized
-- Prefer inline templates for small components
-- Prefer Signal Forms (`@angular/forms/signals`) for new forms. They are stable in Angular v22+ and provide signal-based state, type-safe field access, and schema-based validation
-- When not using Signal Forms, prefer Reactive forms instead of Template-driven ones
-- Do NOT use `ngClass`, use `class` bindings instead
-- Do NOT use `ngStyle`, use `style` bindings instead
-- Do NOT import `CommonModule`, import only the directives and pipes the template uses, such as `AsyncPipe` or `DatePipe`
-- When using external templates/styles, use paths relative to the component TS file.
+- Componentes standalone; **não** escreva `standalone: true` (já é o padrão).
+- A aplicação é **zoneless** (`provideZonelessChangeDetection`): estado de tela em signals; nada de depender de
+  zone.js/`setTimeout` para atualizar a view.
+- Rotas de feature com lazy loading (`loadComponent`/`loadChildren`).
+- Não use `@HostBinding`/`@HostListener`; use o objeto `host` do decorator.
+- Use `NgOptimizedImage` para imagens estáticas (não funciona com base64 inline).
+- Services singleton com `@Injectable({ providedIn: 'root' })` e `inject()` — o decorator `@Service` é da v22, não
+  existe aqui.
 
-## State Management
+### Componentes
 
-- Use signals for local component state
-- Use `computed()` for derived state
-- Keep state transformations pure and predictable
-- Do NOT use `mutate` on signals, use `update` or `set` instead
+- Pequenos e com responsabilidade única.
+- `input()`, `output()` e `model()` em vez de decorators.
+- `computed()` para estado derivado; `linkedSignal()` para estado derivado de várias fontes que precisa ser editável.
+- Templates inline para componentes pequenos; caminhos relativos para template/estilo externos.
+- Formulários: **Reactive Forms** (Signal Forms ainda é experimental na v21 — só usar se pedido).
+- Não use `ngClass`/`ngStyle`; use bindings `[class]`/`[style]`.
+- Não importe `CommonModule`; importe só as diretivas e pipes usados.
 
-## Templates
+### Estado
 
-- Keep templates simple and avoid complex logic
-- Use native control flow (`@if`, `@for`, `@switch`) instead of `*ngIf`, `*ngFor`, `*ngSwitch`
-- Use the async pipe to handle observables
-- Do not assume globals like (`new Date()`) are available.
+- Signals para estado local; transformações puras e previsíveis.
+- Use `set`/`update`, nunca `mutate`.
 
-## Services
+### Templates
 
-- Design services around a single responsibility
-- Use the `providedIn: 'root'` option for singleton services
-- Prefer the `@Service` decorator over `@Injectable({providedIn: 'root'})` for new singleton services (Angular v22+)
-- Use the `inject()` function instead of constructor injection
+- Simples, sem lógica complexa.
+- Controle de fluxo nativo (`@if`, `@for` com `track`, `@switch`).
+- `async` pipe para observables (ou `toSignal`).
+- Não presuma globais como `new Date()` disponíveis no template.
+
+## PrimeNG 21
+
+- Use o MCP `primeng` (`get_component`, `get_example`, `validate_usage`) antes de usar um componente que ainda não
+  aparece no projeto, e siga estritamente as APIs, estilos e padrões da **v21**.
+- Overlays são anexados ao `body` (`overlayAppendTo: 'body'` em `app.config.ts`) — não sobrescreva por componente sem
+  motivo.
+- Modo escuro usa a classe `.app-dark`; cores via tokens do tema/Tailwind (`primary`, `surface-*`), nunca hex fixo,
+  porque o administrador e o visitante podem trocar cor primária, surface e preset.
+- Traduções globais do PrimeNG ficam em `app.config.ts`.
+
+## Acessibilidade
+
+- DEVE passar em todas as verificações do AXE.
+- DEVE seguir os mínimos WCAG AA: foco, contraste de cor e atributos ARIA.
+
+## Ferramentas e comandos
+
+- MCP `angular-cli`: `get_best_practices`, `search_documentation` e `run_target` para build/lint.
+- MCP `webstorm`: problemas do arquivo, lint e rename refactoring.
+- Comandos: `npm start` (4200, proxy para 8080), `npm run build`, `npm run format` (Prettier), `npx eslint src`.

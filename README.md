@@ -39,4 +39,6 @@ npm run build:backend          # backend/core-api/target/imoveis.war
 
 ## Ferramentas de IA do projeto
 
-`frontend/.mcp.json` registra os servidores MCP do Angular CLI e do PrimeNG (`@primeng/mcp`), e `frontend/CLAUDE.md` traz as convenções do front.
+`.mcp.json` (na raiz) registra os servidores MCP do Angular CLI, do PrimeNG (`@primeng/mcp`) e do PostgreSQL de dev.
+`CLAUDE.md` traz o contexto global do monorepo; `backend/CLAUDE.md` e `frontend/CLAUDE.md` trazem as regras de cada parte
+(o Claude Code carrega cada um sob demanda ao trabalhar na pasta).
