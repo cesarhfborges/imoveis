@@ -15,11 +15,12 @@ import { GraficoCard } from '@/app/shared/components/painel/grafico-card';
 import { PeriodoSelect } from '@/app/shared/components/painel/periodo-select';
 import { CoresGraficoService } from '@/app/shared/components/painel/cores-grafico.service';
 import { dadosLinha, numero, opcoesLinha, semDados, variacao } from '@/app/shared/components/painel/graficos';
+import { TabelaResponsiva } from '@/app/shared/directives/tabela-responsiva';
 
 /** Relatório de um anúncio: visitas, contatos e favoritos no período, comparação com os outros anúncios e preço. */
 @Component({
     selector: 'app-relatorio-anuncio-page',
-    imports: [CurrencyPipe, DatePipe, RouterLink, SkeletonModule, TableModule, PageHeader, StatCard, EmptyState, GraficoCard, PeriodoSelect],
+    imports: [CurrencyPipe, DatePipe, RouterLink, SkeletonModule, TableModule, TabelaResponsiva, PageHeader, StatCard, EmptyState, GraficoCard, PeriodoSelect],
     template: `
         <app-page-header titulo="Relatório do anúncio" [subtitulo]="r() ? r()!.anuncio.codigo + ' · ' + r()!.anuncio.titulo : 'Visitas, contatos e favoritos'">
             <app-periodo-select [(periodo)]="periodo" />
@@ -104,7 +105,7 @@ import { dadosLinha, numero, opcoesLinha, semDados, variacao } from '@/app/share
                 <section class="col-span-12 lg:col-span-7 card m-0" aria-labelledby="rel-precos">
                     <h2 id="rel-precos" class="text-lg font-semibold mt-0 mb-3">Histórico de preço</h2>
                     @if (r.precos.length) {
-                        <p-table [value]="r.precos" size="small" [tableStyle]="{ 'min-width': '28rem' }">
+                        <p-table appTabelaResponsiva [value]="r.precos" size="small" [tableStyle]="{ 'min-width': '28rem' }">
                             <ng-template #header>
                                 <tr>
                                     <th scope="col">Data</th>

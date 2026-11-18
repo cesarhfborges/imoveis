@@ -21,7 +21,7 @@ import { AppLogo } from '@/app/shared/components/app-logo';
                     <i class="pi pi-angle-right text-xs" aria-hidden="true"></i>
                     <span aria-current="page">{{ d.titulo }}</span>
                 </nav>
-                <div class="grid gap-8 lg:grid-cols-[16rem_minmax(0,1fr)] items-start">
+                <div class="grid grid-cols-1 gap-8 lg:grid-cols-[16rem_minmax(0,1fr)] items-start">
                     @if (titulos().length > 1) {
                         <aside class="lg:sticky lg:top-28 print:hidden" aria-labelledby="indice-titulo">
                             <div class="p-4 rounded-border border border-surface bg-surface-0 dark:bg-surface-900">

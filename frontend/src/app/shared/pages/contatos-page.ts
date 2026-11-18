@@ -18,6 +18,7 @@ import { AuthService } from '@/app/core/services/auth.service';
 import { TelefonePipe, digitos, formatarTelefone, slug } from '@/app/core/pipes/formatos';
 import { PageHeader } from '@/app/shared/components/page-header';
 import { DadosResposta, respostaEmail, respostaWhatsapp } from './contato-resposta';
+import { TabelaResponsiva } from '@/app/shared/directives/tabela-responsiva';
 
 /**
  * Mensagens recebidas pelos anúncios (corretor: as suas; admin: todas).
@@ -27,7 +28,7 @@ import { DadosResposta, respostaEmail, respostaWhatsapp } from './contato-respos
  */
 @Component({
     selector: 'app-contatos-page',
-    imports: [RouterLink, DatePipe, FormsModule, TableModule, ButtonModule, TagModule, DialogModule, TooltipModule, SelectModule, TextareaModule, PageHeader, TelefonePipe],
+    imports: [RouterLink, DatePipe, FormsModule, TableModule, TabelaResponsiva, ButtonModule, TagModule, DialogModule, TooltipModule, SelectModule, TextareaModule, PageHeader, TelefonePipe],
     styles: `
         .etapa-filtro {
             display: inline-flex;
@@ -79,6 +80,8 @@ import { DadosResposta, respostaEmail, respostaWhatsapp } from './contato-respos
         }
         <div class="card">
             <p-table
+                appTabelaResponsiva
+                [colunaTitulo]="2"
                 [value]="pagina().content"
                 [lazy]="true"
                 [paginator]="true"
@@ -166,7 +169,7 @@ import { DadosResposta, respostaEmail, respostaWhatsapp } from './contato-respos
 
             @if (selecionado(); as c) {
                 <div class="flex flex-col gap-5">
-                    <section aria-label="Dados do interessado" class="grid gap-2 sm:grid-cols-2">
+                    <section aria-label="Dados do interessado" class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         <a [href]="'mailto:' + c.email" class="flex items-center gap-3 p-3 rounded-lg border border-surface hover:bg-emphasis transition-colors min-w-0">
                             <i class="pi pi-envelope text-primary" aria-hidden="true"></i>
                             <span class="min-w-0">

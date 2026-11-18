@@ -202,3 +202,41 @@
         gap: 0.5rem;
     }
 }
+
+@media (max-width: 600px) {
+    .layout-topbar {
+        padding: 0 0.75rem;
+
+        /* o logo encolhe primeiro; os botões da direita mantêm o tamanho */
+        .layout-topbar-logo-container {
+            min-width: 0;
+            gap: 0.5rem;
+        }
+
+        .layout-topbar-logo {
+            min-width: 0;
+
+            img {
+                height: 2rem;
+                max-width: 7.5rem;
+            }
+        }
+
+        .layout-menu-button {
+            flex-shrink: 0;
+            margin-right: 0;
+        }
+
+        .layout-topbar-actions,
+        .layout-config-menu {
+            flex-shrink: 0;
+            gap: 0.25rem;
+        }
+    }
+}
+
+@media (max-width: 359px) {
+    .layout-topbar .layout-topbar-logo img {
+        max-width: 6rem;
+    }
+}

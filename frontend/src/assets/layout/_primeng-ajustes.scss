@@ -41,3 +41,43 @@
         font-size: round(var(--p-radiobutton-icon-lg-size), 2px);
     }
 }
+
+/*
+ * ToggleSwitch, Checkbox e RadioButton ao lado de um texto longo (display: flex): sem isto o flexbox
+ * encolhe o controle quando falta largura (celular) e ele vira uma pílula achatada, cortando o texto.
+ * Controles de tamanho fixo nunca encolhem; quem cede espaço é o texto, que quebra linha.
+ */
+.p-toggleswitch,
+.p-checkbox,
+.p-radiobutton {
+    flex-shrink: 0;
+}
+
+/*
+ * InputNumber: o <input> interno tem a largura padrão do navegador (~20 caracteres) e, como item flex,
+ * não encolhe abaixo dela. Em telas estreitas o campo vazava do card. Com isto ele acompanha o espaço
+ * disponível (cresce até o container, como antes, e agora também encolhe).
+ */
+/*
+ * O mesmo vale para os campos de seleção: o rótulo do valor escolhido (white-space: nowrap) definia a
+ * largura mínima. Com min-width: 0 eles encolhem e o PrimeNG corta o texto com reticências.
+ */
+.p-inputnumber,
+.p-select,
+.p-multiselect,
+.p-autocomplete,
+.p-datepicker {
+    max-width: 100%;
+    min-width: 0;
+}
+.p-inputnumber-input {
+    min-width: 0;
+}
+
+/*
+ * <fieldset> tem min-width: min-content por padrão (especificação do HTML): nunca fica mais estreito
+ * que o conteúdo e vazava do card no celular.
+ */
+fieldset {
+    min-width: 0;
+}

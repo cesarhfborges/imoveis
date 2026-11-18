@@ -10,6 +10,7 @@ import { StatusTag } from '@/app/shared/components/status-tag';
 import { CoresGraficoService } from './cores-grafico.service';
 import { GraficoCard } from './grafico-card';
 import { dadosLinha, dadosPizza, dadosRanking, numero, opcoesBarra, opcoesLinha, opcoesPizza, rotuloDia, semDados, variacao } from './graficos';
+import { TabelaResponsiva } from '@/app/shared/directives/tabela-responsiva';
 
 type Regiao = 'cidade' | 'bairro';
 
@@ -20,7 +21,7 @@ type Regiao = 'cidade' | 'bairro';
  */
 @Component({
     selector: 'app-painel-graficos',
-    imports: [FormsModule, RouterLink, SelectButtonModule, TableModule, StatCard, StatusTag, GraficoCard],
+    imports: [FormsModule, RouterLink, SelectButtonModule, TableModule, TabelaResponsiva, StatCard, StatusTag, GraficoCard],
     template: `
         @let p = painel();
         @let r = p.resumo;
@@ -61,7 +62,7 @@ type Regiao = 'cidade' | 'bairro';
 
             <div class="col-span-12 card m-0">
                 <h2 class="text-lg font-semibold mt-0">{{ area() === 'admin' ? 'Anúncios mais vistos do portal' : 'Seus anúncios mais vistos' }}</h2>
-                <p-table [value]="p.maisVistos" [tableStyle]="{ 'min-width': '44rem' }" size="small">
+                <p-table appTabelaResponsiva [value]="p.maisVistos" [tableStyle]="{ 'min-width': '44rem' }" size="small">
                     <ng-template #header>
                         <tr>
                             <th scope="col">Anúncio</th>

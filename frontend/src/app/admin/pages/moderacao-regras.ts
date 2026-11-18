@@ -16,6 +16,7 @@ import { ModeracaoService } from '@/app/core/services/moderacao.service';
 import { ConfigService } from '@/app/core/services/config.service';
 import { mensagemErro } from '@/app/core/services/api.service';
 import { PageHeader } from '@/app/shared/components/page-header';
+import { TabelaResponsiva } from '@/app/shared/directives/tabela-responsiva';
 
 type TipoEdicao = Omit<TipoDenuncia, 'id' | 'gravidade'> & { id: number | null; gravidadeId: number };
 type GravidadeEdicao = Omit<Gravidade, 'id'> & { id: number | null };
@@ -23,7 +24,7 @@ type GravidadeEdicao = Omit<Gravidade, 'id'> & { id: number | null };
 /** Regras da moderação: automações por etapa, aprovação, avisos e tipos de denúncia com os seus prazos. */
 @Component({
     selector: 'app-moderacao-regras-page',
-    imports: [RouterLink, FormsModule, ButtonModule, SelectModule, InputNumberModule, InputTextModule, TextareaModule, ToggleSwitchModule, TableModule, TagModule, DialogModule, PageHeader],
+    imports: [RouterLink, FormsModule, ButtonModule, SelectModule, InputNumberModule, InputTextModule, TextareaModule, ToggleSwitchModule, TableModule, TabelaResponsiva, TagModule, DialogModule, PageHeader],
     template: `
         <app-page-header titulo="Regras e automações" subtitulo="Prazos em minutos úteis: contam só no expediente do calendário, fora dos feriados.">
             <a routerLink="/admin/calendario" class="p-button p-button-outlined"><i class="pi pi-calendar mr-2" aria-hidden="true"></i>Calendário</a>
@@ -44,7 +45,7 @@ type GravidadeEdicao = Omit<Gravidade, 'id'> & { id: number | null };
 
                     <fieldset class="border border-surface rounded-lg p-4 m-0" [disabled]="!c.automacaoAtiva" [class.opacity-60]="!c.automacaoAtiva">
                         <legend class="font-semibold px-2">Quando o anunciante não responde no prazo</legend>
-                        <div class="grid gap-4 md:grid-cols-3">
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
                             <div class="flex flex-col gap-1">
                                 <label for="e1" class="text-sm font-medium">Etapa 1 · ao vencer o prazo do tipo</label>
                                 <p-select inputId="e1" name="e1" [options]="acoes" optionLabel="label" optionValue="value" [(ngModel)]="c.etapa1Acao" />
@@ -62,7 +63,7 @@ type GravidadeEdicao = Omit<Gravidade, 'id'> & { id: number | null };
                         <p class="text-sm text-muted-color mb-0 mt-3"><i class="pi pi-info-circle" aria-hidden="true"></i> {{ resumo() }}</p>
                     </fieldset>
 
-                    <div class="grid gap-4 md:grid-cols-2">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="flex flex-col gap-1">
                             <label for="aviso" class="text-sm font-medium">Avisar o anunciante quando faltar (min úteis)</label>
                             <p-inputnumber inputId="aviso" name="aviso" [(ngModel)]="c.avisoMinutos" [min]="0" [max]="525600" [useGrouping]="false" />
@@ -100,7 +101,7 @@ type GravidadeEdicao = Omit<Gravidade, 'id'> & { id: number | null };
                 </div>
                 <p-button label="Nova gravidade" icon="pi pi-plus" (onClick)="editarGravidade(null)" />
             </div>
-            <p-table [value]="gravidades()" dataKey="id" [tableStyle]="{ 'min-width': '44rem' }">
+            <p-table appTabelaResponsiva [value]="gravidades()" dataKey="id" [tableStyle]="{ 'min-width': '44rem' }">
                 <ng-template #header>
                     <tr>
                         <th scope="col">Gravidade</th>
@@ -138,7 +139,7 @@ type GravidadeEdicao = Omit<Gravidade, 'id'> & { id: number | null };
                 </div>
                 <p-button label="Novo tipo" icon="pi pi-plus" (onClick)="editar(null)" />
             </div>
-            <p-table [value]="tipos()" dataKey="id" [tableStyle]="{ 'min-width': '48rem' }">
+            <p-table appTabelaResponsiva [value]="tipos()" dataKey="id" [tableStyle]="{ 'min-width': '48rem' }">
                 <ng-template #header>
                     <tr>
                         <th scope="col">Tipo</th>
@@ -181,7 +182,7 @@ type GravidadeEdicao = Omit<Gravidade, 'id'> & { id: number | null };
                         <label for="t-desc" class="font-medium">Descrição (aparece para quem denuncia)</label>
                         <textarea pTextarea id="t-desc" name="descricao" [(ngModel)]="t.descricao" rows="2" maxlength="300" [autoResize]="true"></textarea>
                     </div>
-                    <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div class="flex flex-col gap-1">
                             <label for="t-grav" class="font-medium">Gravidade</label>
                             <p-select inputId="t-grav" name="gravidade" [options]="gravidadesAtivas()" optionLabel="nome" optionValue="id" [(ngModel)]="t.gravidadeId" placeholder="Escolha" />
@@ -222,7 +223,7 @@ type GravidadeEdicao = Omit<Gravidade, 'id'> & { id: number | null };
                             {{ erroNome(g) || 'Maiúsculas, acentos e espaços não diferenciam: "Grave", "grave" e "Gráve" são o mesmo nome.' }}
                         </small>
                     </div>
-                    <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div class="flex flex-col gap-1">
                             <label for="g-cor" class="font-medium">Cor da etiqueta</label>
                             <p-select inputId="g-cor" name="cor" [options]="cores" optionLabel="label" optionValue="value" [(ngModel)]="g.cor">
@@ -245,7 +246,7 @@ type GravidadeEdicao = Omit<Gravidade, 'id'> & { id: number | null };
                             </span>
                         </label>
                         @if (g.banirContaAuto) {
-                            <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div class="flex flex-col gap-1">
                                     <label for="g-apos" class="font-medium">Após quantas procedentes</label>
                                     <p-inputnumber inputId="g-apos" name="apos" [(ngModel)]="g.banirApos" [min]="1" [max]="1000" [useGrouping]="false" />

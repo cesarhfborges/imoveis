@@ -91,7 +91,7 @@ const ACOES: Record<AcaoImovel, { titulo: string; botao: string; severity: 'warn
         <div class="-mt-4 mb-4"><app-presenca-sala [conectado]="realtime.conectado()" [outros]="outros()" [descrever]="descreverOutros" /></div>
 
         @if (dados(); as p) {
-            <div class="grid gap-4 lg:grid-cols-[1fr_20rem] mb-4">
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_20rem] mb-4">
                 <div class="card !mb-0 flex flex-col sm:flex-row gap-4">
                     <app-imovel-foto class="w-full sm:w-40 h-32 rounded-border shrink-0" [src]="p.imovel.fotoCapa" [semente]="p.imovel.id" [alt]="p.imovel.titulo" [mostrarTexto]="false" />
                     <div class="flex-1 min-w-0">

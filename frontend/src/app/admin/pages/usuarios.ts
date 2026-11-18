@@ -27,6 +27,7 @@ import { ConfigService } from '@/app/core/services/config.service';
 import { mensagemErro } from '@/app/core/services/api.service';
 import { PageHeader } from '@/app/shared/components/page-header';
 import { TelefoneInput } from '@/app/shared/components/telefone-input';
+import { TabelaResponsiva } from '@/app/shared/directives/tabela-responsiva';
 
 /** Usuários e permissões: papéis (cliente, corretor, administrador), ativação e senha. */
 @Component({
@@ -35,6 +36,7 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
         DatePipe,
         ReactiveFormsModule,
         TableModule,
+        TabelaResponsiva,
         ButtonModule,
         InputTextModule,
         SelectModule,
@@ -63,7 +65,18 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                 </p-iconfield>
                 <p-select [options]="papeisOpcoes" optionLabel="label" optionValue="value" [formControl]="papel" placeholder="Todos os papéis" [showClear]="true" styleClass="sm:w-56" ariaLabel="Filtrar por papel" />
             </div>
-            <p-table [value]="pagina().content" [lazy]="true" [paginator]="true" [rows]="20" [totalRecords]="pagina().totalElements" [loading]="carregando()" (onLazyLoad)="carregar($event)" dataKey="id" [tableStyle]="{ 'min-width': '50rem' }">
+            <p-table
+                appTabelaResponsiva
+                [value]="pagina().content"
+                [lazy]="true"
+                [paginator]="true"
+                [rows]="20"
+                [totalRecords]="pagina().totalElements"
+                [loading]="carregando()"
+                (onLazyLoad)="carregar($event)"
+                dataKey="id"
+                [tableStyle]="{ 'min-width': '50rem' }"
+            >
                 <ng-template #header>
                     <tr>
                         <th scope="col">Nome</th>
@@ -121,7 +134,7 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                     <label for="us-email">E-mail</label>
                     <input pInputText id="us-email" type="email" formControlName="email" />
                 </div>
-                <div class="grid gap-4 sm:grid-cols-2">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div class="flex flex-col gap-2">
                         <label for="us-tel">Telefone</label>
                         <app-telefone-input inputId="us-tel" formControlName="telefone" />
@@ -140,7 +153,7 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                     <p class="text-xs text-muted-color mt-2 mb-0">Todo usuário é cliente. Corretor também entra como cliente; administrador entra como admin, corretor e cliente.</p>
                 </fieldset>
                 @if (ehCorretor()) {
-                    <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div class="flex flex-col gap-2">
                             <label for="us-tipo">Tipo de usuário</label>
                             <p-select inputId="us-tipo" [options]="tiposAnunciante" optionLabel="label" optionValue="value" formControlName="tipoAnunciante" />

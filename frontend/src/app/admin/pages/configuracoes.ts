@@ -68,7 +68,7 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                 </p-tablist>
                 <p-tabpanels>
                     <p-tabpanel value="identidade">
-                        <div class="grid gap-8 lg:grid-cols-5">
+                        <div class="grid grid-cols-1 gap-8 lg:grid-cols-5">
                             <div class="lg:col-span-3 flex flex-col gap-6">
                                 <!-- Nome e slogan -->
                                 <section class="flex flex-col gap-4 p-4 rounded-border border border-surface" aria-labelledby="id-nome">
@@ -104,7 +104,7 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                                         <h3 id="id-logos" class="text-base font-semibold m-0 flex items-center gap-2"><i class="pi pi-image text-primary" aria-hidden="true"></i> Logos</h3>
                                         <p class="text-sm text-muted-color mt-1 mb-0">Sem logo, o site mostra o nome e o slogan. Sem o logo escuro, o claro é usado também no tema escuro.</p>
                                     </div>
-                                    <div class="grid gap-4 md:grid-cols-2">
+                                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                                         <app-image-upload
                                             rotulo="Para o tema claro"
                                             [vertical]="true"
@@ -195,7 +195,7 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                         </div>
                     </p-tabpanel>
                     <p-tabpanel value="seo">
-                        <div class="grid gap-8 lg:grid-cols-5">
+                        <div class="grid grid-cols-1 gap-8 lg:grid-cols-5">
                             <div class="lg:col-span-3 flex flex-col gap-6">
                                 <!-- Buscadores -->
                                 <section class="flex flex-col gap-4 p-4 rounded-border border border-surface" aria-labelledby="seo-busca">
@@ -321,7 +321,7 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                         </div>
                     </p-tabpanel>
                     <p-tabpanel value="contato">
-                        <div class="grid gap-8 lg:grid-cols-5">
+                        <div class="grid grid-cols-1 gap-8 lg:grid-cols-5">
                             <div class="lg:col-span-3 flex flex-col gap-6">
                                 <!-- Atendimento -->
                                 <section class="flex flex-col gap-4 p-4 rounded-border border border-surface" aria-labelledby="ct-atend">
@@ -329,7 +329,7 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                                         <h3 id="ct-atend" class="text-base font-semibold m-0 flex items-center gap-2"><i class="pi pi-headphones text-primary" aria-hidden="true"></i> Atendimento</h3>
                                         <p class="text-sm text-muted-color mt-1 mb-0">Canais mostrados no rodapé do site. Deixe em branco o que não quiser exibir.</p>
                                     </div>
-                                    <div class="grid gap-4 md:grid-cols-2">
+                                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                                         <div class="flex flex-col gap-2">
                                             <label for="cf-telefoneContato" class="font-medium flex items-center gap-2"><i class="pi pi-phone text-muted-color text-sm" aria-hidden="true"></i> Telefone</label>
                                             <app-telefone-input inputId="cf-telefoneContato" formControlName="telefoneContato" placeholder="Ex.: (61) 3333-4444" />
@@ -467,7 +467,7 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                         </div>
                     </p-tabpanel>
                     <p-tabpanel value="tema">
-                        <div class="grid gap-8 lg:grid-cols-5">
+                        <div class="grid grid-cols-1 gap-8 lg:grid-cols-5">
                             <div class="lg:col-span-3 flex flex-col gap-6">
                                 <div class="flex flex-wrap items-center justify-between gap-3 p-3 rounded-border bg-surface-50 dark:bg-surface-800">
                                     <div class="flex items-center gap-2 text-sm min-w-0">
@@ -524,7 +524,7 @@ import { TelefoneInput } from '@/app/shared/components/telefone-input';
                         </div>
                     </p-tabpanel>
                     <p-tabpanel value="regras">
-                        <div class="grid gap-8 lg:grid-cols-5">
+                        <div class="grid grid-cols-1 gap-8 lg:grid-cols-5">
                             <div class="lg:col-span-3 flex flex-col gap-6">
                                 <!-- Liga/desliga do site, agrupados por assunto (regra nova: só incluir em gruposRegras) -->
                                 @for (g of gruposRegras; track g.id) {

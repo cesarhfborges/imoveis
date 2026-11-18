@@ -94,7 +94,7 @@ function slugDe(texto: string): string {
                 <div class="col-span-12 xl:col-span-8 flex flex-col gap-6 min-w-0">
                     <section class="card m-0 flex flex-col gap-4" aria-labelledby="doc-id-titulo">
                         <h2 id="doc-id-titulo" class="text-lg font-semibold m-0">Identificação</h2>
-                        <div class="grid gap-4 md:grid-cols-2">
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div class="flex flex-col gap-2 min-w-0">
                                 <label for="doc-tipo" class="font-medium">Tipo *</label>
                                 <p-select inputId="doc-tipo" formControlName="tipo" [options]="tipos" optionLabel="label" optionValue="value" [fluid]="true" (onChange)="sugerirPorTipo($event.value)">

@@ -21,6 +21,7 @@ import { mensagemErro } from '@/app/core/services/api.service';
 import { PageHeader } from '@/app/shared/components/page-header';
 import { EditorTexto, htmlVazio } from '@/app/shared/components/editor-texto';
 import { AvisoView } from '@/app/shared/components/aviso-view';
+import { TabelaResponsiva } from '@/app/shared/directives/tabela-responsiva';
 
 const ICONES = [
     'pi-info-circle',
@@ -104,6 +105,7 @@ function novo(): AvisoForm {
         DatePickerModule,
         DialogModule,
         TableModule,
+        TabelaResponsiva,
         TagModule,
         TooltipModule,
         PageHeader,
@@ -116,7 +118,7 @@ function novo(): AvisoForm {
         </app-page-header>
 
         <div class="card">
-            <p-table [value]="lista()" [loading]="carregando()" dataKey="id" responsiveLayout="stack" [breakpoint]="'768px'">
+            <p-table appTabelaResponsiva [value]="lista()" [loading]="carregando()" dataKey="id">
                 <ng-template #header>
                     <tr>
                         <th scope="col">Aviso</th>
@@ -180,7 +182,7 @@ function novo(): AvisoForm {
                     <!-- conteúdo -->
                     <fieldset class="secao">
                         <legend>Conteúdo</legend>
-                        <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div class="flex flex-col gap-2">
                                 <label for="av-nome">Nome interno <span class="text-red-600" aria-hidden="true">*</span></label>
                                 <input pInputText id="av-nome" [(ngModel)]="f.nome" maxlength="80" placeholder="Ex.: Cookies, Convite FAQ" aria-required="true" />
@@ -206,7 +208,7 @@ function novo(): AvisoForm {
                         </p-selectbutton>
                         <p class="text-xs text-muted-color mt-2 mb-0">{{ dicaTipo() }}</p>
 
-                        <div class="grid gap-4 sm:grid-cols-3 mt-4">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 mt-4">
                             <div class="flex flex-col gap-2">
                                 <label for="av-pos">Posição</label>
                                 <p-select inputId="av-pos" [options]="posicoes()" [(ngModel)]="f.posicao" optionLabel="label" optionValue="value" appendTo="body" />
@@ -258,7 +260,7 @@ function novo(): AvisoForm {
                     <!-- ações -->
                     <fieldset class="secao">
                         <legend>Botões</legend>
-                        <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div class="flex flex-col gap-2">
                                 <label for="av-aceite">Botão principal</label>
                                 <input pInputText id="av-aceite" [(ngModel)]="f.textoAceite" maxlength="40" placeholder="Ex.: Aceitar, Entendi, Ler o FAQ (vazio: sem botão)" />
@@ -294,7 +296,7 @@ function novo(): AvisoForm {
                     <!-- público -->
                     <fieldset class="secao">
                         <legend>Para quem e quando</legend>
-                        <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div class="flex flex-col gap-2">
                                 <label for="av-publico">Público</label>
                                 <p-select inputId="av-publico" [options]="publicos" [(ngModel)]="f.publico" optionLabel="label" optionValue="value" appendTo="body" />
@@ -316,7 +318,7 @@ function novo(): AvisoForm {
                                 </label>
                             }
                         </div>
-                        <div class="grid gap-4 sm:grid-cols-2 mt-4">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
                             <div class="flex flex-col gap-2">
                                 <label for="av-inicio">Exibir a partir de (opcional)</label>
                                 <p-datepicker inputId="av-inicio" [(ngModel)]="inicio" [showTime]="true" hourFormat="24" dateFormat="dd/mm/yy" [showClear]="true" appendTo="body" />

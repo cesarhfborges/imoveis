@@ -50,7 +50,8 @@ const MAX_SOBRE = 2000;
         @if (exclusao()?.removerEm; as data) {
             <p-message severity="warn" icon="pi pi-clock" styleClass="mb-4">
                 <span>
-                    <strong>Sua conta será removida em {{ data | date: "dd/MM/yyyy 'às' HH:mm" }}.</strong> Todos os seus dados serão apagados. Mudou de ideia? Use <strong>Desistir da remoção</strong> no fim desta página.
+                    <strong>Sua conta será removida em {{ data | date: "dd/MM/yyyy 'às' HH:mm" }}.</strong> Todos os seus dados serão apagados. Mudou de ideia?
+                    <button type="button" class="font-semibold underline cursor-pointer" aria-haspopup="dialog" (click)="abrirExclusao()">Desistir da remoção</button>
                 </span>
             </p-message>
         }
@@ -113,6 +114,38 @@ const MAX_SOBRE = 2000;
                         <p class="text-sm text-green-700 mt-2! mb-0"><i class="pi pi-check-circle mr-1" aria-hidden="true"></i>Tudo preenchido.</p>
                     }
                 </div>
+
+                <!-- conta e segurança: cada ação abre a sua janela -->
+                <section class="card !mb-0" aria-labelledby="sec-conta">
+                    <h2 id="sec-conta" class="perfil__titulo perfil__titulo--compacto"><i class="pi pi-shield" aria-hidden="true"></i>Conta e segurança</h2>
+                    <ul class="perfil__acoes-conta">
+                        <li>
+                            <button type="button" class="perfil__acao" aria-haspopup="dialog" (click)="abrirSenha()">
+                                <i class="pi pi-key perfil__acao-icone" aria-hidden="true"></i>
+                                <span class="perfil__acao-texto">
+                                    <span class="font-medium">Trocar senha</span>
+                                    <span class="text-sm text-muted-color">Confirme a atual e escolha uma nova</span>
+                                </span>
+                                <i class="pi pi-chevron-right text-xs text-muted-color" aria-hidden="true"></i>
+                            </button>
+                        </li>
+                        <!-- remover conta (LGPD): só com a regra ligada, ou com um pedido já em andamento -->
+                        @if (exclusao(); as ex) {
+                            @if (ex.disponivel || ex.removerEm) {
+                                <li>
+                                    <button type="button" class="perfil__acao perfil__acao--perigo" aria-haspopup="dialog" (click)="abrirExclusao()">
+                                        <i [class]="'pi perfil__acao-icone ' + (ex.removerEm ? 'pi-clock' : 'pi-trash')" aria-hidden="true"></i>
+                                        <span class="perfil__acao-texto">
+                                            <span class="font-medium">{{ ex.removerEm ? 'Remoção agendada' : 'Remover conta' }}</span>
+                                            <span class="text-sm text-muted-color">{{ ex.removerEm ? 'Em ' + (ex.removerEm | date: "dd/MM/yyyy 'às' HH:mm") + ' · desistir' : 'Apaga a conta e todos os dados' }}</span>
+                                        </span>
+                                        <i class="pi pi-chevron-right text-xs text-muted-color" aria-hidden="true"></i>
+                                    </button>
+                                </li>
+                            }
+                        }
+                    </ul>
+                </section>
             </aside>
 
             <div class="perfil__principal">
@@ -120,7 +153,7 @@ const MAX_SOBRE = 2000;
                     <!-- identificação -->
                     <section class="card !mb-0" aria-labelledby="sec-id">
                         <h2 id="sec-id" class="perfil__titulo"><i class="pi pi-id-card" aria-hidden="true"></i>{{ imobiliaria() ? 'Dados da imobiliária' : 'Dados pessoais' }}</h2>
-                        <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div class="flex flex-col gap-2 sm:col-span-2">
                                 <label for="pf-nome">{{ imobiliaria() ? 'Nome fantasia (como aparece nos anúncios)' : 'Nome completo' }} <span class="text-red-600" aria-hidden="true">*</span></label>
                                 <input pInputText id="pf-nome" formControlName="nome" autocomplete="name" aria-required="true" [attr.aria-invalid]="invalido('nome')" aria-describedby="pf-nome-erro" />
@@ -173,7 +206,7 @@ const MAX_SOBRE = 2000;
                     <!-- contato -->
                     <section class="card !mb-0" aria-labelledby="sec-contato">
                         <h2 id="sec-contato" class="perfil__titulo"><i class="pi pi-phone" aria-hidden="true"></i>Contato</h2>
-                        <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div class="flex flex-col gap-2">
                                 <label for="pf-tel">Telefone</label>
                                 <app-telefone-input inputId="pf-tel" formControlName="telefone" />
@@ -210,7 +243,7 @@ const MAX_SOBRE = 2000;
                     @if (anunciante()) {
                         <section class="card !mb-0" aria-labelledby="sec-atuacao">
                             <h2 id="sec-atuacao" class="perfil__titulo"><i class="pi pi-briefcase" aria-hidden="true"></i>Atuação profissional</h2>
-                            <div class="grid gap-4 sm:grid-cols-6">
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-6">
                                 <div class="flex flex-col gap-2 sm:col-span-3">
                                     <label for="pf-creci">CRECI</label>
                                     <input pInputText id="pf-creci" formControlName="creci" />
@@ -246,7 +279,7 @@ const MAX_SOBRE = 2000;
                             </div>
 
                             <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-color mt-5 mb-3">Na internet</h3>
-                            <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div class="flex flex-col gap-2 sm:col-span-2">
                                     <label for="pf-site">Site</label>
                                     <p-inputgroup>
@@ -278,7 +311,7 @@ const MAX_SOBRE = 2000;
                     <!-- endereço -->
                     <section class="card !mb-0" aria-labelledby="sec-end">
                         <h2 id="sec-end" class="perfil__titulo"><i class="pi pi-map-marker" aria-hidden="true"></i>{{ anunciante() ? 'Endereço comercial' : 'Endereço' }}</h2>
-                        <div class="grid gap-4 sm:grid-cols-6">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-6">
                             <div class="flex flex-col gap-2 sm:col-span-2">
                                 <label for="pf-cep">CEP</label>
                                 <p-inputgroup>
@@ -370,78 +403,78 @@ const MAX_SOBRE = 2000;
 
                     <div class="perfil__acoes">
                         <span class="text-sm text-muted-color">{{ dados.dirty ? 'Há alterações não salvas.' : 'Tudo salvo.' }}</span>
-                        <div class="flex gap-2">
-                            <p-button label="Descartar" severity="secondary" [text]="true" [disabled]="!dados.dirty || salvando()" (onClick)="descartar()" />
-                            <p-button type="submit" label="Salvar alterações" icon="pi pi-check" [loading]="salvando()" [disabled]="!dados.dirty" />
+                        <!-- celular: os botões dividem a largura e, se não couberem lado a lado, um fica embaixo do outro -->
+                        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                            <p-button label="Descartar" severity="secondary" [text]="true" [disabled]="!dados.dirty || salvando()" (onClick)="descartar()" class="flex-1 sm:flex-none" styleClass="w-full whitespace-nowrap" />
+                            <p-button type="submit" label="Salvar alterações" icon="pi pi-check" [loading]="salvando()" [disabled]="!dados.dirty" class="flex-1 sm:flex-none" styleClass="w-full whitespace-nowrap" />
                         </div>
                     </div>
                 </form>
-
-                <!-- senha -->
-                <form class="card !mb-0" [formGroup]="senha" (ngSubmit)="trocarSenha()" aria-labelledby="sec-senha">
-                    <h2 id="sec-senha" class="perfil__titulo"><i class="pi pi-lock" aria-hidden="true"></i>Segurança</h2>
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <div class="flex flex-col gap-2">
-                            <label for="pf-atual">Senha atual</label>
-                            <p-password inputId="pf-atual" formControlName="atual" [feedback]="false" [toggleMask]="true" [fluid]="true" autocomplete="current-password" />
-                        </div>
-                        <div class="flex flex-col gap-2">
-                            <label for="pf-nova">Nova senha (mínimo 8 caracteres)</label>
-                            <p-password inputId="pf-nova" formControlName="nova" [toggleMask]="true" [fluid]="true" autocomplete="new-password" />
-                        </div>
-                    </div>
-                    <div class="flex justify-end mt-4"><p-button type="submit" label="Trocar senha" severity="secondary" [outlined]="true" icon="pi pi-key" [loading]="trocando()" /></div>
-                </form>
-
-                <!-- remover conta (LGPD): só com a regra ligada, ou com um pedido já em andamento -->
-                @if (exclusao(); as ex) {
-                    @if (ex.disponivel || ex.removerEm) {
-                        <section class="card !mb-0 border border-red-200 dark:border-red-900" aria-labelledby="sec-remover">
-                            <h2 id="sec-remover" class="perfil__titulo"><i class="pi pi-trash" aria-hidden="true"></i>Remover conta</h2>
-                            @if (ex.removerEm) {
-                                <p class="m-0 mb-4">
-                                    A remoção da sua conta está agendada para <strong>{{ ex.removerEm | date: "dd/MM/yyyy 'às' HH:mm" }}</strong>. Nessa hora, a conta e todos os seus dados são apagados de vez. Até lá tudo continua funcionando, e você pode desistir.
-                                </p>
-                                <div class="flex justify-end">
-                                    <p-button label="Desistir da remoção" icon="pi pi-undo" severity="secondary" [outlined]="true" [loading]="processandoExclusao()" (onClick)="desistirExclusao()" />
-                                </div>
-                            } @else {
-                                <p class="m-0 mb-4">
-                                    Apaga sua conta e todos os seus dados do site{{ anunciante() ? ', incluindo seus anúncios, fotos e contatos recebidos' : '' }}. A remoção acontece {{ ex.diasEspera === 1 ? '1 dia' : ex.diasEspera + ' dias' }} depois do pedido; até lá a conta continua funcionando e você pode desistir.
-                                </p>
-                                <div class="flex justify-end">
-                                    <p-button label="Remover conta" icon="pi pi-trash" severity="danger" [outlined]="true" (onClick)="abrirExclusao()" />
-                                </div>
-                            }
-                        </section>
-                    }
-                }
             </div>
         </div>
 
-        <p-dialog [blockScroll]="true" [visible]="dialogoExclusao()" (visibleChange)="!$event && fecharExclusao()" [modal]="true" header="Remover sua conta" [style]="{ width: '32rem' }" [breakpoints]="{ '575px': '95vw' }">
+        <p-dialog [blockScroll]="true" [visible]="dialogoSenha()" (visibleChange)="!$event && fecharSenha()" [modal]="true" header="Trocar senha" [style]="{ width: '28rem' }" [breakpoints]="{ '575px': '95vw' }">
+            <!-- os botões ficam dentro do form para o Enter enviar -->
+            <form class="flex flex-col gap-4" [formGroup]="senha" (ngSubmit)="trocarSenha()" novalidate>
+                <div class="flex flex-col gap-2">
+                    <label for="pf-atual">Senha atual</label>
+                    <p-password inputId="pf-atual" formControlName="atual" [feedback]="false" [toggleMask]="true" [fluid]="true" autocomplete="current-password" />
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label for="pf-nova">Nova senha (mínimo 8 caracteres)</label>
+                    <p-password inputId="pf-nova" formControlName="nova" [toggleMask]="true" [fluid]="true" autocomplete="new-password" />
+                </div>
+                <div class="flex justify-end gap-2 mt-2">
+                    <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="fecharSenha()" />
+                    <p-button type="submit" label="Trocar senha" icon="pi pi-key" [loading]="trocando()" />
+                </div>
+            </form>
+        </p-dialog>
+
+        <p-dialog
+            [blockScroll]="true"
+            [visible]="dialogoExclusao()"
+            (visibleChange)="!$event && fecharExclusao()"
+            [modal]="true"
+            [header]="exclusao()?.removerEm ? 'Remoção agendada' : 'Remover sua conta'"
+            [style]="{ width: '32rem' }"
+            [breakpoints]="{ '575px': '95vw' }"
+        >
             @if (exclusao(); as ex) {
+                @if (ex.removerEm) {
+                    <p class="m-0">
+                        A remoção da sua conta está agendada para <strong>{{ ex.removerEm | date: "dd/MM/yyyy 'às' HH:mm" }}</strong>. Nessa hora, a conta e todos os seus dados são apagados de vez. Até lá tudo continua funcionando, e você pode desistir.
+                    </p>
+                } @else {
                 <form class="flex flex-col gap-4" id="form-exclusao" (ngSubmit)="pedirExclusao()">
                     <p-message severity="warn" icon="pi pi-exclamation-triangle">Depois da data abaixo, não há como recuperar a conta.</p-message>
                     <p class="m-0">
                         Se confirmar agora, sua conta e seus dados serão apagados em <strong>{{ ex.removerSePedirAgora | date: "dd/MM/yyyy 'às' HH:mm" }}</strong>: dados pessoais, favoritos, contatos enviados, notificações{{ anunciante() ? ', anúncios com fotos, contatos recebidos e tokens de API' : '' }}.
                     </p>
-                    <p class="m-0 text-sm text-muted-color">Até lá você continua usando o site normalmente e pode desistir aqui mesmo, em Meus dados.</p>
+                    <p class="m-0 text-sm text-muted-color">Até lá você continua usando o site normalmente e pode desistir aqui mesmo, em Meus dados › Conta e segurança.</p>
                     <div class="flex flex-col gap-2">
                         <label for="pf-exc-senha">Para confirmar, digite sua senha</label>
                         <p-password inputId="pf-exc-senha" [formControl]="senhaExclusao" [feedback]="false" [toggleMask]="true" [fluid]="true" autocomplete="current-password" />
                     </div>
                 </form>
+                }
             }
             <ng-template #footer>
-                <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="fecharExclusao()" />
-                <p-button label="Agendar remoção" icon="pi pi-trash" severity="danger" [disabled]="!senhaExclusaoValor()" [loading]="processandoExclusao()" (onClick)="pedirExclusao()" />
+                @if (exclusao()?.removerEm) {
+                    <p-button label="Fechar" severity="secondary" [text]="true" (onClick)="fecharExclusao()" />
+                    <p-button label="Desistir da remoção" icon="pi pi-undo" [loading]="processandoExclusao()" (onClick)="desistirExclusao()" />
+                } @else {
+                    <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="fecharExclusao()" />
+                    <p-button label="Agendar remoção" icon="pi pi-trash" severity="danger" [disabled]="!senhaExclusaoValor()" [loading]="processandoExclusao()" (onClick)="pedirExclusao()" />
+                }
             </ng-template>
         </p-dialog>
     `,
     styles: `
         .perfil {
             display: grid;
+            /* uma coluna que nunca passa da tela (sem isto a coluna "auto" crescia até o conteúdo) */
+            grid-template-columns: minmax(0, 1fr);
             gap: 1.5rem;
             align-items: start;
         }
@@ -479,6 +512,61 @@ const MAX_SOBRE = 2000;
             font-size: 0.95rem;
             color: var(--p-primary-color);
             background: color-mix(in srgb, var(--p-primary-color), transparent 88%);
+        }
+        .perfil__titulo--compacto {
+            margin-bottom: 0.75rem;
+        }
+        .perfil__acoes-conta {
+            list-style: none;
+            margin: 0 -0.5rem -0.5rem;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .perfil__acao {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            width: 100%;
+            padding: 0.65rem 0.5rem;
+            border: 0;
+            border-radius: var(--p-content-border-radius, 8px);
+            background: transparent;
+            color: var(--p-text-color);
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .perfil__acao:hover {
+            background: var(--p-content-hover-background);
+        }
+        .perfil__acao:focus-visible {
+            outline: 2px solid var(--p-primary-color);
+            outline-offset: -2px;
+        }
+        .perfil__acao-icone {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 2.25rem;
+            height: 2.25rem;
+            border-radius: 8px;
+            color: var(--p-text-muted-color);
+            background: var(--p-content-hover-background);
+        }
+        .perfil__acao--perigo .perfil__acao-icone {
+            color: var(--p-red-600);
+            background: color-mix(in srgb, var(--p-red-500), transparent 88%);
+        }
+        :host-context(.app-dark) .perfil__acao--perigo .perfil__acao-icone {
+            color: var(--p-red-400);
+        }
+        .perfil__acao-texto {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 0;
         }
         .perfil__barra {
             height: 0.5rem;
@@ -520,7 +608,8 @@ const MAX_SOBRE = 2000;
             margin: 0;
             padding: 0;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+            /* min(): em telas com menos de 14rem a coluna encolhe em vez de vazar */
+            grid-template-columns: repeat(auto-fill, minmax(min(14rem, 100%), 1fr));
             gap: 0.4rem 1rem;
             font-size: 0.875rem;
             color: var(--p-text-muted-color);
@@ -552,7 +641,8 @@ const MAX_SOBRE = 2000;
             box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
         }
         @media (prefers-reduced-motion: reduce) {
-            .perfil__barra span {
+            .perfil__barra span,
+            .perfil__acao {
                 transition: none;
             }
         }
@@ -577,6 +667,7 @@ export class PerfilPage {
     /** "Remover conta" (LGPD): situação do pedido; nulo enquanto carrega ou se falhar. */
     exclusao = signal<ExclusaoContaStatus | null>(null);
     dialogoExclusao = signal(false);
+    dialogoSenha = signal(false);
     processandoExclusao = signal(false);
     senhaExclusao = new FormControl('', { nonNullable: true });
     senhaExclusaoValor = toSignal(this.senhaExclusao.valueChanges, { initialValue: '' });
@@ -846,6 +937,15 @@ export class PerfilPage {
         });
     }
 
+    abrirSenha() {
+        this.senha.reset();
+        this.dialogoSenha.set(true);
+    }
+
+    fecharSenha() {
+        if (!this.trocando()) this.dialogoSenha.set(false);
+    }
+
     abrirExclusao() {
         this.senhaExclusao.reset('');
         this.dialogoExclusao.set(true);
@@ -880,6 +980,7 @@ export class PerfilPage {
             next: (s) => {
                 this.processandoExclusao.set(false);
                 this.exclusao.set(s);
+                this.dialogoExclusao.set(false);
                 this.msg.add({ severity: 'success', summary: 'Remoção cancelada', detail: 'Sua conta continua normalmente. Nada foi apagado.' });
             },
             error: (e) => {
@@ -901,6 +1002,7 @@ export class PerfilPage {
             next: () => {
                 this.trocando.set(false);
                 this.senha.reset();
+                this.dialogoSenha.set(false);
                 this.msg.add({ severity: 'success', summary: 'Senha alterada' });
             },
             error: (e) => {

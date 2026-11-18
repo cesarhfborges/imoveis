@@ -14,7 +14,7 @@ import { MapaOsm, PontoMapa } from '@/app/shared/components/mapa-osm';
     template: `
         <div class="site-container py-4">
             <h1 class="busca__titulo mb-3">{{ pontos().length }} imóveis no mapa</h1>
-            <div class="grid gap-4 lg:grid-cols-[20rem_1fr]">
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-[20rem_1fr]">
                 <div class="painel-lateral"><app-filtros-busca [valor]="filtro()" (buscar)="buscar($event)" /></div>
                 <app-mapa-osm [pontos]="pontos()" zoomRoda="livre" altura="min(70vh, 640px)" />
             </div>

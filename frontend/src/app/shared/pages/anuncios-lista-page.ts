@@ -19,6 +19,7 @@ import { PrecoPipe, slug } from '@/app/core/pipes/formatos';
 import { PageHeader } from '@/app/shared/components/page-header';
 import { StatusTag } from '@/app/shared/components/status-tag';
 import { ImovelFoto } from '@/app/shared/components/imovel-foto';
+import { TabelaResponsiva } from '@/app/shared/directives/tabela-responsiva';
 
 /**
  * Lista de anúncios para gestão.
@@ -27,7 +28,7 @@ import { ImovelFoto } from '@/app/shared/components/imovel-foto';
  */
 @Component({
     selector: 'app-anuncios-lista-page',
-    imports: [RouterLink, ReactiveFormsModule, TableModule, ButtonModule, InputTextModule, SelectModule, IconFieldModule, InputIconModule, MenuModule, TooltipModule, PrecoPipe, PageHeader, StatusTag, ImovelFoto],
+    imports: [RouterLink, ReactiveFormsModule, TableModule, TabelaResponsiva, ButtonModule, InputTextModule, SelectModule, IconFieldModule, InputIconModule, MenuModule, TooltipModule, PrecoPipe, PageHeader, StatusTag, ImovelFoto],
     template: `
         <app-page-header [titulo]="admin ? 'Anúncios de todos os anunciantes' : 'Meus anúncios'" [subtitulo]="admin ? 'Aprove, bloqueie, destaque ou edite qualquer anúncio.' : 'Publique, pause e edite seus imóveis.'">
             <p-button label="Novo anúncio" icon="pi pi-plus" [routerLink]="base + '/novo'" />
@@ -43,6 +44,7 @@ import { ImovelFoto } from '@/app/shared/components/imovel-foto';
             </div>
 
             <p-table
+                appTabelaResponsiva
                 [value]="pagina().content"
                 [lazy]="true"
                 [paginator]="true"

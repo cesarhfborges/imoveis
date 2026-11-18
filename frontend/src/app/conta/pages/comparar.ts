@@ -73,7 +73,7 @@ const SELOS: { linha: string; texto: string; icone: string }[] = [
             </div>
         } @else {
             <div class="card print:hidden">
-                <div class="grid gap-4 lg:grid-cols-[1fr_auto] items-end">
+                <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto] items-end">
                     <div class="flex flex-col gap-2">
                         <label for="comparar-sel" class="font-medium">Imóveis na comparação ({{ ids().length }}/{{ max }})</label>
                         <p-multiselect
@@ -84,6 +84,7 @@ const SELOS: { linha: string; texto: string; icone: string }[] = [
                             [ngModel]="ids()"
                             (ngModelChange)="selecionar($event)"
                             [selectionLimit]="max"
+                            [maxSelectedLabels]="max"
                             display="chip"
                             placeholder="Escolha de 2 a 4 favoritos"
                             [showToggleAll]="false"
@@ -121,11 +122,15 @@ const SELOS: { linha: string; texto: string; icone: string }[] = [
 
             @if (detalhes().length >= 2) {
                 @let lista = detalhes();
-                <!-- cabeçalho: um cartão por imóvel -->
-                <div [class]="'grid gap-4 mt-6 grid-cols-1 sm:grid-cols-2 ' + (lista.length === 4 ? 'xl:grid-cols-4' : lista.length === 3 ? 'lg:grid-cols-3' : '')" role="list" aria-label="Imóveis comparados">
+                <!-- cabeçalho: um cartão por imóvel. Celular: carrossel lateral (com o próximo aparecendo); do sm em diante, grid -->
+                <div
+                    [class]="'flex gap-3 mt-6 overflow-x-auto snap-x snap-mandatory pb-2 sm:grid sm:gap-4 sm:overflow-visible sm:pb-0 sm:grid-cols-2 ' + (lista.length === 4 ? 'xl:grid-cols-4' : lista.length === 3 ? 'lg:grid-cols-3' : '')"
+                    role="list"
+                    aria-label="Imóveis comparados"
+                >
                     @for (i of lista; track i.id) {
-                        <article class="card m-0 p-0! overflow-hidden flex flex-col" role="listitem" [attr.aria-label]="i.titulo">
-                            <div class="relative aspect-[4/3]">
+                        <article class="card m-0 p-0! overflow-hidden flex flex-col w-[80%] shrink-0 snap-start sm:w-auto" role="listitem" [attr.aria-label]="i.titulo">
+                            <div class="relative aspect-[16/10] sm:aspect-[4/3]">
                                 <app-imovel-foto class="w-full h-full" [src]="i.fotos[0]?.url ?? null" [tipo]="i.tipo" [semente]="i.id" [alt]="i.titulo" [mostrarTexto]="false" />
                                 <p-button icon="pi pi-times" [rounded]="true" severity="secondary" size="small" class="absolute top-2 right-2 print:hidden" (onClick)="remover(i.id)" [ariaLabel]="'Tirar ' + i.titulo + ' da comparação'" pTooltip="Tirar da comparação" />
                                 @if (vencedor() === i.id) {
@@ -134,7 +139,8 @@ const SELOS: { linha: string; texto: string; icone: string }[] = [
                             </div>
                             <div class="p-3 flex flex-col gap-2 grow">
                                 <a [routerLink]="['/imovel', i.id, slugTexto(i.titulo)]" class="font-semibold text-primary hover:underline line-clamp-2">{{ i.titulo }}</a>
-                                <span class="text-sm text-muted-color">{{ i.bairro }}, {{ i.cidade }}/{{ i.uf }}</span>
+                                <!-- o código liga o cartão às colunas das tabelas abaixo -->
+                                <span class="text-sm text-muted-color">{{ i.codigo }} · {{ i.bairro }}, {{ i.cidade }}/{{ i.uf }}</span>
                                 <span class="text-xl font-semibold">{{ i.preco | currency: 'BRL' }}</span>
                                 <div class="flex flex-wrap gap-1">
                                     @for (s of selosDe(i.id); track s.texto) {
@@ -151,14 +157,19 @@ const SELOS: { linha: string; texto: string; icone: string }[] = [
                 </div>
 
                 <!-- tabela comparativa -->
+                <!--
+                    Celular: a coluna de rótulos some (fica só para leitor de tela) e cada rótulo vira uma linha própria
+                    acima dos valores, que ocupam a largura toda em colunas iguais — sem rolagem lateral.
+                    Do sm em diante: tabela clássica, com rótulos fixos à esquerda e largura mínima por coluna.
+                -->
                 <div class="card mt-6 overflow-x-auto">
-                    <table class="w-full text-sm border-collapse" [style.min-width]="lista.length * 12 + 12 + 'rem'">
+                    <table class="w-full text-sm border-collapse table-fixed sm:table-auto sm:min-w-(--largura-min)" [style.--largura-min]="lista.length * 12 + 12 + 'rem'">
                         <caption class="sr-only">Comparação detalhada dos imóveis selecionados</caption>
                         <thead>
                             <tr>
-                                <th scope="col" class="text-left p-2 w-48 sticky left-0 bg-surface-0 dark:bg-surface-900 z-10"><span class="sr-only">Item</span></th>
+                                <th scope="col" class="sr-only sm:not-sr-only text-left sm:p-2 sm:w-48 sm:sticky left-0 bg-surface-0 dark:bg-surface-900 z-10"><span class="sr-only">Item</span></th>
                                 @for (i of lista; track i.id) {
-                                    <th scope="col" class="text-left p-2 font-semibold">{{ i.codigo }}</th>
+                                    <th scope="col" class="text-left p-2 font-semibold break-words">{{ i.codigo }}</th>
                                 }
                             </tr>
                         </thead>
@@ -170,8 +181,11 @@ const SELOS: { linha: string; texto: string; icone: string }[] = [
                                     </th>
                                 </tr>
                                 @for (l of g.linhas; track l.id) {
-                                    <tr class="border-t border-surface">
-                                        <th scope="row" class="text-left p-2 font-medium text-muted-color sticky left-0 bg-surface-0 dark:bg-surface-900 z-10">
+                                    <tr class="sm:hidden border-t border-surface" aria-hidden="true">
+                                        <td [attr.colspan]="lista.length" class="px-2 pt-2 pb-0 text-xs font-medium text-muted-color">{{ l.rotulo }}</td>
+                                    </tr>
+                                    <tr class="sm:border-t border-surface">
+                                        <th scope="row" class="sr-only sm:not-sr-only text-left sm:p-2 font-medium text-muted-color sm:sticky left-0 bg-surface-0 dark:bg-surface-900 z-10">
                                             {{ l.rotulo }}
                                             @if (l.dica) {
                                                 <i class="pi pi-info-circle text-xs ml-1" [pTooltip]="l.dica" tabindex="0" [attr.aria-label]="l.dica"></i>
@@ -179,7 +193,7 @@ const SELOS: { linha: string; texto: string; icone: string }[] = [
                                         </th>
                                         @for (i of lista; track i.id) {
                                             @let melhor = destacar() && ehMelhor(l, i);
-                                            <td class="p-2" [class]="melhor ? 'font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-400/10' : ''">
+                                            <td class="p-2 break-words" [class]="melhor ? 'font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-400/10' : ''">
                                                 @switch (l.tipo) {
                                                     @case ('sim-nao') {
                                                         @if (l.valor(i)) {
@@ -217,20 +231,23 @@ const SELOS: { linha: string; texto: string; icone: string }[] = [
                 @if (caracteristicas().length) {
                     <div class="card mt-6 overflow-x-auto">
                         <h2 class="text-lg font-semibold mt-0">Itens do imóvel</h2>
-                        <table class="w-full text-sm border-collapse" [style.min-width]="lista.length * 10 + 12 + 'rem'">
+                        <table class="w-full text-sm border-collapse table-fixed sm:table-auto sm:min-w-(--largura-min)" [style.--largura-min]="lista.length * 10 + 12 + 'rem'">
                             <caption class="sr-only">Itens de cada imóvel</caption>
                             <thead>
                                 <tr>
-                                    <th scope="col" class="text-left p-2 w-48"><span class="sr-only">Item</span></th>
+                                    <th scope="col" class="sr-only sm:not-sr-only text-left sm:p-2 sm:w-48"><span class="sr-only">Item</span></th>
                                     @for (i of lista; track i.id) {
-                                        <th scope="col" class="text-left p-2">{{ i.codigo }} <span class="font-normal text-muted-color">({{ i.caracteristicas.length }})</span></th>
+                                        <th scope="col" class="text-left p-2 break-words">{{ i.codigo }} <span class="font-normal text-muted-color">({{ i.caracteristicas.length }})</span></th>
                                     }
                                 </tr>
                             </thead>
                             <tbody>
                                 @for (c of caracteristicas(); track c) {
-                                    <tr class="border-t border-surface">
-                                        <th scope="row" class="text-left p-2 font-normal">{{ c }}</th>
+                                    <tr class="sm:hidden border-t border-surface" aria-hidden="true">
+                                        <td [attr.colspan]="lista.length" class="px-2 pt-2 pb-0 text-xs font-medium text-muted-color">{{ c }}</td>
+                                    </tr>
+                                    <tr class="sm:border-t border-surface">
+                                        <th scope="row" class="sr-only sm:not-sr-only text-left sm:p-2 font-normal">{{ c }}</th>
                                         @for (i of lista; track i.id) {
                                             <td class="p-2">
                                                 @if (i.caracteristicas.includes(c)) {

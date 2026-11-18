@@ -17,18 +17,35 @@ import { FinanceiraService } from '@/app/core/services/financeira.service';
 import { ConfigService } from '@/app/core/services/config.service';
 import { mensagemErro } from '@/app/core/services/api.service';
 import { PageHeader } from '@/app/shared/components/page-header';
+import { TabelaResponsiva } from '@/app/shared/directives/tabela-responsiva';
 
 /** Cadastro das financeiras (bancos) e das regras usadas na simulação de financiamento dos anúncios. */
 @Component({
     selector: 'app-financeiras-page',
-    imports: [CurrencyPipe, DecimalPipe, ReactiveFormsModule, TableModule, ButtonModule, DialogModule, InputTextModule, InputNumberModule, TextareaModule, SelectButtonModule, ToggleSwitchModule, TagModule, TooltipModule, PageHeader],
+    imports: [
+        CurrencyPipe,
+        DecimalPipe,
+        ReactiveFormsModule,
+        TableModule,
+        TabelaResponsiva,
+        ButtonModule,
+        DialogModule,
+        InputTextModule,
+        InputNumberModule,
+        TextareaModule,
+        SelectButtonModule,
+        ToggleSwitchModule,
+        TagModule,
+        TooltipModule,
+        PageHeader
+    ],
     template: `
         <app-page-header titulo="Financeiras" subtitulo="Bancos e regras usados na simulação de financiamento dos anúncios de venda.">
             <p-button label="Nova financeira" icon="pi pi-plus" (onClick)="abrir(null)" />
         </app-page-header>
 
         <div class="card">
-            <p-table [value]="lista()" [loading]="carregando()" [tableStyle]="{ 'min-width': '56rem' }" dataKey="id">
+            <p-table appTabelaResponsiva [value]="lista()" [loading]="carregando()" [tableStyle]="{ 'min-width': '56rem' }" dataKey="id">
                 <ng-template #header>
                     <tr>
                         <th scope="col">Financeira</th>
