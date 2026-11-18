@@ -48,9 +48,24 @@
             // largura, e os ícones não saem do lugar.
             .layout-sidebar {
                 padding: 0.5rem 9px;
+                overflow-x: hidden;
                 transition:
                     width 0.22s cubic-bezier(0.2, 0, 0, 1),
                     box-shadow 0.22s ease;
+                // Durante qualquer animação de largura (hover ou botão) nada pode quebrar linha nem mostrar barra: a
+                // altura do menu fica constante e a barra de rolagem não pisca. A rolagem continua pela roda do
+                // mouse e pelo foco do teclado.
+                scrollbar-width: none;
+
+                &::-webkit-scrollbar {
+                    display: none;
+                }
+
+                .layout-menuitem-root-text,
+                ul a {
+                    white-space: nowrap;
+                    overflow: hidden;
+                }
             }
 
             // Menu retraído: só os ícones; ao passar o mouse (ou chegar pelo teclado) ele se expande por cima do
