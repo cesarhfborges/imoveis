@@ -96,7 +96,7 @@ import { Avatar } from '@/app/shared/components/avatar';
             color: var(--p-text-muted-color);
         }
         /* celular: só o avatar, num botão redondo do mesmo tamanho dos outros da barra */
-        @media (max-width: 639px) {
+        @media (max-width: 575px) {
             .topbar-conta {
                 justify-content: center;
                 width: 2.5rem;

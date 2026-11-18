@@ -502,7 +502,7 @@ const POR_PAGINA = 12;
             padding: 1rem 1.5rem 1.25rem;
             display: grid;
             gap: 0.75rem;
-            grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(10.5rem, 100%), 1fr));
             border-top: 1px solid var(--site-borda);
         }
         .numero {
@@ -797,7 +797,7 @@ const POR_PAGINA = 12;
         .perfil-pub__grade {
             display: grid;
             gap: 1rem;
-            grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(min(14rem, 100%), 1fr));
         }
         /* "Ver mais imóveis": os novos sobem e aparecem em cascata (70 ms entre um e outro) */
         .card-entra {

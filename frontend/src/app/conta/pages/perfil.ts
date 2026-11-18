@@ -370,9 +370,10 @@ const MAX_SOBRE = 2000;
 
                     <div class="perfil__acoes">
                         <span class="text-sm text-muted-color">{{ dados.dirty ? 'Há alterações não salvas.' : 'Tudo salvo.' }}</span>
-                        <div class="flex gap-2">
-                            <p-button label="Descartar" severity="secondary" [text]="true" [disabled]="!dados.dirty || salvando()" (onClick)="descartar()" />
-                            <p-button type="submit" label="Salvar alterações" icon="pi pi-check" [loading]="salvando()" [disabled]="!dados.dirty" />
+                        <!-- celular: os botões dividem a largura e, se não couberem lado a lado, um fica embaixo do outro -->
+                        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                            <p-button label="Descartar" severity="secondary" [text]="true" [disabled]="!dados.dirty || salvando()" (onClick)="descartar()" class="flex-1 sm:flex-none" styleClass="w-full whitespace-nowrap" />
+                            <p-button type="submit" label="Salvar alterações" icon="pi pi-check" [loading]="salvando()" [disabled]="!dados.dirty" class="flex-1 sm:flex-none" styleClass="w-full whitespace-nowrap" />
                         </div>
                     </div>
                 </form>
@@ -442,6 +443,8 @@ const MAX_SOBRE = 2000;
     styles: `
         .perfil {
             display: grid;
+            /* uma coluna que nunca passa da tela (sem isto a coluna "auto" crescia até o conteúdo) */
+            grid-template-columns: minmax(0, 1fr);
             gap: 1.5rem;
             align-items: start;
         }
@@ -520,7 +523,8 @@ const MAX_SOBRE = 2000;
             margin: 0;
             padding: 0;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+            /* min(): em telas com menos de 14rem a coluna encolhe em vez de vazar */
+            grid-template-columns: repeat(auto-fill, minmax(min(14rem, 100%), 1fr));
             gap: 0.4rem 1rem;
             font-size: 0.875rem;
             color: var(--p-text-muted-color);

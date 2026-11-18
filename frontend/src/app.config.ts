@@ -52,6 +52,7 @@ export const appConfig: ApplicationConfig = {
                 apply: 'Aplicar',
                 emptyMessage: 'Nenhum resultado',
                 emptyFilterMessage: 'Nenhum resultado',
+                selectionMessage: '{0} selecionados',
                 weak: 'Fraca',
                 medium: 'Média',
                 strong: 'Forte',
