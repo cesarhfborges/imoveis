@@ -68,10 +68,14 @@
             cursor: pointer;
             padding: 0.75rem 1rem;
             border-radius: var(--content-border-radius);
-            transition:
-                box-shadow var(--element-transition-duration);
+            transition: box-shadow var(--element-transition-duration);
 
+            // caixa fixa e centralizada: o pi-fw desta versão do PrimeIcons não define largura, e sem isto o ícone
+            // fica fora de centro e encolhe quando falta espaço (no menu retraído), pulando ao expandir
             .layout-menuitem-icon {
+                flex: 0 0 18px;
+                width: 18px;
+                text-align: center;
                 margin-right: 0.5rem;
             }
 

@@ -30,7 +30,8 @@ export class LayoutService {
     });
 
     layoutState = signal<LayoutState>({
-        staticMenuDesktopInactive: false,
+        // no desktop, "inativo" = menu retraído (só ícones; expande ao passar o mouse). A escolha fica no navegador.
+        staticMenuDesktopInactive: LayoutService.lerRetraido(),
         overlayMenuActive: false,
         configSidebarVisible: false,
         mobileMenuActive: false,
@@ -98,7 +99,9 @@ export class LayoutService {
         }
 
         if (this.isDesktop()) {
-            this.layoutState.update((prev) => ({ ...prev, staticMenuDesktopInactive: !this.layoutState().staticMenuDesktopInactive }));
+            const retraido = !this.layoutState().staticMenuDesktopInactive;
+            this.layoutState.update((prev) => ({ ...prev, staticMenuDesktopInactive: retraido }));
+            LayoutService.gravarRetraido(retraido);
         } else {
             this.layoutState.update((prev) => ({ ...prev, mobileMenuActive: !this.layoutState().mobileMenuActive }));
         }
@@ -110,6 +113,27 @@ export class LayoutService {
 
     hideConfigSidebar() {
         this.layoutState.update((prev) => ({ ...prev, configSidebarVisible: false }));
+    }
+
+    /** Menu retraído no desktop: o modo preferido de quem usa este navegador (pode faltar em janela privada). */
+    menuRetraido = computed(() => this.layoutState().staticMenuDesktopInactive);
+
+    private static readonly CHAVE_RETRAIDO = 'imoveis.menu.retraido';
+
+    private static lerRetraido(): boolean {
+        try {
+            return localStorage.getItem(LayoutService.CHAVE_RETRAIDO) === '1';
+        } catch {
+            return false;
+        }
+    }
+
+    private static gravarRetraido(retraido: boolean) {
+        try {
+            localStorage.setItem(LayoutService.CHAVE_RETRAIDO, retraido ? '1' : '0');
+        } catch {
+            // sem armazenamento (janela privada, bloqueio): vale só nesta visita
+        }
     }
 
     isDesktop() {

@@ -16,7 +16,7 @@ import { filter } from 'rxjs/operators';
                 <i [class]="(item().icon ?? '') + ' layout-menuitem-icon'"></i>
                 <span class="layout-menuitem-text">{{ item().label }}</span>
                 @if (item().badge) {
-                    <span class="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-red-700 text-white text-xs font-bold" [attr.aria-label]="item().badge + ' pendentes'">{{ item().badge }}</span>
+                    <span class="layout-menuitem-badge ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-red-700 text-white text-xs font-bold" [attr.aria-label]="item().badge + ' pendentes'">{{ item().badge }}</span>
                 }
                 @if (hasChildren()) {
                     <i class="pi pi-fw pi-angle-down layout-submenu-toggler"></i>
@@ -44,7 +44,7 @@ import { filter } from 'rxjs/operators';
                 <i [class]="(item().icon ?? '') + ' layout-menuitem-icon'"></i>
                 <span class="layout-menuitem-text">{{ item().label }}</span>
                 @if (item().badge) {
-                    <span class="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-red-700 text-white text-xs font-bold" [attr.aria-label]="item().badge + ' pendentes'">{{ item().badge }}</span>
+                    <span class="layout-menuitem-badge ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-red-700 text-white text-xs font-bold" [attr.aria-label]="item().badge + ' pendentes'">{{ item().badge }}</span>
                 }
                 @if (hasChildren()) {
                     <i class="pi pi-fw pi-angle-down layout-submenu-toggler"></i>

@@ -18,7 +18,13 @@ import { Avatar } from '@/app/shared/components/avatar';
     imports: [RouterModule, MenuModule, TagModule, AppLogo, ThemeModeToggle, NotificacoesSino, Avatar],
     template: ` <div class="layout-topbar">
         <div class="layout-topbar-logo-container">
-            <button class="layout-menu-button layout-topbar-action" (click)="layoutService.onMenuToggle()" aria-label="Abrir ou fechar o menu">
+            <!-- desktop: expande ou retrai o menu (retraído = só ícones); celular: abre ou fecha -->
+            <button
+                class="layout-menu-button layout-topbar-action"
+                (click)="layoutService.onMenuToggle()"
+                [attr.aria-label]="layoutService.isDesktop() ? (layoutService.menuRetraido() ? 'Expandir o menu' : 'Retrair o menu') : 'Abrir ou fechar o menu'"
+                [attr.title]="layoutService.isDesktop() ? (layoutService.menuRetraido() ? 'Expandir o menu' : 'Retrair o menu') : null"
+            >
                 <i class="pi pi-bars"></i>
             </button>
             <a class="layout-topbar-logo" [routerLink]="area === 'admin' ? '/admin' : '/conta'">

@@ -44,15 +44,131 @@
                 margin-left: 22rem;
             }
 
+            // Mesmo espaçamento lateral expandido e retraído (ver o bloco abaixo): alternar pelo botão só anima a
+            // largura, e os ícones não saem do lugar.
+            .layout-sidebar {
+                padding: 0.5rem 9px;
+                transition:
+                    width 0.22s cubic-bezier(0.2, 0, 0, 1),
+                    box-shadow 0.22s ease;
+            }
+
+            // Menu retraído: só os ícones; ao passar o mouse (ou chegar pelo teclado) ele se expande por cima do
+            // conteúdo, sem empurrar a página. O botão do topo alterna entre expandido e retraído.
+            //
+            // O retraído é o mesmo menu do expandido, só que cortado: espaçamentos e alinhamentos são iguais nos dois
+            // estados, então cada ícone fica parado no lugar e no hover só a largura anima. Os textos já estão lá
+            // (invisíveis) e aparecem esmaecendo enquanto o menu alarga.
             &.layout-static-inactive {
-                .layout-sidebar {
-                    transform: translateX(-100%);
-                    left: 0;
+                .layout-main-container {
+                    // 28px (2rem) de margem + 64px do menu estreito (o expandido ocupa 22rem)
+                    margin-left: 92px;
                 }
 
-                .layout-main-container {
-                    margin-left: 0;
-                    padding-left: 2rem;
+                .layout-sidebar {
+                    // Geometria em pixels inteiros: com meio pixel (0.75rem = 10.5px) o navegador "encaixa" o ícone
+                    // ora num pixel, ora no outro enquanto a largura anima, e ele parece tremer para a direita.
+                    // 9px do menu + 14px do link = ícone (18px) de 23px a 41px: centro exato nos 64px.
+                    // O espaçamento é o mesmo nos dois estados; no hover só a largura muda.
+                    width: 64px;
+                    padding: 0.5rem 9px;
+                    overflow-x: hidden;
+                    transition:
+                        width 0.22s cubic-bezier(0.2, 0, 0, 1),
+                        box-shadow 0.22s ease;
+                    // sem barra de rolagem no modo retraído (nem durante a expansão): em telas baixas o menu continua
+                    // rolando com a roda do mouse e acompanha o foco do teclado
+                    scrollbar-width: none;
+
+                    &::-webkit-scrollbar {
+                        display: none;
+                    }
+
+                    // título do grupo: texto invisível na mesma altura, com um traço curto no lugar
+                    .layout-menuitem-root-text {
+                        position: relative;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        color: transparent;
+                        transition: color 0.15s ease;
+
+                        // traço de 20px centralizado sob os ícones (centro a 23px do início do título)
+                        &::after {
+                            content: '';
+                            position: absolute;
+                            left: 13px;
+                            width: 20px;
+                            top: 50%;
+                            height: 1px;
+                            background-color: var(--surface-border);
+                            transition: opacity 0.15s ease;
+                        }
+                    }
+
+                    ul a {
+                        white-space: nowrap;
+                        overflow: hidden;
+
+                        .layout-menuitem-text,
+                        .layout-submenu-toggler {
+                            opacity: 0;
+                            transition: opacity 0.12s ease;
+                        }
+
+                        // o contador vira um ponto sobre o ícone
+                        .layout-menuitem-badge {
+                            position: absolute;
+                            top: 6px;
+                            left: 27px;
+                            min-width: 0.6rem;
+                            width: 0.6rem;
+                            height: 0.6rem;
+                            padding: 0;
+                            font-size: 0;
+                            transition:
+                                opacity 0.12s ease,
+                                font-size 0.12s ease;
+                        }
+                    }
+
+                    // expandido por cima do conteúdo; o atraso evita abrir ao só cruzar o mouse pelo menu
+                    &:hover,
+                    &:focus-within {
+                        width: 20rem;
+                        transition-delay: 0.1s;
+                        box-shadow:
+                            0 10px 25px -5px rgba(0, 0, 0, 0.18),
+                            0 4px 10px -4px rgba(0, 0, 0, 0.12);
+
+                        // os textos aparecem durante a segunda metade da expansão
+                        .layout-menuitem-root-text {
+                            color: var(--text-color);
+                            transition-delay: 0.2s;
+
+                            &::after {
+                                opacity: 0;
+                                transition-delay: 0.1s;
+                            }
+                        }
+
+                        ul a {
+                            .layout-menuitem-text,
+                            .layout-submenu-toggler {
+                                opacity: 1;
+                                transition-delay: 0.2s;
+                            }
+
+                            .layout-menuitem-badge {
+                                position: static;
+                                min-width: 1.25rem;
+                                width: auto;
+                                height: 1.25rem;
+                                padding: 0 0.375rem;
+                                font-size: 0.75rem;
+                                opacity: 1;
+                            }
+                        }
+                    }
                 }
             }
         }
