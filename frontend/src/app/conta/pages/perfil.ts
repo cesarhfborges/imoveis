@@ -120,7 +120,7 @@ const MAX_SOBRE = 2000;
                     <!-- identificação -->
                     <section class="card !mb-0" aria-labelledby="sec-id">
                         <h2 id="sec-id" class="perfil__titulo"><i class="pi pi-id-card" aria-hidden="true"></i>{{ imobiliaria() ? 'Dados da imobiliária' : 'Dados pessoais' }}</h2>
-                        <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div class="flex flex-col gap-2 sm:col-span-2">
                                 <label for="pf-nome">{{ imobiliaria() ? 'Nome fantasia (como aparece nos anúncios)' : 'Nome completo' }} <span class="text-red-600" aria-hidden="true">*</span></label>
                                 <input pInputText id="pf-nome" formControlName="nome" autocomplete="name" aria-required="true" [attr.aria-invalid]="invalido('nome')" aria-describedby="pf-nome-erro" />
@@ -173,7 +173,7 @@ const MAX_SOBRE = 2000;
                     <!-- contato -->
                     <section class="card !mb-0" aria-labelledby="sec-contato">
                         <h2 id="sec-contato" class="perfil__titulo"><i class="pi pi-phone" aria-hidden="true"></i>Contato</h2>
-                        <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div class="flex flex-col gap-2">
                                 <label for="pf-tel">Telefone</label>
                                 <app-telefone-input inputId="pf-tel" formControlName="telefone" />
@@ -210,7 +210,7 @@ const MAX_SOBRE = 2000;
                     @if (anunciante()) {
                         <section class="card !mb-0" aria-labelledby="sec-atuacao">
                             <h2 id="sec-atuacao" class="perfil__titulo"><i class="pi pi-briefcase" aria-hidden="true"></i>Atuação profissional</h2>
-                            <div class="grid gap-4 sm:grid-cols-6">
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-6">
                                 <div class="flex flex-col gap-2 sm:col-span-3">
                                     <label for="pf-creci">CRECI</label>
                                     <input pInputText id="pf-creci" formControlName="creci" />
@@ -246,7 +246,7 @@ const MAX_SOBRE = 2000;
                             </div>
 
                             <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-color mt-5 mb-3">Na internet</h3>
-                            <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div class="flex flex-col gap-2 sm:col-span-2">
                                     <label for="pf-site">Site</label>
                                     <p-inputgroup>
@@ -278,7 +278,7 @@ const MAX_SOBRE = 2000;
                     <!-- endereço -->
                     <section class="card !mb-0" aria-labelledby="sec-end">
                         <h2 id="sec-end" class="perfil__titulo"><i class="pi pi-map-marker" aria-hidden="true"></i>{{ anunciante() ? 'Endereço comercial' : 'Endereço' }}</h2>
-                        <div class="grid gap-4 sm:grid-cols-6">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-6">
                             <div class="flex flex-col gap-2 sm:col-span-2">
                                 <label for="pf-cep">CEP</label>
                                 <p-inputgroup>
@@ -380,7 +380,7 @@ const MAX_SOBRE = 2000;
                 <!-- senha -->
                 <form class="card !mb-0" [formGroup]="senha" (ngSubmit)="trocarSenha()" aria-labelledby="sec-senha">
                     <h2 id="sec-senha" class="perfil__titulo"><i class="pi pi-lock" aria-hidden="true"></i>Segurança</h2>
-                    <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div class="flex flex-col gap-2">
                             <label for="pf-atual">Senha atual</label>
                             <p-password inputId="pf-atual" formControlName="atual" [feedback]="false" [toggleMask]="true" [fluid]="true" autocomplete="current-password" />

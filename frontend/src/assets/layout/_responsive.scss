@@ -239,3 +239,19 @@
         }
     }
 }
+
+/*
+ * Celular: o container (2rem de cada lado) somado ao .card (mais 2rem) comia ~112px de uma tela de 300px.
+ * Abaixo de 600px os dois ficam com 1rem, alinhados à topbar.
+ */
+@media (max-width: 600px) {
+    .layout-wrapper .layout-main-container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+}

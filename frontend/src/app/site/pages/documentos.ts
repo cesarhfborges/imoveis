@@ -18,7 +18,7 @@ import { ConfigService } from '@/app/core/services/config.service';
             </header>
 
             @if (documentos.publicos().length) {
-                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     @for (d of documentos.publicos(); track d.id) {
                         @let tipo = info(d.tipo);
                         <a [routerLink]="['/documentos', d.slug]" class="group flex flex-col gap-3 p-5 rounded-border border border-surface bg-surface-0 dark:bg-surface-900 hover:border-primary hover:shadow-md transition-all">

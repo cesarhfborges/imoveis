@@ -73,7 +73,7 @@ const SELOS: { linha: string; texto: string; icone: string }[] = [
             </div>
         } @else {
             <div class="card print:hidden">
-                <div class="grid gap-4 lg:grid-cols-[1fr_auto] items-end">
+                <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto] items-end">
                     <div class="flex flex-col gap-2">
                         <label for="comparar-sel" class="font-medium">Imóveis na comparação ({{ ids().length }}/{{ max }})</label>
                         <p-multiselect

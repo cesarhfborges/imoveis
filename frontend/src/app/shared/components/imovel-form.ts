@@ -71,7 +71,7 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
                                 <p class="text-sm text-muted-color mt-1 mb-0">Finalidade, tipo e preço do imóvel.</p>
                             </div>
                         </header>
-                        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                             <div class="flex flex-col gap-2">
                                 <label for="im-fin" class="font-medium">Finalidade *</label>
                                 <p-select inputId="im-fin" formControlName="finalidade" [options]="finalidades" optionLabel="label" optionValue="value" styleClass="w-full" />
@@ -240,7 +240,7 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
                         @if (valores().finalidade === 'VENDA') {
                             <fieldset class="flex flex-col gap-3 border-0 p-0 m-0">
                                 <legend class="font-semibold mb-1">Pagamento e documentação</legend>
-                                <div class="grid gap-3 sm:grid-cols-2">
+                                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                     @for (d of documentacao; track d.campo) {
                                         <label
                                             [for]="'im-doc-' + d.campo"
@@ -350,7 +350,7 @@ const SUGESTOES = ['Área de serviço', 'Armários embutidos', 'Piscina', 'Varan
                                 <legend class="font-semibold mb-1">
                                     {{ g.titulo }} <span class="block text-xs font-normal text-muted-color">{{ g.descricao }}</span>
                                 </legend>
-                                <div class="grid gap-3 sm:grid-cols-2">
+                                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                     @for (c of g.itens; track c.codigo) {
                                         <label
                                             [for]="'im-cond-' + c.codigo"

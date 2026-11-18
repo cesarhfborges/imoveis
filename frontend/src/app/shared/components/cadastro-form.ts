@@ -36,7 +36,7 @@ type Campo = 'documento' | 'creci' | 'nome' | 'email' | 'telefone' | 'senha';
             @if (modo() === 'escolha') {
                 <fieldset class="flex flex-col gap-2 border-0 p-0 m-0 min-w-0">
                     <legend class="font-medium mb-2">Quero</legend>
-                    <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         @for (o of opcoesTipo; track o.value) {
                             <label
                                 [for]="'cd-tipo-' + o.value"
@@ -61,7 +61,7 @@ type Campo = 'documento' | 'creci' | 'nome' | 'email' | 'telefone' | 'senha';
                         <label for="cd-pj" class="flex items-center gap-2 cursor-pointer"><p-radiobutton formControlName="tipoAnunciante" name="cadastro-tipo-anunciante" value="IMOBILIARIA" inputId="cd-pj" /> Imobiliária</label>
                     </div>
                 </fieldset>
-                <div class="grid gap-4 sm:grid-cols-2">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div class="flex flex-col gap-2 min-w-0">
                         <label for="cd-doc" class="font-medium">{{ ehImobiliaria() ? 'CNPJ' : 'CPF' }} <span class="text-red-600 dark:text-red-400" aria-hidden="true">*</span></label>
                         <!-- trocar Corretor/Imobiliária troca a máscara e limpa o campo (CPF e CNPJ têm tamanhos diferentes) -->

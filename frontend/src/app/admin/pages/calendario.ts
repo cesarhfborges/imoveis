@@ -17,6 +17,7 @@ import { ConfigService } from '@/app/core/services/config.service';
 import { mensagemErro } from '@/app/core/services/api.service';
 import { PageHeader } from '@/app/shared/components/page-header';
 import { endOfDay, format, formatDate, startOfDay } from 'date-fns';
+import { TabelaResponsiva } from '@/app/shared/directives/tabela-responsiva';
 
 const NOMES_DIAS = ['', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];
 /** Ordem de exibição: domingo a sábado. */
@@ -27,7 +28,7 @@ type FeriadoEdicao = Omit<Feriado, 'id'> & { id: number | null };
 /** Calendário geral do sistema: expediente semanal e feriados (os prazos úteis só correm no expediente). */
 @Component({
     selector: 'app-calendario-page',
-    imports: [DatePipe, FormsModule, ButtonModule, CheckboxModule, InputTextModule, InputNumberModule, SelectModule, TableModule, TagModule, DialogModule, ToggleSwitchModule, PageHeader],
+    imports: [DatePipe, FormsModule, ButtonModule, CheckboxModule, InputTextModule, InputNumberModule, SelectModule, TableModule, TabelaResponsiva, TagModule, DialogModule, ToggleSwitchModule, PageHeader],
     template: `
         <app-page-header titulo="Calendário" subtitulo="Expediente e feriados do sistema. Os prazos em minutos úteis (como o das denúncias) só contam dentro do expediente e fora dos feriados." />
 
@@ -37,37 +38,42 @@ type FeriadoEdicao = Omit<Feriado, 'id'> & { id: number | null };
                 <label for="fuso" class="text-sm font-medium">Fuso horário</label>
                 <p-select inputId="fuso" name="fuso" [options]="fusos" [(ngModel)]="fuso" [editable]="true" />
             </div>
-            <table class="w-full max-w-2xl border-collapse">
-                <thead>
-                    <tr class="text-left text-sm text-muted-color">
-                        <th scope="col" class="py-2 font-medium">Dia</th>
-                        <th scope="col" class="py-2 font-medium">Funciona</th>
-                        <th scope="col" class="py-2 font-medium">Início</th>
-                        <th scope="col" class="py-2 font-medium">Fim</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (d of dias(); track d.diaSemana) {
-                        <tr class="border-t border-surface" [class.opacity-60]="!d.ativo">
-                            <th scope="row" class="py-2 pr-4 text-left font-medium">{{ nomeDia(d.diaSemana) }}</th>
-                            <td class="py-2 pr-4"><p-checkbox [binary]="true" [(ngModel)]="d.ativo" [name]="'ativo' + d.diaSemana" [inputId]="'ativo' + d.diaSemana" [ariaLabel]="nomeDia(d.diaSemana) + ': funciona'" /></td>
-                            <td class="py-2 pr-4"><input type="time" pInputText [(ngModel)]="d.inicio" [name]="'ini' + d.diaSemana" [disabled]="!d.ativo" [attr.aria-label]="nomeDia(d.diaSemana) + ': início'" class="w-32" /></td>
-                            <td class="py-2">
-                                <input
-                                    type="time"
-                                    pInputText
-                                    [ngModel]="d.fim === '24:00' ? '23:59' : d.fim"
-                                    (ngModelChange)="d.fim = $event"
-                                    [name]="'fim' + d.diaSemana"
-                                    [disabled]="!d.ativo"
-                                    [attr.aria-label]="nomeDia(d.diaSemana) + ': fim'"
-                                    class="w-32"
-                                />
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+            <!--
+                Grid em vez de <table>: no celular cada dia vira um bloco (checkbox + nome em cima, horários embaixo);
+                do sm em diante, uma linha por dia alinhada com o cabeçalho.
+            -->
+            <div class="max-w-2xl">
+                <div class="hidden sm:grid grid-cols-[12rem_8rem_8rem] gap-x-4 py-2 text-sm font-medium text-muted-color" aria-hidden="true">
+                    <span>Dia</span>
+                    <span>Início</span>
+                    <span>Fim</span>
+                </div>
+                @for (d of dias(); track d.diaSemana) {
+                    <div class="grid grid-cols-2 gap-x-3 gap-y-2 py-3 border-t border-surface sm:grid-cols-[12rem_8rem_8rem] sm:items-center sm:gap-x-4 sm:py-2" [class.opacity-60]="!d.ativo" role="group" [attr.aria-label]="nomeDia(d.diaSemana)">
+                        <div class="col-span-2 sm:col-span-1 flex items-center gap-2">
+                            <p-checkbox [binary]="true" [(ngModel)]="d.ativo" [name]="'ativo' + d.diaSemana" [inputId]="'ativo' + d.diaSemana" [ariaLabel]="nomeDia(d.diaSemana) + ': funciona'" />
+                            <label [for]="'ativo' + d.diaSemana" class="font-medium cursor-pointer">{{ nomeDia(d.diaSemana) }}</label>
+                        </div>
+                        <div class="flex flex-col gap-1 min-w-0">
+                            <span class="text-xs text-muted-color sm:hidden" aria-hidden="true">Início</span>
+                            <input type="time" pInputText [(ngModel)]="d.inicio" [name]="'ini' + d.diaSemana" [disabled]="!d.ativo" [attr.aria-label]="nomeDia(d.diaSemana) + ': início'" class="w-full min-w-0" />
+                        </div>
+                        <div class="flex flex-col gap-1 min-w-0">
+                            <span class="text-xs text-muted-color sm:hidden" aria-hidden="true">Fim</span>
+                            <input
+                                type="time"
+                                pInputText
+                                [ngModel]="d.fim === '24:00' ? '23:59' : d.fim"
+                                (ngModelChange)="d.fim = $event"
+                                [name]="'fim' + d.diaSemana"
+                                [disabled]="!d.ativo"
+                                [attr.aria-label]="nomeDia(d.diaSemana) + ': fim'"
+                                class="w-full min-w-0"
+                            />
+                        </div>
+                    </div>
+                }
+            </div>
             <div class="flex justify-end mt-4">
                 <p-button type="submit" label="Salvar expediente" icon="pi pi-check" [loading]="salvando()" />
             </div>
@@ -81,7 +87,7 @@ type FeriadoEdicao = Omit<Feriado, 'id'> & { id: number | null };
                 </div>
                 <p-button label="Novo feriado" icon="pi pi-plus" (onClick)="editar(null)" />
             </div>
-            <p-table [value]="feriados()" dataKey="id" [tableStyle]="{ 'min-width': '40rem' }">
+            <p-table appTabelaResponsiva [value]="feriados()" dataKey="id" [tableStyle]="{ 'min-width': '40rem' }">
                 <ng-template #header>
                     <tr>
                         <th scope="col">Feriado</th>
@@ -119,13 +125,14 @@ type FeriadoEdicao = Omit<Feriado, 'id'> & { id: number | null };
             <h2 id="sim-titulo" class="text-lg font-semibold mt-0 mb-1">Simular um prazo</h2>
             <p class="text-sm text-muted-color mt-0">Confira quando vence um prazo em minutos úteis com o calendário salvo.</p>
             <form class="flex flex-col sm:flex-row sm:items-end gap-3" (ngSubmit)="simular()">
-                <div class="flex flex-col gap-1">
+                <!-- celular: campos com a largura do card; do sm em diante, larguras fixas ao lado do botão -->
+                <div class="flex flex-col gap-1 min-w-0 sm:w-60">
                     <label for="sim-ini" class="text-sm font-medium">Início</label>
-                    <input type="datetime-local" pInputText id="sim-ini" name="simIni" [(ngModel)]="simInicio" />
+                    <input type="datetime-local" pInputText id="sim-ini" name="simIni" [(ngModel)]="simInicio" class="w-full min-w-0" />
                 </div>
-                <div class="flex flex-col gap-1">
+                <div class="flex flex-col gap-1 min-w-0 sm:w-36">
                     <label for="sim-min" class="text-sm font-medium">Minutos úteis</label>
-                    <p-inputnumber inputId="sim-min" name="simMin" [(ngModel)]="simMinutos" [min]="1" [max]="525600" [useGrouping]="false" />
+                    <p-inputnumber inputId="sim-min" name="simMin" [(ngModel)]="simMinutos" [min]="1" [max]="525600" [useGrouping]="false" [fluid]="true" />
                 </div>
                 <p-button type="submit" label="Calcular" icon="pi pi-calculator" [outlined]="true" />
             </form>
@@ -143,7 +150,7 @@ type FeriadoEdicao = Omit<Feriado, 'id'> & { id: number | null };
                         <label for="f-tit" class="font-medium">Nome</label>
                         <input pInputText id="f-tit" name="titulo" [(ngModel)]="f.titulo" maxlength="120" required placeholder="Ex.: Véspera de Natal" />
                     </div>
-<!--                    <div class="grid gap-4 sm:grid-cols-2">-->
+<!--                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">-->
 <!--                        <div class="flex flex-col gap-1">-->
 <!--                            <label for="f-ini" class="font-medium">Início</label>-->
 <!--                            <input type="datetime-local" pInputText id="f-ini" name="inicio" [(ngModel)]="f.inicio" required />-->

@@ -31,7 +31,7 @@ const POR_PAGINA = 24;
                 <app-empty-state titulo="Histórico indisponível" texto="O histórico de imóveis vistos está desativado no site no momento." icone="pi-eye-slash" />
             </div>
         } @else if (carregando() && !lista().length) {
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 @for (i of [1, 2, 3, 4]; track i) {
                     <p-skeleton height="260px" />
                 }

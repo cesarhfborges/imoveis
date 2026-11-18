@@ -15,11 +15,12 @@ import { AuthService } from '@/app/core/services/auth.service';
 import { ConfigService } from '@/app/core/services/config.service';
 import { mensagemErro } from '@/app/core/services/api.service';
 import { PageHeader } from '@/app/shared/components/page-header';
+import { TabelaResponsiva } from '@/app/shared/directives/tabela-responsiva';
 
 /** Tokens Bearer para a API aberta (/api/v1). O valor aparece uma única vez, na criação. */
 @Component({
     selector: 'app-api-tokens-page',
-    imports: [DatePipe, ReactiveFormsModule, TableModule, ButtonModule, InputTextModule, SelectModule, InputNumberModule, MessageModule, TagModule, PageHeader],
+    imports: [DatePipe, ReactiveFormsModule, TableModule, TabelaResponsiva, ButtonModule, InputTextModule, SelectModule, InputNumberModule, MessageModule, TagModule, PageHeader],
     template: `
         <app-page-header titulo="Tokens da API" subtitulo="Integre outros sistemas usando a API aberta com autenticação Bearer. Disponível para corretores e administradores." />
 
@@ -64,7 +65,7 @@ import { PageHeader } from '@/app/shared/components/page-header';
 
             <div class="card col-span-12 m-0">
                 <h2 class="text-lg font-semibold mt-0">Tokens ativos</h2>
-                <p-table [value]="tokens()" dataKey="id" [tableStyle]="{ 'min-width': '40rem' }">
+                <p-table appTabelaResponsiva [value]="tokens()" dataKey="id" [tableStyle]="{ 'min-width': '40rem' }">
                     <ng-template #header>
                         <tr>
                             <th scope="col">Nome</th>
