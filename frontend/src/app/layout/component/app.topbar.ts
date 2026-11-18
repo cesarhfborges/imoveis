@@ -31,7 +31,8 @@ import { Avatar } from '@/app/shared/components/avatar';
                 <app-logo [compacto]="true" />
             </a>
             @if (area === 'admin') {
-                <p-tag value="Admin" severity="danger" class="hidden sm:inline-flex" />
+                <!-- o display do p-tag vence o "hidden" do Tailwind; por isso o wrapper controla a visibilidade -->
+                <span class="hidden sm:inline-flex"><p-tag value="Admin" severity="danger" /></span>
             }
         </div>
 
@@ -54,6 +55,7 @@ import { Avatar } from '@/app/shared/components/avatar';
     styles: `
         .topbar-conta {
             display: inline-flex;
+            flex-shrink: 0;
             align-items: center;
             gap: 0.5rem;
             height: 2.5rem;
@@ -92,6 +94,17 @@ import { Avatar } from '@/app/shared/components/avatar';
         .topbar-conta__seta {
             font-size: 0.7rem;
             color: var(--p-text-muted-color);
+        }
+        /* celular: só o avatar, num botão redondo do mesmo tamanho dos outros da barra */
+        @media (max-width: 639px) {
+            .topbar-conta {
+                justify-content: center;
+                width: 2.5rem;
+                padding: 0;
+            }
+            .topbar-conta__seta {
+                display: none;
+            }
         }
         @media (prefers-reduced-motion: reduce) {
             .topbar-conta {
